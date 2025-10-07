@@ -140,9 +140,15 @@ export default function AccountsPage() {
   // Filtered accounts with useMemo for performance
   const filteredAccounts = useMemo(() => {
     return accounts.filter((acc) => {
-      // Search filter
-      if (searchQuery && !acc.username.toLowerCase().includes(searchQuery.toLowerCase())) {
-        return false;
+      // Search filter - search in username AND remark
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchUsername = acc.username.toLowerCase().includes(query);
+        const matchRemark = acc.remark?.toLowerCase().includes(query);
+        
+        if (!matchUsername && !matchRemark) {
+          return false;
+        }
       }
       
       // Application filter
@@ -409,7 +415,7 @@ export default function AccountsPage() {
       <div className="flex items-center justify-between gap-3">
         <div className="flex gap-2">
           <Input 
-            placeholder="Search username..." 
+            placeholder="Search username atau remark..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-64" 
