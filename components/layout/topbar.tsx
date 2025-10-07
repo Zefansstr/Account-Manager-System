@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, User, LogOut } from "lucide-react";
+import { User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function Topbar() {
@@ -55,10 +55,6 @@ export function Topbar() {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="relative hover:bg-secondary">
-            <Bell className="h-5 w-5 text-foreground" />
-            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary"></span>
-          </Button>
           <div className="flex items-center gap-2 rounded-md border border-border bg-secondary px-3 py-1.5">
             <User className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium text-foreground">{operatorName}</span>

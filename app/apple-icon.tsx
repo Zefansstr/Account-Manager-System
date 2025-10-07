@@ -11,26 +11,35 @@ export const contentType = 'image/png'
 export default function AppleIcon() {
   return new ImageResponse(
     (
-      // ImageResponse JSX element
       <div
         style={{
-          fontSize: 120,
-          background: '#22c55e',
+          background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
           width: '100%',
           height: '100%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: 'white',
           borderRadius: '25%',
-          fontWeight: 'bold',
-          fontFamily: 'system-ui',
         }}
       >
-        A
+        {/* UserCog Icon */}
+        <svg
+          width="100"
+          height="100"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="white"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="12" cy="8" r="5" />
+          <path d="M20 21a8 8 0 1 0-16 0" />
+          <circle cx="19" cy="8" r="1" />
+          <path d="M19 6v4" />
+        </svg>
       </div>
     ),
-    // ImageResponse options
     {
       ...size,
     }
