@@ -39,14 +39,6 @@ export async function GET(request: NextRequest) {
           .single();
         
         if (permissions) {
-          // DEBUG: Log the permissions data
-          console.log("🔍 Data Filters for Accounts:", {
-            applications: permissions.allowed_applications,
-            lines: permissions.allowed_lines,
-            departments: permissions.allowed_departments,
-            roles: permissions.allowed_roles,
-          });
-          
           // Check if any data filter exists (not null and not undefined)
           const hasApplicationFilter = permissions.allowed_applications !== null && permissions.allowed_applications !== undefined;
           const hasLineFilter = permissions.allowed_lines !== null && permissions.allowed_lines !== undefined;
@@ -76,14 +68,10 @@ export async function GET(request: NextRequest) {
           
           if (hasDepartmentFilter) {
             if (permissions.allowed_departments.length === 0) {
-              console.log("🚫 Department Filter: EMPTY (showing NO data)");
               query = query.in("department_id", ["00000000-0000-0000-0000-000000000000"]);
             } else {
-              console.log("✅ Department Filter: ACTIVE", permissions.allowed_departments);
               query = query.in("department_id", permissions.allowed_departments);
             }
-          } else {
-            console.log("⚠️ Department Filter: NOT SET (showing ALL data)");
           }
           
           if (hasRoleFilter) {
