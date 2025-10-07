@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: ["class"],
+  darkMode: "class",
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
@@ -9,15 +9,9 @@ const config: Config = {
     "./lib/**/*.{js,ts,jsx,tsx}",
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
   ],
-  safelist: [
-    'bg-background',
-    'bg-card',
-    'bg-primary',
-    'bg-secondary',
-    'text-foreground',
-    'text-primary',
-    'border-border',
-  ],
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
   theme: {
     extend: {
       colors: {
