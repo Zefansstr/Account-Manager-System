@@ -69,7 +69,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Determine action: if status changed, log ENABLE/DISABLE, otherwise UPDATE
-    let action = "UPDATE";
+    let action: "UPDATE" | "ENABLE" | "DISABLE" = "UPDATE";
     if (oldData?.status !== status) {
       action = status === "active" ? "ENABLE" : "DISABLE";
     }

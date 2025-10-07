@@ -2,18 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
 type RouteParams = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 // GET: Fetch permissions for an operator
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
+    const { id } = await params;
     const { data, error } = await supabase
       .from("permissions")
       .select("*")
-      .eq("operator_id", params.id);
+      .eq("operator_id", id);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -28,6 +29,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 // PUT: Update permissions for an operator
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { permissions } = body;
 
@@ -39,13 +41,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Delete existing permissions
-    await supabase.from("permissions").delete().eq("operator_id", params.id);
+    await supabase.from("permissions").delete().eq("operator_id", id);
 
     // Insert new permissions (only those with can_view = true)
     const permissionsToInsert = permissions
       .filter((perm: any) => perm.can_view) // Only insert if menu is viewable
       .map((perm: any) => ({
-        operator_id: params.id,
+        operator_id: id,
         menu_name: perm.menu_name,
         can_view: perm.can_view,
         can_create: perm.can_create,

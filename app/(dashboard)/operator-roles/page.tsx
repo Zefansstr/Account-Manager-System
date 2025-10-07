@@ -590,7 +590,9 @@ export default function OperatorRolesPage() {
                   <td className="px-4 py-3 text-sm">
                     <div className="flex items-center gap-2">
                       {role.is_system_role && (
-                        <Lock className="h-3 w-3 text-destructive" title="System Role - Cannot be deleted" />
+                        <div title="System Role - Cannot be deleted">
+                          <Lock className="h-3 w-3 text-destructive" />
+                        </div>
                       )}
                       <span className="font-medium text-foreground">{role.role_name}</span>
                     </div>
@@ -651,7 +653,7 @@ export default function OperatorRolesPage() {
                           setIsDeleteOpen(true);
                         }}
                         className="hover:bg-destructive/10 hover:text-destructive"
-                        disabled={role.is_system_role || (role.operator_count && role.operator_count > 0)}
+                        disabled={role.is_system_role || (role.operator_count ? role.operator_count > 0 : false)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -1162,10 +1164,10 @@ export default function OperatorRolesPage() {
             <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>
               Cancel
             </Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={handleDelete}
-              disabled={selectedRole?.is_system_role || (selectedRole?.operator_count && selectedRole.operator_count > 0)}
+              disabled={selectedRole?.is_system_role || (selectedRole?.operator_count ? selectedRole.operator_count > 0 : false)}
             >
               Delete
             </Button>

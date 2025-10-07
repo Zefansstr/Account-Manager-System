@@ -2,7 +2,7 @@ import { supabase } from "@/lib/supabase";
 
 type LogActivityParams = {
   userId?: string;
-  action: "CREATE" | "UPDATE" | "DELETE" | "LOGIN" | "LOGOUT";
+  action: "CREATE" | "UPDATE" | "DELETE" | "LOGIN" | "LOGOUT" | "ENABLE" | "DISABLE";
   tableName: string;
   recordId?: string;
   oldValue?: any;

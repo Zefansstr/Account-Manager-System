@@ -5,13 +5,14 @@ import { logActivity, getIpAddress, getUserAgent } from "@/lib/audit-logger";
 // GET single application
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const { data, error } = await supabase
       .from("applications")
       .select("*")
-      .eq("id", params.id)
+      .eq("id", id)
       .single();
 
     if (error) throw error;
@@ -25,9 +26,10 @@ export async function GET(
 // PUT update application
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { code, name, description, userId } = body;
 
@@ -35,7 +37,7 @@ export async function PUT(
     const { data: oldData } = await supabase
       .from("applications")
       .select("*")
-      .eq("id", params.id)
+      .eq("id", id)
       .single();
 
     const { data, error } = await supabase
@@ -46,7 +48,7 @@ export async function PUT(
         description: description || null,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", params.id)
+      .eq("id", id)
       .select()
       .single();
 
@@ -57,7 +59,7 @@ export async function PUT(
       userId,
       action: "UPDATE",
       tableName: "applications",
-      recordId: params.id,
+      recordId: id,
       oldValue: { app_code: oldData?.app_code, app_name: oldData?.app_name },
       newValue: { app_code: code, app_name: name },
       ipAddress: getIpAddress(request),
@@ -73,9 +75,10 @@ export async function PUT(
 // DELETE application
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json().catch(() => ({}));
     const { userId } = body;
 
@@ -83,13 +86,13 @@ export async function DELETE(
     const { data: oldData } = await supabase
       .from("applications")
       .select("*")
-      .eq("id", params.id)
+      .eq("id", id)
       .single();
 
     const { error } = await supabase
       .from("applications")
       .delete()
-      .eq("id", params.id);
+      .eq("id", id);
 
     if (error) throw error;
 
@@ -98,7 +101,7 @@ export async function DELETE(
       userId,
       action: "DELETE",
       tableName: "applications",
-      recordId: params.id,
+      recordId: id,
       oldValue: { app_code: oldData?.app_code, app_name: oldData?.app_name },
       ipAddress: getIpAddress(request),
       userAgent: getUserAgent(request),

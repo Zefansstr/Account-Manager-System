@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { logActivity, getIpAddress, getUserAgent } from "@/lib/audit-logger";
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { applicationId, lineId, username, password, departmentId, roleId, remark, userId } = body;
 
@@ -11,7 +12,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     const { data: oldData } = await supabase
       .from("accounts")
       .select("*")
-      .eq("id", params.id)
+      .eq("id", id)
       .single();
 
     const { data, error } = await supabase
@@ -26,7 +27,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         remark: remark || null,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", params.id)
+      .eq("id", id)
       .select()
       .single();
 
@@ -37,7 +38,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       userId,
       action: "UPDATE",
       tableName: "accounts",
-      recordId: params.id,
+      recordId: id,
       oldValue: { username: oldData?.username, status: oldData?.status },
       newValue: { username, status: data.status },
       ipAddress: getIpAddress(request),
@@ -50,16 +51,17 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     // Get data before delete
     const { data: oldData } = await supabase
       .from("accounts")
       .select("*")
-      .eq("id", params.id)
+      .eq("id", id)
       .single();
 
-    const { error } = await supabase.from("accounts").delete().eq("id", params.id);
+    const { error } = await supabase.from("accounts").delete().eq("id", id);
     if (error) throw error;
 
     // Get userId from request body if available
@@ -71,7 +73,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       userId,
       action: "DELETE",
       tableName: "accounts",
-      recordId: params.id,
+      recordId: id,
       oldValue: { username: oldData?.username },
       ipAddress: getIpAddress(request),
       userAgent: getUserAgent(request),

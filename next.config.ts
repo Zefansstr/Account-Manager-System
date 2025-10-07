@@ -4,9 +4,6 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactStrictMode: true,
   
-  // Performance optimizations
-  swcMinify: true,
-  
   // Compiler options for faster builds
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",

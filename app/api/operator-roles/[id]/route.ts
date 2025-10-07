@@ -2,18 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
 type RouteParams = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 // GET: Fetch single operator role
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
+    const { id } = await params;
     const { data, error } = await supabase
       .from("operator_roles")
       .select("*")
-      .eq("id", params.id)
+      .eq("id", id)
       .single();
 
     if (error) {
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { count } = await supabase
       .from("operators")
       .select("*", { count: "exact", head: true })
-      .eq("operator_role_id", params.id);
+      .eq("operator_role_id", id);
 
     return NextResponse.json({ 
       data: {
@@ -40,6 +41,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 // PUT: Update operator role
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { role_name, description, status } = body;
 
@@ -47,7 +49,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const { data: existingRole } = await supabase
       .from("operator_roles")
       .select("is_system_role")
-      .eq("id", params.id)
+      .eq("id", id)
       .single();
 
     if (existingRole?.is_system_role) {
@@ -65,7 +67,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         status,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", params.id)
+      .eq("id", id)
       .select()
       .single();
 
@@ -82,11 +84,12 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 // DELETE: Delete operator role
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
+    const { id } = await params;
     // Check if it's a system role
     const { data: existingRole } = await supabase
       .from("operator_roles")
       .select("is_system_role")
-      .eq("id", params.id)
+      .eq("id", id)
       .single();
 
     if (existingRole?.is_system_role) {
@@ -100,7 +103,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const { count } = await supabase
       .from("operators")
       .select("*", { count: "exact", head: true })
-      .eq("operator_role_id", params.id);
+      .eq("operator_role_id", id);
 
     if (count && count > 0) {
       return NextResponse.json(
@@ -112,7 +115,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const { error } = await supabase
       .from("operator_roles")
       .delete()
-      .eq("id", params.id);
+      .eq("id", id);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

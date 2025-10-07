@@ -27,7 +27,8 @@ export async function GET(request: NextRequest) {
         .eq("id", operatorId)
         .single();
       
-      const isSuperAdmin = operator?.operator_roles?.role_name?.toLowerCase() === "super admin";
+      const operatorRoles = operator?.operator_roles as any;
+      const isSuperAdmin = operatorRoles?.role_name?.toLowerCase() === "super admin";
       
       if (!isSuperAdmin && operator?.operator_role_id) {
         // Get permissions for "Accounts" menu

@@ -5,9 +5,10 @@ import { logActivity, getIpAddress, getUserAgent } from "@/lib/audit-logger";
 // PATCH - Toggle account status
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { status, userId } = body;
 
@@ -22,7 +23,7 @@ export async function PATCH(
     const { data: oldData } = await supabase
       .from("accounts")
       .select("username, status")
-      .eq("id", params.id)
+      .eq("id", id)
       .single();
 
     const { data, error } = await supabase
@@ -31,7 +32,7 @@ export async function PATCH(
         status: status,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", params.id)
+      .eq("id", id)
       .select()
       .single();
 
@@ -42,7 +43,7 @@ export async function PATCH(
       userId,
       action: status === "active" ? "ENABLE" : "DISABLE",
       tableName: "accounts",
-      recordId: params.id,
+      recordId: id,
       oldValue: { username: oldData?.username, status: oldData?.status },
       newValue: { username: oldData?.username, status: status },
       ipAddress: getIpAddress(request),
