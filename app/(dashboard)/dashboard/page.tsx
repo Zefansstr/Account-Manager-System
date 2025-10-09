@@ -5,6 +5,7 @@ import { Users, UserCheck, AppWindow, Layers, Building2, Shield } from "lucide-r
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, PieChart, Pie, Cell } from "recharts";
 import { PermissionGuard } from "@/components/auth/permission-guard";
+import { getDepartmentDisplayName, getRoleDisplayName } from "@/lib/display-names";
 
 const STATUS_COLORS = {
   Active: "#22c55e",
@@ -70,6 +71,23 @@ export default function DashboardPage() {
       
       const res = await fetch("/api/dashboard/stats", { headers });
       const json = await res.json();
+      
+      // Transform department names to short display names
+      if (json.charts?.accountsByDepartment) {
+        json.charts.accountsByDepartment = json.charts.accountsByDepartment.map((item: any) => ({
+          ...item,
+          name: getDepartmentDisplayName(item.name)
+        }));
+      }
+      
+      // Transform role names to short display names
+      if (json.charts?.accountsByRole) {
+        json.charts.accountsByRole = json.charts.accountsByRole.map((item: any) => ({
+          ...item,
+          name: getRoleDisplayName(item.name)
+        }));
+      }
+      
       setData(json);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
