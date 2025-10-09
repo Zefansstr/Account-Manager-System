@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   ChevronDown,
   ChevronRight,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { canViewMenu, isSuperAdmin } from "@/lib/permissions";
@@ -32,6 +33,13 @@ const menuItems = [
     href: "/accounts",
     icon: Users,
     menuName: "Accounts",
+  },
+  {
+    title: "Support Chat",
+    href: "/support-chat",
+    icon: MessageSquare,
+    menuName: "Support Chat",
+    showBadge: true, // For unread count
   },
   {
     title: "Audit Logs",
@@ -89,6 +97,7 @@ export function Sidebar() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [visibleMenus, setVisibleMenus] = useState<string[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
 
   // Check permissions on mount
   useEffect(() => {
@@ -99,7 +108,7 @@ export function Sidebar() {
       if (admin) {
         // Super Admin can see everything
         setVisibleMenus([
-          "Dashboard", "Accounts", "Audit Logs", 
+          "Dashboard", "Accounts", "Support Chat", "Audit Logs", 
           "Operators", "Operator Roles", 
           "Applications", "Lines", "Departments", "Roles"
         ]);
@@ -133,6 +142,31 @@ export function Sidebar() {
     };
     
     checkPermissions();
+    
+    // Fetch unread chat count
+    const fetchUnreadCount = async () => {
+      try {
+        const opStr = localStorage.getItem("operator");
+        if (!opStr) return;
+        
+        const operator = JSON.parse(opStr);
+        const headers: HeadersInit = { "X-Operator-Id": operator.id };
+        
+        const res = await fetch("/api/chat/unread-count", { headers });
+        const json = await res.json();
+        
+        setUnreadChatCount(json.unreadCount || 0);
+      } catch (error) {
+        console.error("Error fetching unread count:", error);
+      }
+    };
+    
+    fetchUnreadCount();
+    
+    // Optimized: Refresh every 60 seconds (reduced from 30s)
+    const interval = setInterval(fetchUnreadCount, 60000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const isOperatorsActive = operatorSubmenus.some(
@@ -194,7 +228,12 @@ export function Sidebar() {
               )}
             >
               <Icon className="h-5 w-5" />
-              <span>{item.title}</span>
+              <span className="flex-1">{item.title}</span>
+              {item.showBadge && unreadChatCount > 0 && (
+                <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
+                  {unreadChatCount > 99 ? "99+" : unreadChatCount}
+                </span>
+              )}
             </Link>
           );
         })}
