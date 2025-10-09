@@ -42,7 +42,6 @@ export async function GET(request: NextRequest) {
               applications: accountsPerms.allowed_applications || [],
               lines: accountsPerms.allowed_lines || [],
               departments: accountsPerms.allowed_departments || [],
-              roles: accountsPerms.allowed_roles || [],
             };
           }
         }
@@ -99,20 +98,6 @@ export async function GET(request: NextRequest) {
         accountsByDeptQuery = accountsByDeptQuery.in("department_id", allowedFilters.departments);
         accountsByAppQuery = accountsByAppQuery.in("department_id", allowedFilters.departments);
         accountsByRoleQuery = accountsByRoleQuery.in("department_id", allowedFilters.departments);
-      }
-      
-      if (allowedFilters.roles.length === 0) {
-        accountsQuery = accountsQuery.in("role_id", ["00000000-0000-0000-0000-000000000000"]);
-        activeAccountsQuery = activeAccountsQuery.in("role_id", ["00000000-0000-0000-0000-000000000000"]);
-        accountsByDeptQuery = accountsByDeptQuery.in("role_id", ["00000000-0000-0000-0000-000000000000"]);
-        accountsByAppQuery = accountsByAppQuery.in("role_id", ["00000000-0000-0000-0000-000000000000"]);
-        accountsByRoleQuery = accountsByRoleQuery.in("role_id", ["00000000-0000-0000-0000-000000000000"]);
-      } else if (allowedFilters.roles.length > 0) {
-        accountsQuery = accountsQuery.in("role_id", allowedFilters.roles);
-        activeAccountsQuery = activeAccountsQuery.in("role_id", allowedFilters.roles);
-        accountsByDeptQuery = accountsByDeptQuery.in("role_id", allowedFilters.roles);
-        accountsByAppQuery = accountsByAppQuery.in("role_id", allowedFilters.roles);
-        accountsByRoleQuery = accountsByRoleQuery.in("role_id", allowedFilters.roles);
       }
     }
     

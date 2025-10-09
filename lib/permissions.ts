@@ -153,7 +153,6 @@ export function getAllowedFilters(menuName: string): {
   applications: string[];
   lines: string[];
   departments: string[];
-  roles: string[];
 } {
   // Super Admin can see all data
   if (isSuperAdmin()) {
@@ -161,7 +160,6 @@ export function getAllowedFilters(menuName: string): {
       applications: [],
       lines: [],
       departments: [],
-      roles: [],
     };
   }
   
@@ -175,7 +173,6 @@ export function getAllowedFilters(menuName: string): {
       applications: [],
       lines: [],
       departments: [],
-      roles: [],
     };
   }
   
@@ -183,7 +180,6 @@ export function getAllowedFilters(menuName: string): {
     applications: menuPermission.allowed_applications || [],
     lines: menuPermission.allowed_lines || [],
     departments: menuPermission.allowed_departments || [],
-    roles: menuPermission.allowed_roles || [],
   };
 }
 
@@ -195,8 +191,7 @@ export function hasDataFilters(menuName: string): boolean {
   return (
     filters.applications.length > 0 ||
     filters.lines.length > 0 ||
-    filters.departments.length > 0 ||
-    filters.roles.length > 0
+    filters.departments.length > 0
   );
 }
 

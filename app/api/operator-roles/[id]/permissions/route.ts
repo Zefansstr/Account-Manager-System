@@ -79,7 +79,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
           allowed_applications: perm.allowed_applications || [],
           allowed_lines: perm.allowed_lines || [],
           allowed_departments: perm.allowed_departments || [],
-          allowed_roles: perm.allowed_roles || [],
         };
       });
 

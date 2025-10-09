@@ -30,7 +30,6 @@ type Permission = {
   allowed_applications?: string[];
   allowed_lines?: string[];
   allowed_departments?: string[];
-  allowed_roles?: string[];
 };
 
 type OperatorRole = {
@@ -365,7 +364,6 @@ export default function OperatorRolesPage() {
             allowed_applications: [],
             allowed_lines: [],
             allowed_departments: [],
-            allowed_roles: [],
           };
         } else {
           // Ensure existing permissions have data filter arrays initialized
@@ -377,9 +375,6 @@ export default function OperatorRolesPage() {
           }
           if (!permissionsMap[menuName].allowed_departments) {
             permissionsMap[menuName].allowed_departments = [];
-          }
-          if (!permissionsMap[menuName].allowed_roles) {
-            permissionsMap[menuName].allowed_roles = [];
           }
         }
       });
@@ -422,7 +417,6 @@ export default function OperatorRolesPage() {
             allowed_applications: [],
             allowed_lines: [],
             allowed_departments: [],
-            allowed_roles: [],
           };
         } else {
           // Ensure existing permissions have data filter arrays initialized
@@ -434,9 +428,6 @@ export default function OperatorRolesPage() {
           }
           if (!permissionsMap[menuName].allowed_departments) {
             permissionsMap[menuName].allowed_departments = [];
-          }
-          if (!permissionsMap[menuName].allowed_roles) {
-            permissionsMap[menuName].allowed_roles = [];
           }
         }
       });
@@ -476,7 +467,7 @@ export default function OperatorRolesPage() {
   };
   
   // Data filter toggle functions
-  const toggleDataFilter = (menuName: string, filterType: 'applications' | 'lines' | 'departments' | 'roles', filterId: string) => {
+  const toggleDataFilter = (menuName: string, filterType: 'applications' | 'lines' | 'departments', filterId: string) => {
     setPermissions((prev) => {
       const filterKey = `allowed_${filterType}` as keyof Permission;
       const currentFilters = (prev[menuName][filterKey] as string[]) || [];
@@ -1074,53 +1065,6 @@ export default function OperatorRolesPage() {
                           className="w-4 h-4 accent-primary"
                         />
                         <span className="text-foreground">{dept.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Roles Filter */}
-                <div className="border-t border-border pt-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-medium text-foreground">Allowed Account Roles:</h4>
-                    <label className="flex items-center gap-2 cursor-pointer text-xs text-primary">
-                      <input
-                        type="checkbox"
-                        checked={accountRoles.every(role => permissions['accounts'].allowed_roles?.includes(role.id))}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setPermissions((prev) => ({
-                              ...prev,
-                              accounts: {
-                                ...prev.accounts,
-                                allowed_roles: accountRoles.map(r => r.id),
-                              },
-                            }));
-                          } else {
-                            setPermissions((prev) => ({
-                              ...prev,
-                              accounts: {
-                                ...prev.accounts,
-                                allowed_roles: [],
-                              },
-                            }));
-                          }
-                        }}
-                        className="w-3 h-3 accent-primary"
-                      />
-                      <span className="font-medium">Select All</span>
-                    </label>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {accountRoles.map((role) => (
-                      <label key={role.id} className="flex items-center gap-2 cursor-pointer text-sm">
-                        <input
-                          type="checkbox"
-                          checked={permissions['accounts'].allowed_roles?.includes(role.id) || false}
-                          onChange={() => toggleDataFilter('accounts', 'roles', role.id)}
-                          className="w-4 h-4 accent-primary"
-                        />
-                        <span className="text-foreground">{role.name}</span>
                       </label>
                     ))}
                   </div>

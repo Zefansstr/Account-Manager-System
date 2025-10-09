@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
         // Get permissions for "Accounts" menu
         const { data: permissions } = await supabase
           .from("operator_role_permissions")
-          .select("allowed_applications, allowed_lines, allowed_departments, allowed_roles")
+          .select("allowed_applications, allowed_lines, allowed_departments")
           .eq("role_id", operator.operator_role_id)
           .eq("menu_name", "accounts")
           .single();
@@ -44,7 +44,6 @@ export async function GET(request: NextRequest) {
           const hasApplicationFilter = permissions.allowed_applications !== null && permissions.allowed_applications !== undefined;
           const hasLineFilter = permissions.allowed_lines !== null && permissions.allowed_lines !== undefined;
           const hasDepartmentFilter = permissions.allowed_departments !== null && permissions.allowed_departments !== undefined;
-          const hasRoleFilter = permissions.allowed_roles !== null && permissions.allowed_roles !== undefined;
           
           // If filter exists but empty = show NO data
           // If filter exists and has values = show filtered data
@@ -72,14 +71,6 @@ export async function GET(request: NextRequest) {
               query = query.in("department_id", ["00000000-0000-0000-0000-000000000000"]);
             } else {
               query = query.in("department_id", permissions.allowed_departments);
-            }
-          }
-          
-          if (hasRoleFilter) {
-            if (permissions.allowed_roles.length === 0) {
-              query = query.in("role_id", ["00000000-0000-0000-0000-000000000000"]);
-            } else {
-              query = query.in("role_id", permissions.allowed_roles);
             }
           }
         }
