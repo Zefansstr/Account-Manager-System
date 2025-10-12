@@ -35,6 +35,9 @@ export default function OperatorsPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedOperator, setSelectedOperator] = useState<Operator | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const [formData, setFormData] = useState({
     username: "",
@@ -82,6 +85,30 @@ export default function OperatorsPage() {
   };
 
   const handleAdd = async () => {
+    // Reset messages
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    // Validate form
+    if (!formData.username.trim()) {
+      setErrorMessage("Username tidak boleh kosong");
+      return;
+    }
+    if (!formData.password.trim()) {
+      setErrorMessage("Password tidak boleh kosong");
+      return;
+    }
+    if (!formData.full_name.trim()) {
+      setErrorMessage("Full Name tidak boleh kosong");
+      return;
+    }
+    if (!formData.operator_role_id) {
+      setErrorMessage("Silakan pilih Role");
+      return;
+    }
+
+    setIsSubmitting(true);
+
     try {
       const res = await fetch("/api/operators", {
         method: "POST",
@@ -89,13 +116,23 @@ export default function OperatorsPage() {
         body: JSON.stringify(formData),
       });
 
+      const result = await res.json();
+
       if (res.ok) {
         await fetchOperators();
         setIsAddOpen(false);
         resetForm();
+        setSuccessMessage("Operator berhasil ditambahkan!");
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccessMessage(""), 3000);
+      } else {
+        setErrorMessage(result.error || "Gagal menambahkan operator");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error adding operator:", error);
+      setErrorMessage("Terjadi kesalahan: " + (error.message || "Unknown error"));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -189,11 +226,23 @@ export default function OperatorsPage() {
             Manage system operators and assign roles
           </p>
         </div>
-        <Button onClick={() => setIsAddOpen(true)}>
+        <Button onClick={() => {
+          resetForm();
+          setErrorMessage("");
+          setSuccessMessage("");
+          setIsAddOpen(true);
+        }}>
           <Plus className="mr-2 h-4 w-4" />
           Add Operator
         </Button>
       </div>
+
+      {/* Success Message */}
+      {successMessage && (
+        <div className="rounded-lg border border-green-500 bg-green-50 dark:bg-green-950/20 px-4 py-3">
+          <p className="text-sm text-green-700 dark:text-green-400">{successMessage}</p>
+        </div>
+      )}
 
       <div className="rounded-lg border border-border bg-card shadow-lg">
         <div className="overflow-x-auto">
@@ -286,6 +335,13 @@ export default function OperatorsPage() {
             <DialogTitle className="text-foreground">Add New Operator</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            {/* Error Message */}
+            {errorMessage && (
+              <div className="rounded-lg border border-red-500 bg-red-50 dark:bg-red-950/20 px-4 py-3">
+                <p className="text-sm text-red-700 dark:text-red-400">{errorMessage}</p>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="add-username">Username</Label>
               <Input
@@ -293,6 +349,7 @@ export default function OperatorsPage() {
                 value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 placeholder="Enter username"
+                disabled={isSubmitting}
               />
             </div>
             <div className="space-y-2">
@@ -303,6 +360,7 @@ export default function OperatorsPage() {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 placeholder="Enter password"
+                disabled={isSubmitting}
               />
             </div>
             <div className="space-y-2">
@@ -312,6 +370,7 @@ export default function OperatorsPage() {
                 value={formData.full_name}
                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                 placeholder="Enter full name"
+                disabled={isSubmitting}
               />
             </div>
             <div className="space-y-2">
@@ -320,7 +379,8 @@ export default function OperatorsPage() {
                 id="add-role"
                 value={formData.operator_role_id}
                 onChange={(e) => setFormData({ ...formData, operator_role_id: e.target.value })}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isSubmitting}
               >
                 {roles.length === 0 ? (
                   <option value="">No roles available</option>
@@ -339,7 +399,8 @@ export default function OperatorsPage() {
                 id="add-status"
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isSubmitting}
               >
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
@@ -347,11 +408,15 @@ export default function OperatorsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddOpen(false)}>
+            <Button variant="outline" onClick={() => setIsAddOpen(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button onClick={handleAdd} className="bg-primary hover:bg-primary/90">
-              Add Operator
+            <Button 
+              onClick={handleAdd} 
+              className="bg-primary hover:bg-primary/90"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Menambahkan..." : "Add Operator"}
             </Button>
           </DialogFooter>
         </DialogContent>
