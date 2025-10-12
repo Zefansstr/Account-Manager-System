@@ -114,6 +114,7 @@ export function Sidebar() {
         ]);
       } else {
         // Filter menus based on permissions
+        // Note: Dashboard and Support Chat are always visible (handled in canViewMenu)
         const visible: string[] = [];
         
         // Check main menus

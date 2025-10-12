@@ -31,9 +31,15 @@ export function getCurrentOperator() {
 export function canViewMenu(menuName: string): boolean {
   const permissions = getPermissions();
   
-  // If no permissions, default to false (except for Dashboard which is always visible)
+  // Dashboard and Support Chat are always visible for all operators
+  const alwaysVisibleMenus = ["Dashboard", "Support Chat"];
+  if (alwaysVisibleMenus.some(menu => menu.toLowerCase() === menuName.toLowerCase())) {
+    return true;
+  }
+  
+  // If no permissions, default to false
   if (!permissions || permissions.length === 0) {
-    return menuName === "Dashboard";
+    return false;
   }
   
   // Find permission for this menu
