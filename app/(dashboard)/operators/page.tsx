@@ -73,7 +73,7 @@ export default function OperatorsPage() {
   // Derived state from React Query
   const operators: Operator[] = operatorsData?.data || [];
   const pagination = operatorsData?.pagination || { page: 1, limit: 20, total: 0, totalPages: 1 };
-  const roles = (rolesData?.data || []).filter((r: OperatorRole) => r.status === "active");
+  const roles: OperatorRole[] = (rolesData?.data || []).filter((r: OperatorRole) => r.status === "active");
   const loading = operatorsLoading || rolesLoading;
 
   const resetForm = () => {
