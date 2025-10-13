@@ -503,7 +503,7 @@ export default function AccountsPage() {
             <option value="">All Status</option>
             {(() => {
               // Get unique statuses from current data
-              const uniqueStatuses = [...new Set(accounts.map(acc => acc.status))];
+              const uniqueStatuses = [...new Set(accounts.map(acc => acc.status).filter(Boolean))];
               return uniqueStatuses.map(status => (
                 <option key={status} value={status}>
                   {status.charAt(0).toUpperCase() + status.slice(1)}
