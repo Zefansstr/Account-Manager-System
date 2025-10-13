@@ -63,11 +63,11 @@ export default function AccountsPage() {
   const [filterLine, setFilterLine] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   
-  // Get allowed filters based on role
-  const allowedFilters = getAllowedFilters(menuName);
-  
   // Permission checks
   const menuName = "Accounts";
+  
+  // Get allowed filters based on role
+  const allowedFilters = getAllowedFilters(menuName);
   const hasCreatePermission = isSuperAdmin() || canCreate(menuName);
   const hasEditPermission = isSuperAdmin() || canEdit(menuName);
   const hasDeletePermission = isSuperAdmin() || canDelete(menuName);
