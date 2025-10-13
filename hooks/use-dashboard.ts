@@ -18,6 +18,7 @@ export interface DashboardKPIs {
 export interface ChartData {
   name: string;
   count: number;
+  [key: string]: any; // Allow additional properties for Recharts compatibility
 }
 
 export interface DashboardCharts {
