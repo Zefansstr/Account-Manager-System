@@ -77,7 +77,7 @@ export function useAccounts(page = 1, limit = 20, search = '', operatorId?: stri
   return useQuery({
     queryKey: [...accountKeys.lists(), { page, limit, search, operatorId }],
     queryFn: () => fetchAccounts(page, limit, search, operatorId),
-    keepPreviousData: true, // Keep showing old data while loading new page
+    placeholderData: (previousData) => previousData, // Keep showing old data while loading new page
   });
 }
 

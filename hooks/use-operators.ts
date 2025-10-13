@@ -78,7 +78,7 @@ export function useOperators(page = 1, limit = 20, search = '') {
   return useQuery({
     queryKey: [...operatorKeys.lists(), { page, limit, search }],
     queryFn: () => fetchOperators(page, limit, search),
-    keepPreviousData: true, // Keep showing old data while loading new page
+    placeholderData: (previousData) => previousData, // Keep showing old data while loading new page
   });
 }
 

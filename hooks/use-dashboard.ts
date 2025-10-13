@@ -46,11 +46,11 @@ async function fetchDashboardStats(operatorId?: string): Promise<DashboardData> 
 
 // Hook: Get dashboard stats with caching
 export function useDashboard(operatorId?: string) {
-  return useQuery({
+  return useQuery<DashboardData>({
     queryKey: ['dashboard', 'stats', operatorId],
     queryFn: () => fetchDashboardStats(operatorId),
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-    cacheTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes (renamed from cacheTime in v5)
     refetchOnWindowFocus: true, // Refresh when user returns to tab
   });
 }
