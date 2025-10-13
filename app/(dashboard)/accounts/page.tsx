@@ -501,15 +501,8 @@ export default function AccountsPage() {
             className="rounded-md border border-border bg-background px-3 py-2 text-sm"
           >
             <option value="">All Status</option>
-            {(() => {
-              // Get unique statuses from current data
-              const uniqueStatuses = [...new Set(accounts.map(acc => acc.status).filter(Boolean))];
-              return uniqueStatuses.map(status => (
-                <option key={status} value={status}>
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </option>
-              ));
-            })()}
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
           </select>
           <div className="text-sm text-muted-foreground ml-2">
             {pagination.total} total account{pagination.total !== 1 ? 's' : ''}
