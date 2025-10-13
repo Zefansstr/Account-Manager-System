@@ -12,7 +12,7 @@ import { Plus, Edit, Trash2, Eye, EyeOff, Upload, Download, Power, CheckSquare, 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import * as XLSX from "xlsx";
 import { PermissionGuard } from "@/components/auth/permission-guard";
-import { canCreate, canEdit, canDelete, canEnableDisable, canImport, canExport, isColumnVisible, isSuperAdmin } from "@/lib/permissions";
+import { canCreate, canEdit, canDelete, canEnableDisable, canImport, canExport, isColumnVisible, isSuperAdmin, getAllowedFilters } from "@/lib/permissions";
 
 type Account = {
   id: string;
@@ -62,6 +62,9 @@ export default function AccountsPage() {
   const [filterApplication, setFilterApplication] = useState("");
   const [filterLine, setFilterLine] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  
+  // Get allowed filters based on role
+  const allowedFilters = getAllowedFilters(menuName);
   
   // Permission checks
   const menuName = "Accounts";
@@ -464,9 +467,16 @@ export default function AccountsPage() {
             className="rounded-md border border-border bg-background px-3 py-2 text-sm"
           >
             <option value="">All Applications</option>
-            {applications.map((app) => (
-              <option key={app.id} value={app.id}>{app.name}</option>
-            ))}
+            {applications
+              .filter(app => {
+                // If no data filters, show all
+                if (allowedFilters.applications.length === 0) return true;
+                // If has data filters, only show allowed applications
+                return allowedFilters.applications.includes(app.id);
+              })
+              .map((app) => (
+                <option key={app.id} value={app.id}>{app.name}</option>
+              ))}
           </select>
           <select 
             value={filterLine}
@@ -474,9 +484,16 @@ export default function AccountsPage() {
             className="rounded-md border border-border bg-background px-3 py-2 text-sm"
           >
             <option value="">All Lines</option>
-            {lines.map((line) => (
-              <option key={line.id} value={line.id}>{line.name}</option>
-            ))}
+            {lines
+              .filter(line => {
+                // If no data filters, show all
+                if (allowedFilters.lines.length === 0) return true;
+                // If has data filters, only show allowed lines
+                return allowedFilters.lines.includes(line.id);
+              })
+              .map((line) => (
+                <option key={line.id} value={line.id}>{line.name}</option>
+              ))}
           </select>
           <select 
             value={filterStatus}
@@ -484,8 +501,15 @@ export default function AccountsPage() {
             className="rounded-md border border-border bg-background px-3 py-2 text-sm"
           >
             <option value="">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            {(() => {
+              // Get unique statuses from current data
+              const uniqueStatuses = [...new Set(accounts.map(acc => acc.status))];
+              return uniqueStatuses.map(status => (
+                <option key={status} value={status}>
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </option>
+              ));
+            })()}
           </select>
           <div className="text-sm text-muted-foreground ml-2">
             {pagination.total} total account{pagination.total !== 1 ? 's' : ''}
