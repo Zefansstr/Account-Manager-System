@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { MessageSquare, Send, Paperclip, Plus, X, Check, CheckCheck, Users, User, Trash2 } from "lucide-react";
+import { MessageSquare, Send, Paperclip, Plus, X, Check, CheckCheck, Users, User, Trash2, Settings, Bell, Volume2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { PermissionGuard } from "@/components/auth/permission-guard";
 
@@ -66,6 +66,11 @@ export default function SupportChatPage() {
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [roomToDelete, setRoomToDelete] = useState<string | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  
+  // Notification settings
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [desktopEnabled, setDesktopEnabled] = useState(true);
 
   // Personal chat
   const [operators, setOperators] = useState<Operator[]>([]);
@@ -91,6 +96,12 @@ export default function SupportChatPage() {
       setCurrentOperator(op);
       setIsSuperAdmin(op.role_name === "Super Admin");
     }
+    
+    // Load notification settings
+    const soundSetting = localStorage.getItem('notification_sound');
+    const desktopSetting = localStorage.getItem('notification_desktop');
+    setSoundEnabled(soundSetting !== 'false');
+    setDesktopEnabled(desktopSetting !== 'false');
   }, []);
 
   useEffect(() => {
@@ -105,33 +116,104 @@ export default function SupportChatPage() {
     }
   }, [currentOperator, activeTab]);
 
-  // Real-time subscription
+  // Real-time subscription for chat messages
   useEffect(() => {
-    if (!selectedRoom) return;
+    if (!selectedRoom || !currentOperator) return;
+
+    console.log(`🔗 Subscribing to room: ${selectedRoom.id}`);
 
     const channel = supabase
-      .channel(`room-${selectedRoom.id}`)
+      .channel(`room-${selectedRoom.id}`, {
+        config: {
+          broadcast: { self: false },
+        },
+      })
       .on(
         "postgres_changes",
         {
-          event: "*",
+          event: "INSERT",
+          schema: "public",
+          table: "chat_messages",
+          filter: `room_id=eq.${selectedRoom.id}`,
+        },
+        async (payload) => {
+          console.log("💬 New message in room:", payload);
+          const newMessage = payload.new as any;
+          
+          // Check if message already exists (avoid duplicates from optimistic UI)
+          setMessages(prev => {
+            const exists = prev.some(msg => msg.id === newMessage.id);
+            if (exists) {
+              console.log('Message already exists, skipping...');
+              return prev;
+            }
+            
+            // Also remove any temp message with same timestamp (if optimistic UI was used)
+            const filtered = prev.filter(msg => !msg.id.startsWith('temp-'));
+            
+            // Add message to state for instant display
+            return [...filtered, {
+              id: newMessage.id,
+              message: newMessage.message,
+              sender_id: newMessage.sender_id,
+              message_type: newMessage.message_type,
+              created_at: newMessage.created_at,
+              is_read: newMessage.is_read,
+              chat_attachments: []
+            }];
+          });
+          
+          // Mark as read if not own message
+          if (newMessage.sender_id !== currentOperator.id) {
+            try {
+              // Update last_read_at to mark messages as read
+              await supabase
+                .from('chat_participants')
+                .update({ last_read_at: new Date().toISOString() })
+                .eq('room_id', selectedRoom.id)
+                .eq('operator_id', currentOperator.id);
+              
+              console.log('✅ Marked as read');
+            } catch (error) {
+              console.error("Failed to mark as read:", error);
+            }
+          }
+          
+          // Refresh rooms list to update last message
+          fetchRooms();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
           schema: "public",
           table: "chat_messages",
           filter: `room_id=eq.${selectedRoom.id}`,
         },
         (payload) => {
-          console.log("New message received:", payload);
-          if (payload.eventType === "INSERT") {
-            fetchMessages(selectedRoom.id);
-          }
+          console.log("✏️ Message updated:", payload);
+          // Update message in state (e.g., read status changed)
+          const updatedMessage = payload.new as any;
+          setMessages(prev => prev.map(msg => 
+            msg.id === updatedMessage.id 
+              ? { ...msg, is_read: updatedMessage.is_read }
+              : msg
+          ));
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`📡 Room subscription status: ${status}`);
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Subscribed to room messages!');
+        }
+      });
 
     return () => {
+      console.log(`🔌 Unsubscribing from room: ${selectedRoom.id}`);
       supabase.removeChannel(channel);
     };
-  }, [selectedRoom]);
+  }, [selectedRoom, currentOperator]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -318,9 +400,44 @@ export default function SupportChatPage() {
     }
   };
 
+  const handleSaveSettings = () => {
+    localStorage.setItem('notification_sound', soundEnabled.toString());
+    localStorage.setItem('notification_desktop', desktopEnabled.toString());
+    setIsSettingsOpen(false);
+    
+    // Request notification permission if desktop notifications are enabled
+    if (desktopEnabled && 'Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  };
+
   const handleSendMessage = async () => {
     if ((!newMessage.trim() && !selectedFile) || !selectedRoom || !currentOperator) return;
 
+    const messageText = newMessage.trim() || "📎 File attached";
+    const tempId = `temp-${Date.now()}`; // Temporary ID for optimistic UI
+    
+    // OPTIMISTIC UI: Show message immediately! (Like WhatsApp)
+    const optimisticMessage: Message = {
+      id: tempId,
+      message: messageText,
+      sender_id: currentOperator.id,
+      message_type: selectedFile ? "attachment" : "text",
+      created_at: new Date().toISOString(),
+      is_read: false,
+      chat_attachments: [],
+    };
+    
+    // Add to UI instantly!
+    setMessages(prev => [...prev, optimisticMessage]);
+    
+    // Clear input immediately
+    const messageToSend = newMessage;
+    const fileToUpload = selectedFile;
+    setNewMessage("");
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    
     setSending(true);
     try {
       const res = await fetch("/api/chat/messages", {
@@ -329,17 +446,22 @@ export default function SupportChatPage() {
         body: JSON.stringify({
           room_id: selectedRoom.id,
           sender_id: currentOperator.id,
-          message: newMessage.trim() || "📎 File attached",
-          message_type: selectedFile ? "attachment" : "text",
+          message: messageToSend.trim() || "📎 File attached",
+          message_type: fileToUpload ? "attachment" : "text",
         }),
       });
 
       if (res.ok) {
         const json = await res.json();
         
-        if (selectedFile && json.data) {
+        // Replace temp message with real message from database
+        setMessages(prev => prev.map(msg => 
+          msg.id === tempId ? { ...json.data, chat_attachments: [] } : msg
+        ));
+        
+        if (fileToUpload && json.data) {
           const formData = new FormData();
-          formData.append("file", selectedFile);
+          formData.append("file", fileToUpload);
           formData.append("message_id", json.data.id);
           formData.append("uploaded_by", currentOperator.id);
 
@@ -358,28 +480,24 @@ export default function SupportChatPage() {
             } else {
               alert(`Failed to upload file: ${uploadError.message || uploadError.error}`);
             }
-            
-            // Message sent but file failed - refresh to show message without attachment
-            setNewMessage("");
-            setSelectedFile(null);
-            if (fileInputRef.current) fileInputRef.current.value = "";
-            fetchMessages(selectedRoom.id);
-            fetchRooms();
-            return;
           }
         }
 
-        setNewMessage("");
-        setSelectedFile(null);
-        if (fileInputRef.current) fileInputRef.current.value = "";
-        fetchMessages(selectedRoom.id);
         fetchRooms();
       } else {
         const error = await res.json();
+        
+        // Remove optimistic message if failed
+        setMessages(prev => prev.filter(msg => msg.id !== tempId));
+        
         alert(error.error || "Failed to send message");
       }
     } catch (error) {
       console.error("Error sending message:", error);
+      
+      // Remove optimistic message if failed
+      setMessages(prev => prev.filter(msg => msg.id !== tempId));
+      
       alert("Failed to send message");
     } finally {
       setSending(false);
@@ -438,6 +556,19 @@ export default function SupportChatPage() {
         <div className="h-full flex gap-4">
         {/* Left: Chat Rooms List */}
         <div className="w-1/3 border border-border rounded-lg bg-card p-4 flex flex-col">
+          {/* Header with Settings */}
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-foreground">Chats</h2>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setIsSettingsOpen(true)}
+              className="h-8 w-8 p-0"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+          </div>
+          
           {/* Tabs */}
           <div className="flex items-center gap-2 mb-4 border-b border-border">
             <button
@@ -868,6 +999,94 @@ export default function SupportChatPage() {
                 onClick={confirmDeleteRoom}
               >
                 Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Notification Settings Dialog */}
+        <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Notification Settings</DialogTitle>
+              <DialogDescription>
+                Customize your chat notification preferences
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6 py-4">
+              {/* Sound Notification */}
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3 flex-1">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
+                    <Volume2 className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <Label className="text-base font-semibold text-foreground">Sound Notification</Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Play a sound when you receive a new message
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSoundEnabled(!soundEnabled)}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                    soundEnabled ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-700'
+                  }`}
+                  role="switch"
+                  aria-checked={soundEnabled}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                      soundEnabled ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Desktop Notification */}
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3 flex-1">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
+                    <Bell className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <Label className="text-base font-semibold text-foreground">Desktop Notification</Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Show Windows notification when you receive a message (only when tab is not focused)
+                    </p>
+                    {desktopEnabled && 'Notification' in window && Notification.permission !== 'granted' && (
+                      <div className="flex items-center gap-2 mt-2 px-3 py-2 rounded-md bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800">
+                        <span className="text-xs text-orange-700 dark:text-orange-400">
+                          ⚠️ Permission required. Click Save to request permission.
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setDesktopEnabled(!desktopEnabled)}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                    desktopEnabled ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-700'
+                  }`}
+                  role="switch"
+                  aria-checked={desktopEnabled}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                      desktopEnabled ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsSettingsOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveSettings}>
+                Save Settings
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -3,19 +3,35 @@ import { supabase } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
 import { logActivity, getIpAddress, getUserAgent } from "@/lib/audit-logger";
 
-// GET: Fetch all operators
-export async function GET() {
+// GET: Fetch all operators (with pagination)
+export async function GET(request: NextRequest) {
   try {
-    const { data, error } = await supabase
+    // Get pagination and search params
+    const searchParams = request.nextUrl.searchParams;
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "20");
+    const search = searchParams.get("search") || "";
+    const offset = (page - 1) * limit;
+
+    // Build query with count
+    let query = supabase
       .from("operators")
       .select(`
         *,
         operator_roles (
           role_name
         )
-      `)
+      `, { count: 'exact' });
+
+    // Apply search filter if provided
+    if (search) {
+      query = query.or(`username.ilike.%${search}%,full_name.ilike.%${search}%`);
+    }
+
+    // Execute with pagination
+    const { data, error, count } = await query
       .order("created_at", { ascending: false })
-      .limit(200);
+      .range(offset, offset + limit - 1);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -28,7 +44,15 @@ export async function GET() {
       operator_roles: undefined,
     }));
 
-    return NextResponse.json({ data: formattedData });
+    return NextResponse.json({ 
+      data: formattedData,
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limit),
+      }
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

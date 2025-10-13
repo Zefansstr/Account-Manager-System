@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { canViewMenu, isSuperAdmin } from "@/lib/permissions";
+import { supabase } from "@/lib/supabase";
 
 const menuItems = [
   {
@@ -98,6 +99,7 @@ export function Sidebar() {
   const [visibleMenus, setVisibleMenus] = useState<string[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>("default");
 
   // Check permissions on mount
   useEffect(() => {
@@ -144,6 +146,18 @@ export function Sidebar() {
     
     checkPermissions();
     
+    // Request notification permission
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotificationPermission(Notification.permission);
+      
+      // Request permission if not granted yet
+      if (Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+          setNotificationPermission(permission);
+        });
+      }
+    }
+    
     // Fetch unread chat count
     const fetchUnreadCount = async () => {
       try {
@@ -164,11 +178,154 @@ export function Sidebar() {
     
     fetchUnreadCount();
     
-    // Optimized: Refresh every 60 seconds (reduced from 30s)
-    const interval = setInterval(fetchUnreadCount, 60000);
+    // Fallback: Poll for unread count every 20 seconds
+    const pollInterval = setInterval(fetchUnreadCount, 20000);
     
-    return () => clearInterval(interval);
-  }, []);
+    // Try real-time subscription (optional - fallback to polling if fails)
+    const opStr = localStorage.getItem("operator");
+    let channel: any = null;
+    
+    if (opStr) {
+      const operator = JSON.parse(opStr);
+      
+      // Subscribe to chat_messages for real-time updates
+      const channelName = `sidebar-notifications-${operator.id}`;
+      console.log('🚀 Starting realtime subscription:', channelName);
+      
+      try {
+        channel = supabase
+          .channel(channelName, {
+            config: {
+              broadcast: { self: false },
+              presence: { key: operator.id },
+            },
+          })
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'chat_messages',
+            },
+            async (payload) => {
+              console.log('🔔 New message received:', payload);
+              
+              // Check if message is for current user
+              const messageData = payload.new as any;
+              
+              // Don't show notification for own messages
+              if (messageData.sender_id === operator.id) {
+                console.log('⏭️ Skipping own message');
+                return;
+              }
+              
+              // Check if operator is participant in this room
+              try {
+                const { data: participant, error } = await supabase
+                  .from('chat_participants')
+                  .select('id')
+                  .eq('room_id', messageData.room_id)
+                  .eq('operator_id', operator.id)
+                  .maybeSingle();
+                
+                // If not a participant, ignore this message
+                if (!participant || error) {
+                  console.log('⏭️ Not a participant in this room');
+                  return;
+                }
+                
+                console.log('✅ Operator is participant - showing notification');
+              } catch (error) {
+                console.error('Error checking participant:', error);
+                return;
+              }
+              
+              // Fetch updated unread count
+              await fetchUnreadCount();
+              
+              // Get notification preferences
+              const soundEnabled = localStorage.getItem('notification_sound') !== 'false';
+              const desktopEnabled = localStorage.getItem('notification_desktop') !== 'false';
+              
+              console.log('🔊 Sound enabled:', soundEnabled);
+              console.log('🔔 Desktop enabled:', desktopEnabled);
+              
+              // Play notification sound
+              if (soundEnabled) {
+                try {
+                  // Simple beep sound
+                  const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZRQ0KVa7n77BdGAg+ltrzxnMpBSuBzfLaizsIGWi88OScSgwOUKXi8bllHAU3ktXyzn0xBSV8yvDdj0EJE12z6OysWBUIR5/e8sFuJAUuhM/x2Ik6BxtnvvDnm0gMDFCk4/K5ZBsCNpHU8tB/MwUlfc3w3I9DChRcs+jrrFgVCEae3vPDbyQELoTP8diJOgcbZ77w6JxJDA1Qo+Pzt2IbAjWQ0/HQgDQFJH3N8NyPRAoUXLPo66xYFQhFnd7zxnEmBCyDz/HaijsFG2e+8OidSgwNUKPj8rdkGwIzj9Pw0oI1BSN9zfDckUYKFFuy6OuwWhYJQ53d88d0KAUrhM/y3Iw+BxhmvfDom0kMC0+h4vO4axwCMY3S8NODNwUie8vw3ZJICBNarejqsF4YCUGa3PPIdy4FKoTP8t+PPgYWY7zv6aFOCwpLn+H1vGwhAjCMz/HVhzwGIHfH79yUTAcTVqvn67BgGwk+mNvzzn0yBS2Fz/Lfkj4GFWK77+mjUAwJSZ3g9b9xJAIuitDx14g+BiByxu/ckE4IElWq5uuwYRsJPZbb89CPOQUtg87y4JU/BhVhuuz')
+                  audio.volume = 0.5;
+                  await audio.play();
+                  console.log('🎵 Sound played successfully');
+                } catch (error) {
+                  console.error('❌ Could not play sound:', error);
+                }
+              }
+              
+              // Show desktop notification
+              if (desktopEnabled && notificationPermission === 'granted') {
+                try {
+                  // Fetch room details for better notification
+                  const res = await fetch(`/api/chat/rooms/${messageData.room_id}`, {
+                    headers: { "X-Operator-Id": operator.id }
+                  });
+                  const roomData = await res.json();
+                  
+                  const notification = new Notification('💬 New Message', {
+                    body: `${roomData.data?.room?.subject || 'Support Chat'}: ${messageData.message.substring(0, 100)}`,
+                    icon: '/icon.png',
+                    badge: '/icon.png',
+                    tag: messageData.room_id,
+                    requireInteraction: false,
+                  });
+                  
+                  console.log('🪟 Desktop notification shown');
+                  
+                  // Click notification to focus window
+                  notification.onclick = () => {
+                    window.focus();
+                    notification.close();
+                  };
+                  
+                  // Auto-close after 5 seconds
+                  setTimeout(() => notification.close(), 5000);
+                } catch (error) {
+                  console.error('❌ Could not show notification:', error);
+                }
+              }
+            }
+          )
+          .subscribe((status, err) => {
+            console.log('📡 Realtime subscription status:', status);
+            if (err) {
+              console.error('❌ Realtime subscription error:', err);
+              console.warn('⚠️ Falling back to polling mode');
+            }
+            if (status === 'SUBSCRIBED') {
+              console.log('✅ Realtime connection established!');
+            } else if (status === 'CHANNEL_ERROR') {
+              console.warn('⚠️ Realtime channel error - using polling mode');
+            } else if (status === 'TIMED_OUT') {
+              console.warn('⚠️ Realtime connection timed out - using polling mode');
+            } else if (status === 'CLOSED') {
+              console.log('⚠️ Realtime connection closed');
+            }
+          });
+      } catch (error) {
+        console.error('Failed to setup realtime subscription:', error);
+        console.warn('⚠️ Using polling mode only');
+      }
+    }
+    
+    return () => {
+      console.log('🔌 Cleaning up');
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+      clearInterval(pollInterval);
+    };
+  }, [notificationPermission]);
 
   const isOperatorsActive = operatorSubmenus.some(
     item => pathname === item.href || pathname.startsWith(item.href + "/")

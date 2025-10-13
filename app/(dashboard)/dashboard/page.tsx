@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Users, UserCheck, AppWindow, Layers, Building2, Shield } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, PieChart, Pie, Cell } from "recharts";
 import { PermissionGuard } from "@/components/auth/permission-guard";
 import { getDepartmentDisplayName, getRoleDisplayName } from "@/lib/display-names";
+import { useDashboard } from "@/hooks/use-dashboard";
+import { DashboardSkeleton } from "@/components/ui/skeleton";
 
 const STATUS_COLORS = {
   Active: "#22c55e",
@@ -33,74 +35,47 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
   );
 };
 
-type DashboardData = {
-  kpis: {
-    totalAccounts: number;
-    activeAccounts: number;
-    totalApplications: number;
-    totalLines: number;
-    totalDepartments: number;
-    totalRoles: number;
-  };
-  charts: {
-    accountsStatus: { name: string; count: number }[];
-    accountsByDepartment: { name: string; count: number }[];
-    accountsByApplication: { name: string; count: number }[];
-    accountsByRole: { name: string; count: number }[];
-  };
-};
-
 export default function DashboardPage() {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
-
+  // Get operator ID from localStorage
+  const [operatorId, setOperatorId] = useState<string>();
+  
   useEffect(() => {
-    fetchDashboardData();
+    const operatorStr = localStorage.getItem("operator");
+    if (operatorStr) {
+      const operator = JSON.parse(operatorStr);
+      setOperatorId(operator.id);
+    }
   }, []);
 
-  const fetchDashboardData = async () => {
-    try {
-      // Get operator ID from localStorage for data filtering
-      const operatorStr = localStorage.getItem("operator");
-      const operator = operatorStr ? JSON.parse(operatorStr) : null;
-      
-      const headers: HeadersInit = {};
-      if (operator?.id) {
-        headers["X-Operator-Id"] = operator.id;
-      }
-      
-      const res = await fetch("/api/dashboard/stats", { headers });
-      const json = await res.json();
-      
-      // Transform department names to short display names
-      if (json.charts?.accountsByDepartment) {
-        json.charts.accountsByDepartment = json.charts.accountsByDepartment.map((item: any) => ({
+  // Use React Query hook for automatic caching & refetching
+  const { data: rawData, isLoading: loading, error } = useDashboard(operatorId);
+
+  // Transform data with display names (memoized for performance)
+  const data = useMemo(() => {
+    if (!rawData) return null;
+
+    return {
+      kpis: rawData.kpis,
+      charts: {
+        accountsStatus: rawData.charts.accountsStatus,
+        accountsByDepartment: rawData.charts.accountsByDepartment.map(item => ({
           ...item,
-          name: getDepartmentDisplayName(item.name)
-        }));
-      }
-      
-      // Transform role names to short display names
-      if (json.charts?.accountsByRole) {
-        json.charts.accountsByRole = json.charts.accountsByRole.map((item: any) => ({
+          name: getDepartmentDisplayName(item.name),
+        })),
+        accountsByApplication: rawData.charts.accountsByApplication,
+        accountsByRole: rawData.charts.accountsByRole.map(item => ({
           ...item,
-          name: getRoleDisplayName(item.name)
-        }));
-      }
-      
-      setData(json);
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+          name: getRoleDisplayName(item.name),
+        })),
+      },
+    };
+  }, [rawData]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-muted-foreground">Loading dashboard...</div>
-      </div>
+      <PermissionGuard menuName="Dashboard">
+        <DashboardSkeleton />
+      </PermissionGuard>
     );
   }
 

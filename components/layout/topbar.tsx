@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { User, LogOut, Bell, MessageSquare, X, Trash2 } from "lucide-react";
+import { User, LogOut, Bell, MessageSquare, X, Trash2, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Notification = {
@@ -189,9 +189,13 @@ export function Topbar() {
     <header className="sticky top-0 z-50 w-full border-b border-border bg-card shadow-lg">
       <div className="flex h-16 items-center justify-between px-6">
         {/* Left: Logo/Title */}
-        <div className="flex items-center gap-4">
-          <h1 className="text-xl font-bold text-primary">
-            Account Management System
+        <div className="flex items-center gap-2">
+          {/* Logo Icon - Small & Professional */}
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
+            <Shield className="h-5 w-5 text-primary" />
+          </div>
+          <h1 className="text-lg font-semibold text-foreground">
+            Account Management
           </h1>
         </div>
 

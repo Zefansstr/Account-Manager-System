@@ -1,12 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Plus, Edit, Trash2, Power } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Plus, Edit, Trash2, Power, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Pagination } from "@/components/ui/pagination";
+import { TableSkeleton } from "@/components/ui/skeleton";
+import { useOperators, useCreateOperator, useUpdateOperator, useDeleteOperator } from "@/hooks/use-operators";
+import { useOperatorRoles } from "@/hooks/use-operator-roles";
 
 type Operator = {
   id: string;
@@ -28,14 +32,33 @@ type OperatorRole = {
 };
 
 export default function OperatorsPage() {
-  const [operators, setOperators] = useState<Operator[]>([]);
-  const [roles, setRoles] = useState<OperatorRole[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Pagination & Search state
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setPage(1); // Reset to page 1 when searching
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // React Query hooks - automatic caching & refetching with pagination!
+  const { data: operatorsData, isLoading: operatorsLoading } = useOperators(page, limit, debouncedSearch);
+  const { data: rolesData, isLoading: rolesLoading } = useOperatorRoles();
+  const createOperator = useCreateOperator();
+  const updateOperator = useUpdateOperator();
+  const deleteOperator = useDeleteOperator();
+
+  // Local state for UI
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedOperator, setSelectedOperator] = useState<Operator | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -47,32 +70,11 @@ export default function OperatorsPage() {
     status: "active",
   });
 
-  const fetchOperators = async () => {
-    try {
-      const res = await fetch("/api/operators");
-      const json = await res.json();
-      setOperators(json.data || []);
-    } catch (error) {
-      console.error("Error fetching operators:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchRoles = async () => {
-    try {
-      const res = await fetch("/api/operator-roles");
-      const json = await res.json();
-      setRoles((json.data || []).filter((r: OperatorRole) => r.status === "active"));
-    } catch (error) {
-      console.error("Error fetching roles:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchOperators();
-    fetchRoles();
-  }, []);
+  // Derived state from React Query
+  const operators = operatorsData?.data || [];
+  const pagination = operatorsData?.pagination || { page: 1, limit: 20, total: 0, totalPages: 1 };
+  const roles = (rolesData?.data || []).filter((r: OperatorRole) => r.status === "active");
+  const loading = operatorsLoading || rolesLoading;
 
   const resetForm = () => {
     setFormData({
@@ -82,6 +84,11 @@ export default function OperatorsPage() {
       operator_role_id: roles.length > 0 ? roles[0].id : "",
       status: "active",
     });
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setLimit(newSize);
+    setPage(1); // Reset to first page when changing page size
   };
 
   const handleAdd = async () => {
@@ -107,72 +114,56 @@ export default function OperatorsPage() {
       return;
     }
 
-    setIsSubmitting(true);
-
-    try {
-      const res = await fetch("/api/operators", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      const result = await res.json();
-
-      if (res.ok) {
-        await fetchOperators();
+    // Use React Query mutation
+    createOperator.mutate(formData, {
+      onSuccess: () => {
         setIsAddOpen(false);
         resetForm();
         setSuccessMessage("Operator berhasil ditambahkan!");
-        // Clear success message after 3 seconds
         setTimeout(() => setSuccessMessage(""), 3000);
-      } else {
-        setErrorMessage(result.error || "Gagal menambahkan operator");
-      }
-    } catch (error: any) {
-      console.error("Error adding operator:", error);
-      setErrorMessage("Terjadi kesalahan: " + (error.message || "Unknown error"));
-    } finally {
-      setIsSubmitting(false);
-    }
+      },
+      onError: (error: any) => {
+        setErrorMessage(error.message || "Gagal menambahkan operator");
+      },
+    });
   };
 
   const handleEdit = async () => {
     if (!selectedOperator) return;
 
-    try {
-      const res = await fetch(`/api/operators/${selectedOperator.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (res.ok) {
-        await fetchOperators();
-        setIsEditOpen(false);
-        setSelectedOperator(null);
-        resetForm();
+    // Use React Query mutation
+    updateOperator.mutate(
+      { id: selectedOperator.id, data: formData },
+      {
+        onSuccess: () => {
+          setIsEditOpen(false);
+          setSelectedOperator(null);
+          resetForm();
+          setSuccessMessage("Operator berhasil diupdate!");
+          setTimeout(() => setSuccessMessage(""), 3000);
+        },
+        onError: (error: any) => {
+          setErrorMessage(error.message || "Gagal mengupdate operator");
+        },
       }
-    } catch (error) {
-      console.error("Error editing operator:", error);
-    }
+    );
   };
 
   const handleDelete = async () => {
     if (!selectedOperator) return;
 
-    try {
-      const res = await fetch(`/api/operators/${selectedOperator.id}`, {
-        method: "DELETE",
-      });
-
-      if (res.ok) {
-        await fetchOperators();
+    // Use React Query mutation
+    deleteOperator.mutate(selectedOperator.id, {
+      onSuccess: () => {
         setIsDeleteOpen(false);
         setSelectedOperator(null);
-      }
-    } catch (error) {
-      console.error("Error deleting operator:", error);
-    }
+        setSuccessMessage("Operator berhasil dihapus!");
+        setTimeout(() => setSuccessMessage(""), 3000);
+      },
+      onError: (error: any) => {
+        setErrorMessage(error.message || "Gagal menghapus operator");
+      },
+    });
   };
 
   const openEditDialog = (operator: Operator) => {
@@ -188,31 +179,43 @@ export default function OperatorsPage() {
   };
 
   const toggleOperatorStatus = async (operator: Operator) => {
-    try {
-      const newStatus = operator.status === "active" ? "inactive" : "active";
-      const res = await fetch(`/api/operators/${operator.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+    const newStatus = operator.status === "active" ? "inactive" : "active";
+    
+    // Use React Query mutation
+    updateOperator.mutate(
+      {
+        id: operator.id,
+        data: {
           full_name: operator.full_name,
           operator_role_id: operator.operator_role_id,
           status: newStatus,
-        }),
-      });
-
-      if (res.ok) {
-        await fetchOperators();
+        },
+      },
+      {
+        onSuccess: () => {
+          setSuccessMessage(`Operator ${newStatus === "active" ? "activated" : "deactivated"}!`);
+          setTimeout(() => setSuccessMessage(""), 3000);
+        },
+        onError: (error: any) => {
+          setErrorMessage(error.message || "Gagal mengubah status");
+        },
       }
-    } catch (error) {
-      console.error("Error toggling status:", error);
-    }
+    );
   };
 
 
-  if (loading) {
+  if (loading && operators.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64 text-muted-foreground">
-        Loading operators...
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Operators</h2>
+            <p className="text-sm text-muted-foreground">
+              Manage system operators and assign roles
+            </p>
+          </div>
+        </div>
+        <TableSkeleton rows={10} columns={5} />
       </div>
     );
   }
@@ -244,6 +247,23 @@ export default function OperatorsPage() {
         </div>
       )}
 
+      {/* Search Bar */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search operators..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <div className="text-sm text-muted-foreground">
+          {pagination.total} total operator{pagination.total !== 1 ? 's' : ''}
+        </div>
+      </div>
+
       <div className="rounded-lg border border-border bg-card shadow-lg">
         <div className="overflow-x-auto">
           <table className="w-full" style={{ tableLayout: "fixed" }}>
@@ -257,7 +277,23 @@ export default function OperatorsPage() {
               </tr>
             </thead>
             <tbody>
-              {operators.map((operator, index) => (
+              {operators.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-12 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <p className="text-muted-foreground">
+                        {searchTerm ? "No operators found matching your search" : "No operators yet"}
+                      </p>
+                      {searchTerm && (
+                        <Button variant="outline" size="sm" onClick={() => setSearchTerm("")}>
+                          Clear search
+                        </Button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                operators.map((operator, index) => (
                 <tr
                   key={operator.id}
                   className={`border-b border-border transition-colors hover:bg-secondary/30 ${
@@ -322,9 +358,23 @@ export default function OperatorsPage() {
                     </div>
                   </td>
                 </tr>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination */}
+        <div className="border-t border-border p-4">
+          <Pagination
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={setPage}
+            isLoading={operatorsLoading}
+            pageSize={limit}
+            onPageSizeChange={handlePageSizeChange}
+            totalRecords={pagination.total}
+          />
         </div>
       </div>
 
@@ -349,7 +399,7 @@ export default function OperatorsPage() {
                 value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 placeholder="Enter username"
-                disabled={isSubmitting}
+                disabled={createOperator.isPending}
               />
             </div>
             <div className="space-y-2">
@@ -360,7 +410,7 @@ export default function OperatorsPage() {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 placeholder="Enter password"
-                disabled={isSubmitting}
+                disabled={createOperator.isPending}
               />
             </div>
             <div className="space-y-2">
@@ -370,7 +420,7 @@ export default function OperatorsPage() {
                 value={formData.full_name}
                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                 placeholder="Enter full name"
-                disabled={isSubmitting}
+                disabled={createOperator.isPending}
               />
             </div>
             <div className="space-y-2">
@@ -380,7 +430,7 @@ export default function OperatorsPage() {
                 value={formData.operator_role_id}
                 onChange={(e) => setFormData({ ...formData, operator_role_id: e.target.value })}
                 className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isSubmitting}
+                disabled={createOperator.isPending}
               >
                 {roles.length === 0 ? (
                   <option value="">No roles available</option>
@@ -400,7 +450,7 @@ export default function OperatorsPage() {
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                 className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isSubmitting}
+                disabled={createOperator.isPending}
               >
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
@@ -408,15 +458,15 @@ export default function OperatorsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddOpen(false)} disabled={isSubmitting}>
+            <Button variant="outline" onClick={() => setIsAddOpen(false)} disabled={createOperator.isPending}>
               Cancel
             </Button>
             <Button 
               onClick={handleAdd} 
               className="bg-primary hover:bg-primary/90"
-              disabled={isSubmitting}
+              disabled={createOperator.isPending}
             >
-              {isSubmitting ? "Menambahkan..." : "Add Operator"}
+              {createOperator.isPending ? "Menambahkan..." : "Add Operator"}
             </Button>
           </DialogFooter>
         </DialogContent>

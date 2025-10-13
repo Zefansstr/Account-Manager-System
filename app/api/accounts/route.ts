@@ -7,6 +7,13 @@ export async function GET(request: NextRequest) {
     // Get operator ID from headers (sent from frontend)
     const operatorId = request.headers.get("X-Operator-Id");
     
+    // Get pagination and search params
+    const searchParams = request.nextUrl.searchParams;
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "20");
+    const search = searchParams.get("search") || "";
+    const offset = (page - 1) * limit;
+    
     // Build base query
     let query = supabase
       .from("accounts")
@@ -16,7 +23,7 @@ export async function GET(request: NextRequest) {
         lines:line_id(id, line_code, line_name),
         departments:department_id(id, department_code, department_name),
         roles:role_id(id, role_code, role_name)
-      `);
+      `, { count: 'exact' });
     
     // Apply data-level filters if operator is not Super Admin
     if (operatorId) {
@@ -77,10 +84,15 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    // Execute query with ordering and limit
-    const { data, error } = await query
+    // Apply search filter if provided
+    if (search) {
+      query = query.or(`username.ilike.%${search}%,remark.ilike.%${search}%`);
+    }
+    
+    // Execute query with ordering, pagination, and count
+    const { data, error, count } = await query
       .order("created_at", { ascending: false })
-      .limit(1000);
+      .range(offset, offset + limit - 1);
 
     if (error) throw error;
 
@@ -100,7 +112,15 @@ export async function GET(request: NextRequest) {
       status: acc.status,
     }));
 
-    return NextResponse.json({ data: transformed });
+    return NextResponse.json({ 
+      data: transformed,
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limit),
+      }
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

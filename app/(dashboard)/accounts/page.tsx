@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Eye, EyeOff, Upload, Download, Power, CheckSquare, Square } from "lucide-react";
+import { Pagination } from "@/components/ui/pagination";
+import { TableSkeleton } from "@/components/ui/skeleton";
+import { Plus, Edit, Trash2, Eye, EyeOff, Upload, Download, Power, CheckSquare, Square, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import * as XLSX from "xlsx";
 import { PermissionGuard } from "@/components/auth/permission-guard";
@@ -49,6 +51,12 @@ export default function AccountsPage() {
   const [showPassword, setShowPassword] = useState<{ [key: string]: boolean }>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
   const [filterApplication, setFilterApplication] = useState("");
@@ -84,11 +92,28 @@ export default function AccountsPage() {
     remark: "",
   });
 
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1); // Reset to page 1 when searching
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const fetchAccounts = async () => {
     try {
+      setLoading(true);
       // Get operator ID from localStorage
       const operatorStr = localStorage.getItem("operator");
       const operator = operatorStr ? JSON.parse(operatorStr) : null;
+      
+      // Build query params
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        ...(debouncedSearch && { search: debouncedSearch }),
+      });
       
       const headers: HeadersInit = {
         "Content-Type": "application/json",
@@ -99,9 +124,10 @@ export default function AccountsPage() {
         headers["X-Operator-Id"] = operator.id;
       }
       
-      const res = await fetch("/api/accounts", { headers });
+      const res = await fetch(`/api/accounts?${params}`, { headers });
       const json = await res.json();
       setAccounts(json.data || []);
+      setPagination(json.pagination || { page: 1, limit: 20, total: 0, totalPages: 1 });
     } catch (error) {
       console.error("Error:", error);
     } finally {
@@ -133,15 +159,19 @@ export default function AccountsPage() {
   };
 
   useEffect(() => {
-    fetchAccounts();
     fetchLookups();
   }, []);
 
-  // Filtered accounts with useMemo for performance
+  useEffect(() => {
+    fetchAccounts();
+  }, [page, limit, debouncedSearch]);
+
+  // Client-side filtering for dropdown filters only (search is now server-side)
   const filteredAccounts = useMemo(() => {
     return accounts.filter((acc) => {
-      // Search filter - search in username AND remark
-      if (searchQuery) {
+      // Note: Search is now handled server-side, only apply dropdown filters here
+      // Dropdown filters stay client-side for better UX
+      if (false && searchQuery) { // Disabled - now server-side
         const query = searchQuery.toLowerCase();
         const matchUsername = acc.username.toLowerCase().includes(query);
         const matchRemark = acc.remark?.toLowerCase().includes(query);
@@ -204,6 +234,11 @@ export default function AccountsPage() {
     } catch (error) {
       console.error("Error:", error);
     }
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setLimit(newSize);
+    setPage(1); // Reset to first page when changing page size
   };
 
   const handleDelete = async () => {
@@ -413,13 +448,16 @@ export default function AccountsPage() {
       <div className="space-y-3">
       {/* Filter Row */}
       <div className="flex items-center justify-between gap-3">
-        <div className="flex gap-2">
-          <Input 
-            placeholder="Search username atau remark..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-64" 
-          />
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search username atau remark..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-64 pl-9" 
+            />
+          </div>
           <select 
             value={filterApplication}
             onChange={(e) => setFilterApplication(e.target.value)}
@@ -449,6 +487,9 @@ export default function AccountsPage() {
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
+          <div className="text-sm text-muted-foreground ml-2">
+            {pagination.total} total account{pagination.total !== 1 ? 's' : ''}
+          </div>
         </div>
         <div className="flex gap-2">
           <input
@@ -540,8 +581,12 @@ export default function AccountsPage() {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
-                <tr><td colSpan={10} className="px-4 py-8 text-center text-muted-foreground">Loading...</td></tr>
+              {loading && accounts.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="p-4">
+                    <TableSkeleton rows={10} columns={8} />
+                  </td>
+                </tr>
               ) : filteredAccounts.length === 0 ? (
                 <tr><td colSpan={10} className="px-4 py-8 text-center text-muted-foreground">No accounts found</td></tr>
               ) : (
@@ -629,6 +674,19 @@ export default function AccountsPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination */}
+        <div className="border-t border-border p-4">
+          <Pagination
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={setPage}
+            isLoading={loading}
+            pageSize={limit}
+            onPageSizeChange={handlePageSizeChange}
+            totalRecords={pagination.total}
+          />
         </div>
       </div>
 

@@ -5,6 +5,8 @@ import { Eye, Download, Search, Filter, Plus, Edit, Trash2, LogIn, LogOut, Check
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Pagination } from "@/components/ui/pagination";
+import { AuditLogsSkeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 type AuditLog = {
@@ -28,6 +30,11 @@ export default function AuditLogsPage() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(50);
+  const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0, totalPages: 1 });
+  
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [actionFilter, setActionFilter] = useState("all");
@@ -36,7 +43,10 @@ export default function AuditLogsPage() {
 
   const fetchLogs = async () => {
     try {
+      setLoading(true);
       const params = new URLSearchParams();
+      params.append("page", page.toString());
+      params.append("limit", limit.toString());
       if (actionFilter !== "all") params.append("action", actionFilter);
       if (tableFilter !== "all") params.append("table", tableFilter);
       if (dateFilter !== "all") params.append("days", dateFilter);
@@ -45,6 +55,7 @@ export default function AuditLogsPage() {
       const json = await res.json();
       setLogs(json.data || []);
       setFilteredLogs(json.data || []);
+      setPagination(json.pagination || { page: 1, limit: 50, total: 0, totalPages: 1 });
     } catch (error) {
       console.error("Error fetching audit logs:", error);
     } finally {
@@ -52,9 +63,14 @@ export default function AuditLogsPage() {
     }
   };
 
+  const handlePageSizeChange = (newSize: number) => {
+    setLimit(newSize);
+    setPage(1); // Reset to first page
+  };
+
   useEffect(() => {
     fetchLogs();
-  }, [actionFilter, tableFilter, dateFilter]);
+  }, [page, limit, actionFilter, tableFilter, dateFilter]);
 
   useEffect(() => {
     // Client-side search filter
@@ -149,13 +165,7 @@ export default function AuditLogsPage() {
     a.click();
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64 text-muted-foreground">
-        Loading audit logs...
-      </div>
-    );
-  }
+  // Note: Don't show full-page skeleton - show inline loading in list instead
 
   return (
     <div className="space-y-3">
@@ -226,13 +236,15 @@ export default function AuditLogsPage() {
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
           Showing <span className="font-semibold text-foreground">{filteredLogs.length}</span> of{" "}
-          <span className="font-semibold text-foreground">{logs.length}</span> logs
+          <span className="font-semibold text-foreground">{pagination.total}</span> total logs
         </p>
       </div>
 
       {/* Logs List */}
       <div className="space-y-3">
-        {filteredLogs.length === 0 ? (
+        {loading ? (
+          <AuditLogsSkeleton count={10} />
+        ) : filteredLogs.length === 0 ? (
           <div className="rounded-lg border border-border bg-card p-12 text-center">
             <p className="text-muted-foreground">No audit logs found</p>
           </div>
@@ -305,6 +317,19 @@ export default function AuditLogsPage() {
             </div>
           ))
         )}
+      </div>
+
+      {/* Pagination */}
+      <div className="rounded-lg border border-border bg-card p-4">
+        <Pagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={setPage}
+          isLoading={loading}
+          pageSize={limit}
+          onPageSizeChange={handlePageSizeChange}
+          totalRecords={pagination.total}
+        />
       </div>
 
       {/* Detail Dialog */}
