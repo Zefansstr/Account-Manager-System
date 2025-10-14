@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
     
     // Apply search filter if provided
     if (search) {
-      query = query.or(`username.ilike.%${search}%,remark.ilike.%${search}%`);
+      query = query.or(`username.ilike.%${search}%,remark.ilike.%${search}%,roles.role_name.ilike.%${search}%`);
     }
     
     // Apply dropdown filters if provided
