@@ -121,6 +121,9 @@ export default function AccountsPage() {
         page: page.toString(),
         limit: limit.toString(),
         ...(debouncedSearch && { search: debouncedSearch }),
+        ...(filterApplication && { application_id: filterApplication }),
+        ...(filterLine && { line_id: filterLine }),
+        ...(filterStatus && { status: filterStatus }),
       });
       
       const headers: HeadersInit = {
@@ -172,41 +175,10 @@ export default function AccountsPage() {
 
   useEffect(() => {
     fetchAccounts();
-  }, [page, limit, debouncedSearch]);
+  }, [page, limit, debouncedSearch, filterApplication, filterLine, filterStatus]);
 
-  // Client-side filtering for dropdown filters only (search is now server-side)
-  const filteredAccounts = useMemo(() => {
-    return accounts.filter((acc) => {
-      // Note: Search is now handled server-side, only apply dropdown filters here
-      // Dropdown filters stay client-side for better UX
-      if (false && searchQuery) { // Disabled - now server-side
-        const query = searchQuery.toLowerCase();
-        const matchUsername = acc.username.toLowerCase().includes(query);
-        const matchRemark = acc.remark?.toLowerCase().includes(query);
-        
-        if (!matchUsername && !matchRemark) {
-          return false;
-        }
-      }
-      
-      // Application filter
-      if (filterApplication && acc.applicationId !== filterApplication) {
-        return false;
-      }
-      
-      // Line filter
-      if (filterLine && acc.lineId !== filterLine) {
-        return false;
-      }
-      
-      // Status filter
-      if (filterStatus && acc.status !== filterStatus) {
-        return false;
-      }
-      
-      return true;
-    });
-  }, [accounts, searchQuery, filterApplication, filterLine, filterStatus]);
+  // No need for client-side filtering anymore - all filtering is done server-side
+  const filteredAccounts = accounts;
 
   const handleAdd = async () => {
     try {

@@ -12,6 +12,9 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "20");
     const search = searchParams.get("search") || "";
+    const filterApplicationId = searchParams.get("application_id") || "";
+    const filterLineId = searchParams.get("line_id") || "";
+    const filterStatus = searchParams.get("status") || "";
     const offset = (page - 1) * limit;
     
     // Build base query
@@ -87,6 +90,19 @@ export async function GET(request: NextRequest) {
     // Apply search filter if provided
     if (search) {
       query = query.or(`username.ilike.%${search}%,remark.ilike.%${search}%`);
+    }
+    
+    // Apply dropdown filters if provided
+    if (filterApplicationId) {
+      query = query.eq("application_id", filterApplicationId);
+    }
+    
+    if (filterLineId) {
+      query = query.eq("line_id", filterLineId);
+    }
+    
+    if (filterStatus) {
+      query = query.eq("status", filterStatus);
     }
     
     // Execute query with ordering, pagination, and count
