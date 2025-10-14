@@ -87,9 +87,23 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    // Apply search filter if provided
+    // Apply search filter if provided (search in username, remark, and role_name)
     if (search) {
-      query = query.or(`username.ilike.%${search}%,remark.ilike.%${search}%,roles.role_name.ilike.%${search}%`);
+      // First get all matching role IDs
+      const { data: matchingRoles } = await supabase
+        .from("roles")
+        .select("id")
+        .ilike("role_name", `%${search}%`);
+      
+      const roleIds = matchingRoles?.map(r => r.id) || [];
+      
+      // Build OR condition: username OR remark OR role_id in matching roles
+      if (roleIds.length > 0) {
+        query = query.or(`username.ilike.%${search}%,remark.ilike.%${search}%,role_id.in.(${roleIds.join(',')})`);
+      } else {
+        // If no matching roles, just search username and remark
+        query = query.or(`username.ilike.%${search}%,remark.ilike.%${search}%`);
+      }
     }
     
     // Apply dropdown filters if provided
