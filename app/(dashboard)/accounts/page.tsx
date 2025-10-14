@@ -104,6 +104,11 @@ export default function AccountsPage() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [filterApplication, filterLine, filterStatus]);
+
   const fetchAccounts = async () => {
     try {
       setLoading(true);

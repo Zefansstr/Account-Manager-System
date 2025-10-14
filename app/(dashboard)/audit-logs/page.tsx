@@ -68,6 +68,11 @@ export default function AuditLogsPage() {
     setPage(1); // Reset to first page
   };
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [actionFilter, tableFilter, dateFilter]);
+
   useEffect(() => {
     fetchLogs();
   }, [page, limit, actionFilter, tableFilter, dateFilter]);
