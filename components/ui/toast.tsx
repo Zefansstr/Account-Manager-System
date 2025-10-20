@@ -28,9 +28,9 @@ export function Toast({ message, type, onClose, duration = 5000 }: ToastProps) {
   };
 
   const bgColors = {
-    success: "bg-green-50 border-green-200",
-    error: "bg-red-50 border-red-200",
-    warning: "bg-yellow-50 border-yellow-200",
+    success: "bg-green-100 border-green-300",
+    error: "bg-red-100 border-red-300",
+    warning: "bg-yellow-100 border-yellow-300",
   };
 
   const textColors = {
