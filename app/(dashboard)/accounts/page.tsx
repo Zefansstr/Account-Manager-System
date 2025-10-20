@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
 import { TableSkeleton } from "@/components/ui/skeleton";
+import { Toast } from "@/components/ui/toast";
+import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, Eye, EyeOff, Upload, Download, Power, CheckSquare, Square, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import * as XLSX from "xlsx";
@@ -50,6 +52,9 @@ export default function AccountsPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showPassword, setShowPassword] = useState<{ [key: string]: boolean }>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Toast notifications
+  const { toasts, success, error, warning, removeToast } = useToast();
   
   // Pagination state
   const [page, setPage] = useState(1);
@@ -201,15 +206,19 @@ export default function AccountsPage() {
         fetchAccounts();
         setIsAddOpen(false);
         resetForm();
-        alert("Account berhasil ditambahkan!");
+        success(`Account "${formData.username}" berhasil ditambahkan!`);
       } else {
-        // Show error message to user
-        alert(`Error: ${result.error || "Gagal menambahkan account"}`);
+        // Check for duplicate username error
+        if (result.error && result.error.includes("duplicate key") || result.error?.includes("unique")) {
+          error(`Username "${formData.username}" sudah digunakan. Silakan gunakan username lain.`);
+        } else {
+          error(result.error || "Gagal menambahkan account. Silakan coba lagi.");
+        }
         console.error("Error response:", result);
       }
-    } catch (error) {
-      console.error("Error:", error);
-      alert("Terjadi kesalahan saat menambahkan account. Silakan coba lagi.");
+    } catch (err) {
+      console.error("Error:", err);
+      error("Terjadi kesalahan saat menambahkan account. Silakan coba lagi.");
     }
   };
 
@@ -236,15 +245,19 @@ export default function AccountsPage() {
         setIsEditOpen(false);
         setSelected(null);
         resetForm();
-        alert("Account berhasil diupdate!");
+        success(`Account "${formData.username}" berhasil diupdate!`);
       } else {
-        // Show error message to user
-        alert(`Error: ${result.error || "Gagal mengupdate account"}`);
+        // Check for duplicate username error
+        if (result.error && result.error.includes("duplicate key") || result.error?.includes("unique")) {
+          error(`Username "${formData.username}" sudah digunakan oleh account lain. Silakan gunakan username lain.`);
+        } else {
+          error(result.error || "Gagal mengupdate account. Silakan coba lagi.");
+        }
         console.error("Error response:", result);
       }
-    } catch (error) {
-      console.error("Error:", error);
-      alert("Terjadi kesalahan saat mengupdate account. Silakan coba lagi.");
+    } catch (err) {
+      console.error("Error:", err);
+      error("Terjadi kesalahan saat mengupdate account. Silakan coba lagi.");
     }
   };
 
@@ -261,9 +274,14 @@ export default function AccountsPage() {
         fetchAccounts();
         setIsDeleteOpen(false);
         setSelected(null);
+        success(`Account "${selected.username}" berhasil dihapus!`);
+      } else {
+        const result = await res.json();
+        error(result.error || "Gagal menghapus account. Silakan coba lagi.");
       }
-    } catch (error) {
-      console.error("Error:", error);
+    } catch (err) {
+      console.error("Error:", err);
+      error("Terjadi kesalahan saat menghapus account. Silakan coba lagi.");
     }
   };
 
@@ -310,11 +328,17 @@ export default function AccountsPage() {
         body: JSON.stringify({ accountIds: selectedIds, status }),
       });
       if (res.ok) {
+        const statusText = status === "active" ? "aktifkan" : "nonaktifkan";
+        success(`Berhasil ${statusText} ${selectedIds.length} account!`);
         fetchAccounts();
         setSelectedIds([]);
+      } else {
+        const result = await res.json();
+        error(result.error || "Gagal mengupdate status accounts. Silakan coba lagi.");
       }
-    } catch (error) {
-      console.error("Error bulk updating status:", error);
+    } catch (err) {
+      console.error("Error bulk updating status:", err);
+      error("Terjadi kesalahan saat mengupdate status accounts. Silakan coba lagi.");
     }
   };
 
@@ -344,12 +368,17 @@ export default function AccountsPage() {
         body: JSON.stringify({ accountIds: selectedIds }),
       });
       if (res.ok) {
+        success(`Berhasil menghapus ${selectedIds.length} account!`);
         fetchAccounts();
         setSelectedIds([]);
         setIsBulkDeleteOpen(false);
+      } else {
+        const result = await res.json();
+        error(result.error || "Gagal menghapus accounts. Silakan coba lagi.");
       }
-    } catch (error) {
-      console.error("Error bulk deleting:", error);
+    } catch (err) {
+      console.error("Error bulk deleting:", err);
+      error("Terjadi kesalahan saat menghapus accounts. Silakan coba lagi.");
     }
   };
 
@@ -457,6 +486,16 @@ export default function AccountsPage() {
 
   return (
     <PermissionGuard menuName={menuName}>
+      {/* Toast Notifications */}
+      {toasts.map((toast) => (
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          type={toast.type}
+          onClose={() => removeToast(toast.id)}
+        />
+      ))}
+      
       <div className="space-y-3">
       {/* Filter Row */}
       <div className="flex items-center justify-between gap-3">
