@@ -182,37 +182,69 @@ export default function AccountsPage() {
 
   const handleAdd = async () => {
     try {
+      // Get operator ID from localStorage
+      const operatorStr = localStorage.getItem("operator");
+      const operator = operatorStr ? JSON.parse(operatorStr) : null;
+      
       const res = await fetch("/api/accounts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          userId: operator?.id, // Add userId for audit logging
+        }),
       });
+      
+      const result = await res.json();
+      
       if (res.ok) {
         fetchAccounts();
         setIsAddOpen(false);
         resetForm();
+        alert("Account berhasil ditambahkan!");
+      } else {
+        // Show error message to user
+        alert(`Error: ${result.error || "Gagal menambahkan account"}`);
+        console.error("Error response:", result);
       }
     } catch (error) {
       console.error("Error:", error);
+      alert("Terjadi kesalahan saat menambahkan account. Silakan coba lagi.");
     }
   };
 
   const handleEdit = async () => {
     if (!selected) return;
     try {
+      // Get operator ID from localStorage
+      const operatorStr = localStorage.getItem("operator");
+      const operator = operatorStr ? JSON.parse(operatorStr) : null;
+      
       const res = await fetch(`/api/accounts/${selected.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          userId: operator?.id, // Add userId for audit logging
+        }),
       });
+      
+      const result = await res.json();
+      
       if (res.ok) {
         fetchAccounts();
         setIsEditOpen(false);
         setSelected(null);
         resetForm();
+        alert("Account berhasil diupdate!");
+      } else {
+        // Show error message to user
+        alert(`Error: ${result.error || "Gagal mengupdate account"}`);
+        console.error("Error response:", result);
       }
     } catch (error) {
       console.error("Error:", error);
+      alert("Terjadi kesalahan saat mengupdate account. Silakan coba lagi.");
     }
   };
 
