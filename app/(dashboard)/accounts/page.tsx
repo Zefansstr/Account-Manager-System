@@ -206,19 +206,19 @@ export default function AccountsPage() {
         fetchAccounts();
         setIsAddOpen(false);
         resetForm();
-        success(`Account "${formData.username}" berhasil ditambahkan!`);
+        success(`Account "${formData.username}" created successfully!`);
       } else {
         // Check for duplicate username error
         if (result.error && result.error.includes("duplicate key") || result.error?.includes("unique")) {
-          error(`Username "${formData.username}" sudah digunakan. Silakan gunakan username lain.`);
+          error(`Username "${formData.username}" already exists. Please use a different username.`);
         } else {
-          error(result.error || "Gagal menambahkan account. Silakan coba lagi.");
+          error(result.error || "Failed to create account. Please try again.");
         }
         console.error("Error response:", result);
       }
     } catch (err) {
       console.error("Error:", err);
-      error("Terjadi kesalahan saat menambahkan account. Silakan coba lagi.");
+      error("An error occurred while creating account. Please try again.");
     }
   };
 
@@ -245,19 +245,19 @@ export default function AccountsPage() {
         setIsEditOpen(false);
         setSelected(null);
         resetForm();
-        success(`Account "${formData.username}" berhasil diupdate!`);
+        success(`Account "${formData.username}" updated successfully!`);
       } else {
         // Check for duplicate username error
         if (result.error && result.error.includes("duplicate key") || result.error?.includes("unique")) {
-          error(`Username "${formData.username}" sudah digunakan oleh account lain. Silakan gunakan username lain.`);
+          error(`Username "${formData.username}" is already taken by another account. Please use a different username.`);
         } else {
-          error(result.error || "Gagal mengupdate account. Silakan coba lagi.");
+          error(result.error || "Failed to update account. Please try again.");
         }
         console.error("Error response:", result);
       }
     } catch (err) {
       console.error("Error:", err);
-      error("Terjadi kesalahan saat mengupdate account. Silakan coba lagi.");
+      error("An error occurred while updating account. Please try again.");
     }
   };
 
@@ -274,14 +274,14 @@ export default function AccountsPage() {
         fetchAccounts();
         setIsDeleteOpen(false);
         setSelected(null);
-        success(`Account "${selected.username}" berhasil dihapus!`);
+        success(`Account "${selected.username}" deleted successfully!`);
       } else {
         const result = await res.json();
-        error(result.error || "Gagal menghapus account. Silakan coba lagi.");
+        error(result.error || "Failed to delete account. Please try again.");
       }
     } catch (err) {
       console.error("Error:", err);
-      error("Terjadi kesalahan saat menghapus account. Silakan coba lagi.");
+      error("An error occurred while deleting account. Please try again.");
     }
   };
 
@@ -328,17 +328,17 @@ export default function AccountsPage() {
         body: JSON.stringify({ accountIds: selectedIds, status }),
       });
       if (res.ok) {
-        const statusText = status === "active" ? "aktifkan" : "nonaktifkan";
-        success(`Berhasil ${statusText} ${selectedIds.length} account!`);
+        const statusText = status === "active" ? "enabled" : "disabled";
+        success(`Successfully ${statusText} ${selectedIds.length} account(s)!`);
         fetchAccounts();
         setSelectedIds([]);
       } else {
         const result = await res.json();
-        error(result.error || "Gagal mengupdate status accounts. Silakan coba lagi.");
+        error(result.error || "Failed to update account status. Please try again.");
       }
     } catch (err) {
       console.error("Error bulk updating status:", err);
-      error("Terjadi kesalahan saat mengupdate status accounts. Silakan coba lagi.");
+      error("An error occurred while updating account status. Please try again.");
     }
   };
 
@@ -368,17 +368,17 @@ export default function AccountsPage() {
         body: JSON.stringify({ accountIds: selectedIds }),
       });
       if (res.ok) {
-        success(`Berhasil menghapus ${selectedIds.length} account!`);
+        success(`Successfully deleted ${selectedIds.length} account(s)!`);
         fetchAccounts();
         setSelectedIds([]);
         setIsBulkDeleteOpen(false);
       } else {
         const result = await res.json();
-        error(result.error || "Gagal menghapus accounts. Silakan coba lagi.");
+        error(result.error || "Failed to delete accounts. Please try again.");
       }
     } catch (err) {
       console.error("Error bulk deleting:", err);
-      error("Terjadi kesalahan saat menghapus accounts. Silakan coba lagi.");
+      error("An error occurred while deleting accounts. Please try again.");
     }
   };
 
