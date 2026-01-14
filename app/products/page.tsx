@@ -65,7 +65,12 @@ export default function ProductsDashboardPage() {
     };
   }, []);
 
-  const kpiCards = [
+  const kpiCards: Array<{
+    title: string;
+    value: number;
+    icon: React.ComponentType<{ className?: string }>;
+    trend: { value: number } | null;
+  }> = [
     {
       title: "Total Accounts",
       value: data.kpis.totalAccounts,
