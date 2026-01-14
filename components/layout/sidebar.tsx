@@ -17,6 +17,7 @@ import {
   ChevronDown,
   ChevronRight,
   LogOut,
+  Cog,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { canViewMenu, isSuperAdmin } from "@/lib/permissions";
@@ -31,7 +32,7 @@ const menuItems = [
   {
     title: "Accounts",
     href: "/accounts",
-    icon: Users,
+    icon: UserCog,
     menuName: "Accounts",
   },
 ];
@@ -46,7 +47,7 @@ const operatorSubmenus = [
   {
     title: "Roles",
     href: "/operator-roles",
-    icon: ShieldCheck,
+    icon: Cog,
     menuName: "Operator Roles",
   },
   {

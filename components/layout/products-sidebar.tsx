@@ -13,6 +13,7 @@ import {
   Shield,
   ChevronDown,
   ChevronRight,
+  Package,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { canViewMenu, isSuperAdmin } from "@/lib/permissions";
@@ -27,7 +28,7 @@ const menuItems = [
   {
     title: "Accounts",
     href: "/products/accounts",
-    icon: Users,
+    icon: Package,
     menuName: "Accounts",
   },
 ];

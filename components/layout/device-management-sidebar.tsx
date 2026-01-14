@@ -13,6 +13,7 @@ import {
   Shield,
   ChevronDown,
   ChevronRight,
+  Laptop,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { canViewMenu, isSuperAdmin } from "@/lib/permissions";
@@ -27,7 +28,7 @@ const menuItems = [
   {
     title: "Device",
     href: "/device-management/accounts",
-    icon: Users,
+    icon: Laptop,
     menuName: "Accounts",
   },
 ];
