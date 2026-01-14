@@ -341,10 +341,10 @@ export default function LoginPage() {
           <div className="w-full max-w-6xl mx-auto">
             {/* Logo & Title */}
             <div className="text-center mb-12">
-              <div className="inline-flex items-center justify-center mb-6 relative">
-                <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" style={{ animationDuration: '3s', width: '96px', height: '96px', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
-                <div className="relative">
-                  <Logo width={96} height={96} />
+              <div className="inline-flex items-center justify-center mb-6 relative w-24 h-24">
+                <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" style={{ animationDuration: '3s', animationIterationCount: 'infinite' }} />
+                <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary/70 shadow-2xl shadow-primary/50 flex items-center justify-center">
+                  <Logo width={64} height={64} />
                 </div>
               </div>
               <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight">
