@@ -280,7 +280,7 @@ export function Sidebar() {
                       : "text-foreground hover:bg-secondary hover:text-primary"
                   )}
                 >
-                  <UserCog className="h-5 w-5" />
+                  <Cog className="h-5 w-5" />
                   <span className="flex-1 text-left">Operators</span>
                   {isOperatorsOpen ? (
                     <ChevronDown className="h-4 w-4" />
