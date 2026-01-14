@@ -15,23 +15,38 @@ const STATUS_COLORS = {
 };
 
 const RADIAN = Math.PI / 180;
-const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, count }: any) => {
   const radius = outerRadius + 25; // Position label outside the donut
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
   return (
-    <text 
-      x={x} 
-      y={y} 
-      fill="white" 
-      textAnchor={x > cx ? 'start' : 'end'} 
-      dominantBaseline="central" 
-      fontSize="16" 
-      fontWeight="bold"
-    >
-      {`${(percent * 100).toFixed(1)}%`}
-    </text>
+    <g>
+      <text 
+        x={x} 
+        y={y - 8} 
+        fill="hsl(var(--foreground))"
+        textAnchor={x > cx ? 'start' : 'end'} 
+        dominantBaseline="central" 
+        fontSize="14" 
+        fontWeight="600"
+        fontFamily="Inter, sans-serif"
+      >
+        {name}
+      </text>
+      <text 
+        x={x} 
+        y={y + 8} 
+        fill="hsl(var(--primary))"
+        textAnchor={x > cx ? 'start' : 'end'} 
+        dominantBaseline="central" 
+        fontSize="12" 
+        fontWeight="500"
+        fontFamily="Inter, sans-serif"
+      >
+        count : {count}
+      </text>
+    </g>
   );
 };
 
