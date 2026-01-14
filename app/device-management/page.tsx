@@ -183,7 +183,7 @@ export default function DeviceManagementDashboardPage() {
                         data={data.charts.devicesStatus}
                         cx="50%"
                         cy="50%"
-                        labelLine={false}
+                        labelLine={{ stroke: 'white', strokeWidth: 2 }}
                         label={renderCustomizedLabel}
                         outerRadius={95}
                         innerRadius={60}
