@@ -200,22 +200,6 @@ export default function DeviceManagementDashboardPage() {
                           />
                         ))}
                       </Pie>
-                      {/* Center Label */}
-                      <text
-                        x="50%"
-                        y="50%"
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        fill="hsl(var(--muted-foreground))"
-                        fontSize="14"
-                        fontWeight="500"
-                        fontFamily="Inter, sans-serif"
-                      >
-                        {(() => {
-                          const activeEntry = data.charts.devicesStatus.find((e: any) => e.name === "Active");
-                          return activeEntry ? `Active : ${activeEntry.count}` : "";
-                        })()}
-                      </text>
                       <Tooltip 
                         contentStyle={{ 
                           backgroundColor: 'hsl(var(--card))',
