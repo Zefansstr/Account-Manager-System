@@ -343,10 +343,10 @@ export default function AccountsPage() {
       // Map Excel columns to database fields
       const accountsToImport = jsonData.map((row: any) => {
         // Find IDs by code/name
-        const app = applications.find(a => a.code === row.Application || a.name === row.Application);
-        const line = lines.find(l => l.code === row.Line || l.name === row.Line);
-        const dept = departments.find(d => d.code === row.Department || d.name === row.Department);
-        const role = roles.find(r => r.code === row.Role || r.name === row.Role);
+        const app = applications.find((a: { id: string; code: string; name: string }) => a.code === row.Application || a.name === row.Application);
+        const line = lines.find((l: { id: string; code: string; name: string }) => l.code === row.Line || l.name === row.Line);
+        const dept = departments.find((d: { id: string; code: string; name: string }) => d.code === row.Department || d.name === row.Department);
+        const role = roles.find((r: { id: string; code: string; name: string }) => r.code === row.Role || r.name === row.Role);
 
         return {
           application_id: app?.id || null,
