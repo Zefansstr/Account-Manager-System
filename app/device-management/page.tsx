@@ -42,23 +42,42 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
 };
 
 export default function DeviceManagementDashboardPage() {
-  // Empty data - no API calls
-  const loading = false;
-  const data = useMemo(() => {
-    return {
-      kpis: {
-        totalDevices: 0,
-        activeDevices: 0,
-        totalTypes: 0,
-        totalBrands: 0,
-      },
-      charts: {
-        devicesStatus: [] as Array<{ name: string; count: number }>,
-        devicesByType: [] as Array<{ name: string; count: number }>,
-        devicesByBrand: [] as Array<{ name: string; count: number }>,
-        devicesByUserUse: [] as Array<{ name: string; count: number }>,
-      },
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState({
+    kpis: {
+      totalDevices: 0,
+      activeDevices: 0,
+      totalTypes: 0,
+      totalBrands: 0,
+    },
+    charts: {
+      devicesStatus: [] as Array<{ name: string; count: number }>,
+      devicesByType: [] as Array<{ name: string; count: number }>,
+      devicesByBrand: [] as Array<{ name: string; count: number }>,
+      devicesByUserUse: [] as Array<{ name: string; count: number }>,
+    },
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/device-management/dashboard/stats");
+        const json = await res.json();
+
+        if (res.ok) {
+          setData(json);
+        } else {
+          console.error("Failed to fetch stats:", json.error);
+        }
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+      } finally {
+        setLoading(false);
+      }
     };
+
+    fetchStats();
   }, []);
 
   const kpiCards: Array<{
