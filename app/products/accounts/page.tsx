@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
-import { Plus, Edit, Trash2, Eye, EyeOff, Upload, Download, Power, CheckSquare, Square, Search } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, EyeOff, Upload, Download, Power, CheckSquare, Square, Search, Package } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PermissionGuard } from "@/components/auth/permission-guard";
 import toast from "react-hot-toast";
@@ -380,7 +380,8 @@ export default function ProductsAccountsPage() {
                       </Badge>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant="secondary" className="bg-primary/20 text-primary border-primary">
+                      <Badge variant="secondary" className="bg-primary/20 text-primary border-primary flex items-center gap-2">
+                        <Package className="h-3 w-3 text-white" />
                         {acc.application || "-"}
                       </Badge>
                     </td>

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
-import { Plus, Edit, Trash2, Power, CheckSquare, Square, Search } from "lucide-react";
+import { Plus, Edit, Trash2, Power, CheckSquare, Square, Search, Laptop } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PermissionGuard } from "@/components/auth/permission-guard";
 import toast from "react-hot-toast";
@@ -181,7 +181,10 @@ export default function DeviceManagementAccountsPage() {
                       <span className="font-mono text-sm font-medium text-primary">-</span>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant="secondary" className="bg-primary/20 text-primary border-primary">-</Badge>
+                      <Badge variant="secondary" className="bg-primary/20 text-primary border-primary flex items-center gap-2">
+                        <Laptop className="h-3 w-3 text-white" />
+                        -
+                      </Badge>
                     </td>
                     <td className="px-4 py-3"><Badge variant="secondary">-</Badge></td>
                     <td className="px-4 py-3 text-sm text-foreground">-</td>

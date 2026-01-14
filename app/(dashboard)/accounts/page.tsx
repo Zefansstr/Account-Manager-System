@@ -10,7 +10,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { TableSkeleton } from "@/components/ui/skeleton";
 import { Toast } from "@/components/ui/toast";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Eye, EyeOff, Upload, Download, Power, CheckSquare, Square, Search } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, EyeOff, Upload, Download, Power, CheckSquare, Square, Search, UserCog } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import * as XLSX from "xlsx";
 import { PermissionGuard } from "@/components/auth/permission-guard";
@@ -621,7 +621,10 @@ export default function AccountsPage() {
                     )}
                     {showApplicationColumn && (
                       <td className="px-4 py-3">
-                        <Badge variant="secondary" className="bg-primary/20 text-primary border-primary">{acc.application}</Badge>
+                        <Badge variant="secondary" className="bg-primary/20 text-primary border-primary flex items-center gap-2">
+                          <UserCog className="h-3 w-3 text-white" />
+                          {acc.application}
+                        </Badge>
                       </td>
                     )}
                     {showLineColumn && <td className="px-4 py-3"><Badge variant="secondary">{acc.line}</Badge></td>}
