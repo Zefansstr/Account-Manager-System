@@ -365,8 +365,8 @@ export default function LoginPage() {
                   
                   {/* Content */}
                   <div className="relative z-10">
-                    <div className="flex items-center justify-center w-16 h-16 mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
-                      <Logo width={64} height={64} />
+                    <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/70 mb-4 mx-auto group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-primary/30 p-3">
+                      <Logo width={40} height={40} />
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors">
                       Account Management
@@ -394,8 +394,8 @@ export default function LoginPage() {
                   
                   {/* Content */}
                   <div className="relative z-10">
-                    <div className="flex items-center justify-center w-16 h-16 mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
-                      <Logo width={64} height={64} />
+                    <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/70 mb-4 mx-auto group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-primary/30 p-3">
+                      <Logo width={40} height={40} />
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors">
                       Product Management
@@ -423,8 +423,8 @@ export default function LoginPage() {
                   
                   {/* Content */}
                   <div className="relative z-10">
-                    <div className="flex items-center justify-center w-16 h-16 mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
-                      <Logo width={64} height={64} />
+                    <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/70 mb-4 mx-auto group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-primary/30 p-3">
+                      <Logo width={40} height={40} />
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors">
                       Device Management
@@ -452,8 +452,8 @@ export default function LoginPage() {
                   
                   {/* Content */}
                   <div className="relative z-10">
-                    <div className="flex items-center justify-center w-16 h-16 mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
-                      <Logo width={64} height={64} />
+                    <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/70 mb-4 mx-auto group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-primary/30 p-3">
+                      <Logo width={40} height={40} />
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors">
                       Operator Setting
