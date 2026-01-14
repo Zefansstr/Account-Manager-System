@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Eye, EyeOff, UserCog, Shield, ShieldCheck, Users, FileText, Settings, ArrowRight, Check, User, Lock, ArrowLeft, BarChart3, Sparkles, DollarSign, Gamepad2, LayoutDashboard, Package, Smartphone, Laptop, Cog } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
+import LogoMark from "@/logo product/eficiency";
 
 export default function LoginPage() {
   const router = useRouter();
