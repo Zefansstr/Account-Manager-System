@@ -199,7 +199,7 @@ export default function DashboardPage() {
                           key={`cell-${index}`} 
                           fill={STATUS_COLORS[entry.name as keyof typeof STATUS_COLORS]}
                           strokeWidth={2}
-                          stroke="#1a1d23"
+                          stroke="hsl(var(--card))"
                         />
                       ))}
                     </Pie>

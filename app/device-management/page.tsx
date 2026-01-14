@@ -211,7 +211,7 @@ export default function DeviceManagementDashboardPage() {
                             key={`cell-${index}`} 
                             fill={STATUS_COLORS[entry.name as keyof typeof STATUS_COLORS]}
                             strokeWidth={3}
-                            stroke="hsl(var(--card))"
+                            stroke="white"
                           />
                         ))}
                       </Pie>

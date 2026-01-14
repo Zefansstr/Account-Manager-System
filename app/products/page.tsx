@@ -184,7 +184,7 @@ export default function ProductsDashboardPage() {
                             key={`cell-${index}`} 
                             fill={STATUS_COLORS[entry.name as keyof typeof STATUS_COLORS]}
                             strokeWidth={3}
-                            stroke="hsl(var(--card))"
+                            stroke="white"
                           />
                         ))}
                       </Pie>
