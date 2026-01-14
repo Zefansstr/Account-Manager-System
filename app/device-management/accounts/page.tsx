@@ -29,9 +29,8 @@ type Device = {
 type LookupData = { id: string; code: string; name: string }[];
 
 export default function DeviceManagementAccountsPage() {
-  // Empty data - no API calls
-  const [devices] = useState<Device[]>([]);
-  const [loading] = useState(false);
+  const [devices, setDevices] = useState<Device[]>([]);
+  const [loading, setLoading] = useState(false);
   const [types, setTypes] = useState<LookupData>([]);
   const [brands, setBrands] = useState<LookupData>([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -42,7 +41,7 @@ export default function DeviceManagementAccountsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [limit] = useState(20);
-  const [pagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
+  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
   
   const [formData, setFormData] = useState({
     code: "",
@@ -96,9 +95,79 @@ export default function DeviceManagementAccountsPage() {
     }
   };
 
+  // Fetch devices
+  const fetchDevices = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+      if (searchQuery) params.append("search", searchQuery);
+
+      const res = await fetch(`/api/device-management/accounts?${params}`);
+      const json = await res.json();
+
+      if (res.ok) {
+        setDevices(json.data || []);
+        setPagination(json.pagination || { page: 1, limit: 20, total: 0, totalPages: 1 });
+      } else {
+        toast.error(json.error || "Failed to fetch devices");
+      }
+    } catch (error) {
+      console.error("Error fetching devices:", error);
+      toast.error("Failed to fetch devices");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchLookups();
-  }, []);
+    fetchDevices();
+  }, [page, searchQuery]);
+
+  // Handle add device
+  const handleAdd = async () => {
+    if (!formData.code || !formData.item) {
+      toast.error("Code and Item are required");
+      return;
+    }
+
+    try {
+      const operatorStr = localStorage.getItem("operator");
+      const userId = operatorStr ? JSON.parse(operatorStr).id : null;
+
+      const res = await fetch("/api/device-management/accounts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: formData.code,
+          typeId: formData.typeId || null,
+          brandId: formData.brandId || null,
+          item: formData.item,
+          specification: formData.specification || null,
+          userUse: formData.userUse || null,
+          note: formData.note || null,
+          userId,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (res.ok) {
+        toast.success(`Device "${formData.code}" created successfully!`);
+        setIsAddOpen(false);
+        resetForm();
+        fetchDevices();
+      } else {
+        toast.error(json.error || "Failed to create device");
+      }
+    } catch (error: any) {
+      console.error("Error creating device:", error);
+      toast.error(error.message || "Failed to create device. Please try again.");
+    }
+  };
 
   return (
     <PermissionGuard menuName={menuName}>
@@ -274,7 +343,7 @@ export default function DeviceManagementAccountsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddOpen(false); resetForm(); }}>Cancel</Button>
-            <Button onClick={() => setIsAddOpen(false)} disabled={!formData.code || !formData.item}>Add Device</Button>
+            <Button onClick={handleAdd} disabled={!formData.code || !formData.item}>Add Device</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
