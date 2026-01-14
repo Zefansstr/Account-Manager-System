@@ -740,7 +740,7 @@ export default function AccountsPage() {
               <Label>Role</Label>
               <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={formData.roleId} onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}>
                 <option value="">Select Role</option>
-                {roles.map((role) => (<option key={role.id} value={role.id}>{role.name}</option>))}
+                {roles.map((role: { id: string; code: string; name: string }) => (<option key={role.id} value={role.id}>{role.name}</option>))}
               </select>
             </div>
             <div className="col-span-2 grid gap-2">
@@ -796,7 +796,7 @@ export default function AccountsPage() {
               <Label>Role</Label>
               <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={formData.roleId} onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}>
                 <option value="">Select Role</option>
-                {roles.map((role) => (<option key={role.id} value={role.id}>{role.name}</option>))}
+                {roles.map((role: { id: string; code: string; name: string }) => (<option key={role.id} value={role.id}>{role.name}</option>))}
               </select>
             </div>
             <div className="col-span-2 grid gap-2">
