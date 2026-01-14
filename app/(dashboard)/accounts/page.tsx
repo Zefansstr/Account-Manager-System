@@ -460,13 +460,13 @@ export default function AccountsPage() {
           >
             <option value="">All Applications</option>
             {applications
-              .filter(app => {
+              .filter((app: { id: string; code: string; name: string }) => {
                 // If no data filters, show all
                 if (allowedFilters.applications.length === 0) return true;
                 // If has data filters, only show allowed applications
                 return allowedFilters.applications.includes(app.id);
               })
-              .map((app) => (
+              .map((app: { id: string; code: string; name: string }) => (
                 <option key={app.id} value={app.id}>{app.name}</option>
               ))}
           </select>
@@ -477,13 +477,13 @@ export default function AccountsPage() {
           >
             <option value="">All Lines</option>
             {lines
-              .filter(line => {
+              .filter((line: { id: string; code: string; name: string }) => {
                 // If no data filters, show all
                 if (allowedFilters.lines.length === 0) return true;
                 // If has data filters, only show allowed lines
                 return allowedFilters.lines.includes(line.id);
               })
-              .map((line) => (
+              .map((line: { id: string; code: string; name: string }) => (
                 <option key={line.id} value={line.id}>{line.name}</option>
               ))}
           </select>
@@ -711,14 +711,14 @@ export default function AccountsPage() {
               <Label>Application</Label>
               <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={formData.applicationId} onChange={(e) => setFormData({ ...formData, applicationId: e.target.value })}>
                 <option value="">Select Application</option>
-                {applications.map((app) => (<option key={app.id} value={app.id}>{app.name}</option>))}
+                {applications.map((app: { id: string; code: string; name: string }) => (<option key={app.id} value={app.id}>{app.name}</option>))}
               </select>
             </div>
             <div className="grid gap-2">
               <Label>Line</Label>
               <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={formData.lineId} onChange={(e) => setFormData({ ...formData, lineId: e.target.value })}>
                 <option value="">Select Line</option>
-                {lines.map((line) => (<option key={line.id} value={line.id}>{line.name}</option>))}
+                {lines.map((line: { id: string; code: string; name: string }) => (<option key={line.id} value={line.id}>{line.name}</option>))}
               </select>
             </div>
             <div className="grid gap-2">
@@ -733,7 +733,7 @@ export default function AccountsPage() {
               <Label>Department</Label>
               <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={formData.departmentId} onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}>
                 <option value="">Select Department</option>
-                {departments.map((dept) => (<option key={dept.id} value={dept.id}>{dept.name}</option>))}
+                {departments.map((dept: { id: string; code: string; name: string }) => (<option key={dept.id} value={dept.id}>{dept.name}</option>))}
               </select>
             </div>
             <div className="grid gap-2">
@@ -767,14 +767,14 @@ export default function AccountsPage() {
               <Label>Application</Label>
               <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={formData.applicationId} onChange={(e) => setFormData({ ...formData, applicationId: e.target.value })}>
                 <option value="">Select Application</option>
-                {applications.map((app) => (<option key={app.id} value={app.id}>{app.name}</option>))}
+                {applications.map((app: { id: string; code: string; name: string }) => (<option key={app.id} value={app.id}>{app.name}</option>))}
               </select>
             </div>
             <div className="grid gap-2">
               <Label>Line</Label>
               <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={formData.lineId} onChange={(e) => setFormData({ ...formData, lineId: e.target.value })}>
                 <option value="">Select Line</option>
-                {lines.map((line) => (<option key={line.id} value={line.id}>{line.name}</option>))}
+                {lines.map((line: { id: string; code: string; name: string }) => (<option key={line.id} value={line.id}>{line.name}</option>))}
               </select>
             </div>
             <div className="grid gap-2">
@@ -789,7 +789,7 @@ export default function AccountsPage() {
               <Label>Department</Label>
               <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={formData.departmentId} onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}>
                 <option value="">Select Department</option>
-                {departments.map((dept) => (<option key={dept.id} value={dept.id}>{dept.name}</option>))}
+                {departments.map((dept: { id: string; code: string; name: string }) => (<option key={dept.id} value={dept.id}>{dept.name}</option>))}
               </select>
             </div>
             <div className="grid gap-2">
