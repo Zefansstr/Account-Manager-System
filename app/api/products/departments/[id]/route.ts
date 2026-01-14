@@ -51,7 +51,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   try {
     const { id } = await params;
     const searchParams = new URL(request.url).searchParams;
-    const userId = searchParams.get("userId") || null;
+    const userId = searchParams.get("userId") || undefined;
 
     // Get old value before delete
     const { data: oldData } = await supabase
