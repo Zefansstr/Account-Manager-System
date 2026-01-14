@@ -244,22 +244,34 @@ export default function DeviceManagementAccountsPage() {
                       </button>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant="secondary" className="bg-muted text-muted-foreground">Inactive</Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="font-mono text-sm font-medium text-primary">-</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant="secondary" className="bg-primary/20 text-primary border-primary flex items-center gap-2">
-                        <Laptop className="h-3 w-3 text-white" />
-                        -
+                      <Badge variant={device.status === "active" ? "default" : "secondary"} className={device.status === "active" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}>
+                        {device.status || "inactive"}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3"><Badge variant="secondary">-</Badge></td>
-                    <td className="px-4 py-3 text-sm text-foreground">-</td>
-                    <td className="px-4 py-3 text-sm text-foreground">-</td>
-                    <td className="px-4 py-3 text-sm text-foreground">-</td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">-</td>
+                    <td className="px-4 py-3">
+                      <span className="font-mono text-sm font-medium text-primary">{device.code || "-"}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {device.type ? (
+                        <Badge variant="secondary" className="bg-primary/20 text-primary border-primary flex items-center gap-2">
+                          <Laptop className="h-3 w-3 text-white" />
+                          {device.type}
+                        </Badge>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">-</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {device.brand ? (
+                        <Badge variant="secondary">{device.brand}</Badge>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">-</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-foreground">{device.item || "-"}</td>
+                    <td className="px-4 py-3 text-sm text-foreground">{device.specification || "-"}</td>
+                    <td className="px-4 py-3 text-sm text-foreground">{device.userUse || "-"}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">{device.note || "-"}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-2">
                         <Button variant="ghost" size="sm" className="hover:bg-primary/10 hover:text-primary">
