@@ -10,6 +10,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { Plus, Edit, Trash2, Power, CheckSquare, Square, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PermissionGuard } from "@/components/auth/permission-guard";
+import toast from "react-hot-toast";
 
 type Device = {
   id: string;
