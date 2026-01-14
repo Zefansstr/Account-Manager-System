@@ -599,7 +599,7 @@ export default function AccountsPage() {
               ) : filteredAccounts.length === 0 ? (
                 <tr><td colSpan={10} className="px-4 py-8 text-center text-muted-foreground">No accounts found</td></tr>
               ) : (
-                filteredAccounts.map((acc) => (
+                filteredAccounts.map((acc: Account) => (
                   <tr key={acc.id} className="border-b border-border hover:bg-secondary/50 transition-colors">
                     <td className="px-4 py-3 text-center">
                       <button onClick={() => toggleSelect(acc.id)} className="hover:text-primary">
