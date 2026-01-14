@@ -289,7 +289,7 @@ export default function AccountsPage() {
     if (selectedIds.length === filteredAccounts.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(filteredAccounts.map(acc => acc.id));
+      setSelectedIds(filteredAccounts.map((acc: Account) => acc.id));
     }
   };
 
