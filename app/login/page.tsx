@@ -344,7 +344,7 @@ export default function LoginPage() {
               <div className="inline-flex items-center justify-center mb-6 relative w-24 h-24">
                 <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" style={{ animationDuration: '3s', animationIterationCount: 'infinite' }} />
                 <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary/70 shadow-2xl shadow-primary/50 flex items-center justify-center">
-                  <Logo width={64} height={64} />
+                  <Logo width={64} height={64} variant="white" />
                 </div>
               </div>
               <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight">

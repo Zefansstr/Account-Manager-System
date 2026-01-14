@@ -7,9 +7,10 @@ type LogoProps = {
   className?: string;
   width?: number;
   height?: number;
+  variant?: "green" | "white";
 };
 
-export function Logo({ className = "", width = 32, height = 32 }: LogoProps) {
+export function Logo({ className = "", width = 32, height = 32, variant = "green" }: LogoProps) {
   const [mounted, setMounted] = useState(false);
   const [isDark, setIsDark] = useState(false);
 
@@ -36,14 +37,19 @@ export function Logo({ className = "", width = 32, height = 32 }: LogoProps) {
   }, []);
 
   // CSS filter untuk mengubah warna hitam menjadi hijau (primary color)
-  // Formula: brightness(0) saturate(100%) invert(50%) sepia(100%) saturate(2000%) hue-rotate(120deg) brightness(0.9)
   const greenFilter = "brightness(0) saturate(100%) invert(50%) sepia(100%) saturate(2000%) hue-rotate(120deg) brightness(0.9)";
+  const darkModeGreenFilter = "brightness(0) saturate(100%) invert(50%) sepia(100%) saturate(2000%) hue-rotate(120deg) brightness(1.1)";
   
-  // Untuk dark mode, gunakan filter yang lebih terang
-  const darkModeFilter = "brightness(0) saturate(100%) invert(50%) sepia(100%) saturate(2000%) hue-rotate(120deg) brightness(1.1)";
+  // CSS filter untuk mengubah warna hitam menjadi putih
+  const whiteFilter = "brightness(0) saturate(100%) invert(100%)";
   
-  // Default to green filter if theme is not loaded yet
-  const currentFilter = mounted && isDark ? darkModeFilter : greenFilter;
+  // Determine filter based on variant
+  let currentFilter: string;
+  if (variant === "white") {
+    currentFilter = whiteFilter;
+  } else {
+    currentFilter = mounted && isDark ? darkModeGreenFilter : greenFilter;
+  }
   
   return (
     <div className={`relative ${className}`} style={{ width, height }}>

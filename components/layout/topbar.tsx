@@ -45,7 +45,7 @@ export function Topbar() {
         <div className="flex items-center gap-3">
           {/* Logo with green circle background */}
           <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/70 shadow-md shadow-primary/30 flex-shrink-0">
-            <Logo width={20} height={20} />
+            <Logo width={20} height={20} variant="white" />
           </div>
           <h1 className="text-lg font-semibold text-foreground">
             {getModuleTitle()}
