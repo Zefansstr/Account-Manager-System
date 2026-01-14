@@ -1,0 +1,4 @@
+# Force Vercel to rebuild CSS
+.next/
+node_modules/
+
