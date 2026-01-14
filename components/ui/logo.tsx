@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { useTheme } from "@/components/providers/theme-provider";
 import { useEffect, useState } from "react";
 
 type LogoProps = {
@@ -11,11 +10,29 @@ type LogoProps = {
 };
 
 export function Logo({ className = "", width = 32, height = 32 }: LogoProps) {
-  const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    // Check theme from document or localStorage
+    const checkTheme = () => {
+      const htmlElement = document.documentElement;
+      const hasDarkClass = htmlElement.classList.contains("dark");
+      const savedTheme = localStorage.getItem("theme");
+      setIsDark(hasDarkClass || savedTheme === "dark");
+    };
+
+    checkTheme();
+
+    // Watch for theme changes
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => observer.disconnect();
   }, []);
 
   // CSS filter untuk mengubah warna hitam menjadi hijau (primary color)
@@ -26,7 +43,7 @@ export function Logo({ className = "", width = 32, height = 32 }: LogoProps) {
   const darkModeFilter = "brightness(0) saturate(100%) invert(50%) sepia(100%) saturate(2000%) hue-rotate(120deg) brightness(1.1)";
   
   // Default to green filter if theme is not loaded yet
-  const currentFilter = mounted && theme === "dark" ? darkModeFilter : greenFilter;
+  const currentFilter = mounted && isDark ? darkModeFilter : greenFilter;
   
   return (
     <div className={`relative ${className}`} style={{ width, height }}>
