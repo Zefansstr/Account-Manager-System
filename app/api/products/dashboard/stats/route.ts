@@ -1,59 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
-// Products mapping to applications in database
-const PRODUCTS_MAPPING: { [key: string]: string[] } = {
-  "PK Mechanism Dashboard": ["PK_MECHANISM", "PK Mechanism Dashboard"],
-  "USDT Tracker": ["USDT_TRACKER", "USDT Tracker"],
-  "Efficiency Insight Dashboard": ["EFFICIENCY_INSIGHT", "Efficiency Insight Dashboard"],
-  "nexplan": ["NEXPLAN", "nexplan"],
-  "X ARENA": ["X_ARENA", "X ARENA"],
-  "SCRM Dashboard": ["SCRM_DASHBOARD", "SCRM Dashboard"],
-};
-
-// Get application IDs that match products
-async function getProductApplicationIds() {
-  const productNames = Object.keys(PRODUCTS_MAPPING);
-  const allCodes = productNames.flatMap(name => PRODUCTS_MAPPING[name]);
-  
-  const { data: applications } = await supabase
-    .from("applications")
-    .select("id, app_code, app_name")
-    .or(allCodes.map(code => `app_code.ilike.%${code}%,app_name.ilike.%${code}%`).join(','));
-  
-  return applications?.map(app => app.id) || [];
-}
-
 export async function GET(request: NextRequest) {
   try {
     // Get operator ID from header for data filtering
     const operatorId = request.headers.get("X-Operator-Id");
-    
-    // Get product application IDs
-    const productApplicationIds = await getProductApplicationIds();
-    
-    // If no product applications found, return empty data
-    if (productApplicationIds.length === 0) {
-      return NextResponse.json({
-        kpis: {
-          totalAccounts: 0,
-          activeAccounts: 0,
-          totalApplications: 0,
-          totalLines: 0,
-          totalDepartments: 0,
-          totalRoles: 0,
-        },
-        charts: {
-          accountsStatus: [
-            { name: "Active", count: 0 },
-            { name: "Inactive", count: 0 },
-          ],
-          accountsByDepartment: [],
-          accountsByApplication: [],
-          accountsByRole: [],
-        },
-      });
-    }
     
     // Check if operator has segment data filtering enabled
     let allowedFilters: any = null;
@@ -72,6 +23,7 @@ export async function GET(request: NextRequest) {
           .select("*")
           .eq("role_id", operator.operator_role_id)
           .eq("menu_name", "dashboard")
+          .eq("module", "product-management")
           .single();
         
         // Check if view_segment_data is enabled
@@ -84,6 +36,7 @@ export async function GET(request: NextRequest) {
             .select("*")
             .eq("role_id", operator.operator_role_id)
             .eq("menu_name", "accounts")
+            .eq("module", "product-management")
             .single();
           
           if (accountsPerms) {
@@ -97,92 +50,76 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    // Build queries - ONLY for products applications
-    let accountsQuery = supabase
-      .from("accounts")
-      .select("id", { count: "exact", head: true })
-      .in("application_id", productApplicationIds);
-    
-    let activeAccountsQuery = supabase
-      .from("accounts")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "active")
-      .in("application_id", productApplicationIds);
-    
-    let accountsByDeptQuery = supabase
-      .from("accounts")
-      .select("department_id, departments(department_code, department_name)")
-      .in("application_id", productApplicationIds);
-    
-    let accountsByAppQuery = supabase
-      .from("accounts")
-      .select("application_id, applications(app_code, app_name)")
-      .in("application_id", productApplicationIds);
-    
-    let accountsByRoleQuery = supabase
-      .from("accounts")
-      .select("role_id, roles(role_code, role_name)")
-      .in("application_id", productApplicationIds);
+    // Build queries - Use product_* tables
+    // Optimized: Use count-only queries for KPIs
+    let accountsQuery = supabase.from("product_accounts").select("id", { count: "exact", head: true });
+    let activeAccountsQuery = supabase.from("product_accounts").select("id", { count: "exact", head: true }).eq("status", "active");
     
     // Apply data filters if segment data is enabled
     if (hasSegmentData && allowedFilters) {
-      // Intersect with product application IDs
-      let filteredAppIds = productApplicationIds;
-      if (allowedFilters.applications.length > 0) {
-        filteredAppIds = productApplicationIds.filter(id => 
-          allowedFilters.applications.includes(id)
-        );
-      } else if (allowedFilters.applications.length === 0 && allowedFilters.applications !== null) {
-        // Empty array means show NO data
-        filteredAppIds = [];
-      }
-      
-      if (filteredAppIds.length === 0) {
+      // Apply filters: empty array means show NO data
+      if (allowedFilters.applications.length === 0) {
         accountsQuery = accountsQuery.in("application_id", ["00000000-0000-0000-0000-000000000000"]);
         activeAccountsQuery = activeAccountsQuery.in("application_id", ["00000000-0000-0000-0000-000000000000"]);
-        accountsByDeptQuery = accountsByDeptQuery.in("application_id", ["00000000-0000-0000-0000-000000000000"]);
-        accountsByAppQuery = accountsByAppQuery.in("application_id", ["00000000-0000-0000-0000-000000000000"]);
-        accountsByRoleQuery = accountsByRoleQuery.in("application_id", ["00000000-0000-0000-0000-000000000000"]);
-      } else {
-        accountsQuery = accountsQuery.in("application_id", filteredAppIds);
-        activeAccountsQuery = activeAccountsQuery.in("application_id", filteredAppIds);
-        accountsByDeptQuery = accountsByDeptQuery.in("application_id", filteredAppIds);
-        accountsByAppQuery = accountsByAppQuery.in("application_id", filteredAppIds);
-        accountsByRoleQuery = accountsByRoleQuery.in("application_id", filteredAppIds);
+      } else if (allowedFilters.applications.length > 0) {
+        accountsQuery = accountsQuery.in("application_id", allowedFilters.applications);
+        activeAccountsQuery = activeAccountsQuery.in("application_id", allowedFilters.applications);
       }
       
-      // Apply line filters
-      if (allowedFilters.lines.length === 0 && allowedFilters.lines !== null) {
+      if (allowedFilters.lines.length === 0) {
         accountsQuery = accountsQuery.in("line_id", ["00000000-0000-0000-0000-000000000000"]);
         activeAccountsQuery = activeAccountsQuery.in("line_id", ["00000000-0000-0000-0000-000000000000"]);
-        accountsByDeptQuery = accountsByDeptQuery.in("line_id", ["00000000-0000-0000-0000-000000000000"]);
-        accountsByAppQuery = accountsByAppQuery.in("line_id", ["00000000-0000-0000-0000-000000000000"]);
-        accountsByRoleQuery = accountsByRoleQuery.in("line_id", ["00000000-0000-0000-0000-000000000000"]);
       } else if (allowedFilters.lines.length > 0) {
         accountsQuery = accountsQuery.in("line_id", allowedFilters.lines);
         activeAccountsQuery = activeAccountsQuery.in("line_id", allowedFilters.lines);
-        accountsByDeptQuery = accountsByDeptQuery.in("line_id", allowedFilters.lines);
-        accountsByAppQuery = accountsByAppQuery.in("line_id", allowedFilters.lines);
-        accountsByRoleQuery = accountsByRoleQuery.in("line_id", allowedFilters.lines);
       }
       
-      // Apply department filters
-      if (allowedFilters.departments.length === 0 && allowedFilters.departments !== null) {
+      if (allowedFilters.departments.length === 0) {
         accountsQuery = accountsQuery.in("department_id", ["00000000-0000-0000-0000-000000000000"]);
         activeAccountsQuery = activeAccountsQuery.in("department_id", ["00000000-0000-0000-0000-000000000000"]);
-        accountsByDeptQuery = accountsByDeptQuery.in("department_id", ["00000000-0000-0000-0000-000000000000"]);
-        accountsByAppQuery = accountsByAppQuery.in("department_id", ["00000000-0000-0000-0000-000000000000"]);
-        accountsByRoleQuery = accountsByRoleQuery.in("department_id", ["00000000-0000-0000-0000-000000000000"]);
       } else if (allowedFilters.departments.length > 0) {
         accountsQuery = accountsQuery.in("department_id", allowedFilters.departments);
         activeAccountsQuery = activeAccountsQuery.in("department_id", allowedFilters.departments);
-        accountsByDeptQuery = accountsByDeptQuery.in("department_id", allowedFilters.departments);
-        accountsByAppQuery = accountsByAppQuery.in("department_id", allowedFilters.departments);
-        accountsByRoleQuery = accountsByRoleQuery.in("department_id", allowedFilters.departments);
       }
     }
     
-    // Get all data with counts
+    // Optimize: Get all data with counts in parallel
+    // Use single query for accounts with all relations to reduce round trips
+    let accountsWithRelationsQuery = supabase
+      .from("product_accounts")
+      .select(`
+        id,
+        status,
+        department_id,
+        application_id,
+        role_id,
+        product_departments:department_id(department_code, department_name),
+        product_applications:application_id(app_code, app_name),
+        product_roles:role_id(role_code, role_name)
+      `);
+    
+    // Apply same filters to accounts with relations query
+    if (hasSegmentData && allowedFilters) {
+      if (allowedFilters.applications.length === 0) {
+        accountsWithRelationsQuery = accountsWithRelationsQuery.in("application_id", ["00000000-0000-0000-0000-000000000000"]);
+      } else if (allowedFilters.applications.length > 0) {
+        accountsWithRelationsQuery = accountsWithRelationsQuery.in("application_id", allowedFilters.applications);
+      }
+      
+      if (allowedFilters.lines.length === 0) {
+        accountsWithRelationsQuery = accountsWithRelationsQuery.in("line_id", ["00000000-0000-0000-0000-000000000000"]);
+      } else if (allowedFilters.lines.length > 0) {
+        accountsWithRelationsQuery = accountsWithRelationsQuery.in("line_id", allowedFilters.lines);
+      }
+      
+      if (allowedFilters.departments.length === 0) {
+        accountsWithRelationsQuery = accountsWithRelationsQuery.in("department_id", ["00000000-0000-0000-0000-000000000000"]);
+      } else if (allowedFilters.departments.length > 0) {
+        accountsWithRelationsQuery = accountsWithRelationsQuery.in("department_id", allowedFilters.departments);
+      }
+    }
+
+    // Get all data in parallel - optimized queries
     const [
       accountsRes,
       activeAccountsRes,
@@ -190,64 +127,56 @@ export async function GET(request: NextRequest) {
       linesRes,
       departmentsRes,
       rolesRes,
-      accountsByDeptRes,
-      accountsByAppRes,
-      accountsByRoleRes,
+      accountsWithRelationsRes,
     ] = await Promise.all([
-      // Total accounts (filtered by products)
+      // Total accounts (count only)
       accountsQuery,
-      // Active accounts (filtered by products)
+      // Active accounts (count only)
       activeAccountsQuery,
-      // Total applications (only products)
-      supabase.from("applications").select("id", { count: "exact", head: true }).in("id", productApplicationIds),
-      // Total lines
-      supabase.from("lines").select("id", { count: "exact", head: true }),
-      // Total departments
-      supabase.from("departments").select("id", { count: "exact", head: true }),
-      // Total roles
-      supabase.from("roles").select("id", { count: "exact", head: true }),
-      // Accounts by department (filtered by products)
-      accountsByDeptQuery,
-      // Accounts by application (filtered by products)
-      accountsByAppQuery,
-      // Accounts by role (filtered by products)
-      accountsByRoleQuery,
+      // Total applications (count only)
+      supabase.from("product_applications").select("id", { count: "exact", head: true }),
+      // Total lines (count only)
+      supabase.from("product_lines").select("id", { count: "exact", head: true }),
+      // Total departments (count only)
+      supabase.from("product_departments").select("id", { count: "exact", head: true }),
+      // Total roles (count only)
+      supabase.from("product_roles").select("id", { count: "exact", head: true }),
+      // Accounts with all relations (single query for charts)
+      accountsWithRelationsQuery,
     ]);
 
     // Calculate inactive accounts
     const inactiveAccounts = (accountsRes.count || 0) - (activeAccountsRes.count || 0);
 
-    // Process accounts by department
+    // Process all chart data from single query result
     const deptGroups: any = {};
-    accountsByDeptRes.data?.forEach((acc: any) => {
-      if (acc.departments) {
-        const key = acc.departments.department_code;
+    const appGroups: any = {};
+    const roleGroups: any = {};
+    
+    accountsWithRelationsRes.data?.forEach((acc: any) => {
+      // Process by department
+      if (acc.product_departments) {
+        const key = acc.product_departments.department_code;
         deptGroups[key] = {
-          name: acc.departments.department_name,
+          name: acc.product_departments.department_name,
           count: (deptGroups[key]?.count || 0) + 1,
         };
       }
-    });
-
-    // Process accounts by application
-    const appGroups: any = {};
-    accountsByAppRes.data?.forEach((acc: any) => {
-      if (acc.applications) {
-        const key = acc.applications.app_code;
+      
+      // Process by application
+      if (acc.product_applications) {
+        const key = acc.product_applications.app_code;
         appGroups[key] = {
-          name: acc.applications.app_name,
+          name: acc.product_applications.app_name,
           count: (appGroups[key]?.count || 0) + 1,
         };
       }
-    });
-
-    // Process accounts by role
-    const roleGroups: any = {};
-    accountsByRoleRes.data?.forEach((acc: any) => {
-      if (acc.roles) {
-        const key = acc.roles.role_code;
+      
+      // Process by role
+      if (acc.product_roles) {
+        const key = acc.product_roles.role_code;
         roleGroups[key] = {
-          name: acc.roles.role_name,
+          name: acc.product_roles.role_name,
           count: (roleGroups[key]?.count || 0) + 1,
         };
       }
@@ -285,4 +214,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
-

@@ -5,6 +5,8 @@ import { Users, UserCheck, AppWindow, Layers, Building2, Shield, TrendingUp, Arr
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, PieChart, Pie, Cell, Legend } from "recharts";
 import { PermissionGuard } from "@/components/auth/permission-guard";
+import { useProductsDashboard } from "@/hooks/use-products-dashboard";
+import { DashboardSkeleton } from "@/components/ui/skeleton";
 
 const STATUS_COLORS = {
   Active: "#46C46E",
@@ -21,56 +23,89 @@ const CHART_COLORS = [
 ];
 
 const RADIAN = Math.PI / 180;
-const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, count }: any) => {
   const radius = outerRadius + 25;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
   return (
-    <text 
-      x={x} 
-      y={y} 
-      fill="currentColor" 
-      textAnchor={x > cx ? 'start' : 'end'} 
-      dominantBaseline="central" 
-      fontSize="14" 
-      fontWeight="600"
-      fontFamily="Poppins, sans-serif"
-      className="text-foreground"
-    >
-      {`${(percent * 100).toFixed(1)}%`}
-    </text>
+    <g>
+      <text 
+        x={x} 
+        y={y - 8} 
+        fill="hsl(var(--foreground))"
+        textAnchor={x > cx ? 'start' : 'end'} 
+        dominantBaseline="central" 
+        fontSize="14" 
+        fontWeight="600"
+        fontFamily="Inter, sans-serif"
+      >
+        {name}
+      </text>
+      <text 
+        x={x} 
+        y={y + 8} 
+        fill="hsl(var(--primary))"
+        textAnchor={x > cx ? 'start' : 'end'} 
+        dominantBaseline="central" 
+        fontSize="12" 
+        fontWeight="500"
+        fontFamily="Inter, sans-serif"
+      >
+        count : {count}
+      </text>
+    </g>
   );
 };
 
 export default function ProductsDashboardPage() {
-  // Empty data - no API calls
-  const loading = false;
-  const data = useMemo(() => {
-    return {
-      kpis: {
-        totalAccounts: 0,
-        activeAccounts: 0,
-        totalApplications: 0,
-        totalLines: 0,
-        totalDepartments: 0,
-        totalRoles: 0,
-      },
-      charts: {
-        accountsStatus: [] as Array<{ name: string; count: number }>,
-        accountsByDepartment: [] as Array<{ name: string; count: number }>,
-        accountsByApplication: [] as Array<{ name: string; count: number }>,
-        accountsByRole: [] as Array<{ name: string; count: number }>,
-      },
-    };
+  // Get operator ID from localStorage
+  const [operatorId, setOperatorId] = useState<string>();
+  
+  useEffect(() => {
+    // Use requestAnimationFrame for smoother initial load
+    requestAnimationFrame(() => {
+      const operatorStr = localStorage.getItem("operator");
+      if (operatorStr) {
+        const operator = JSON.parse(operatorStr);
+        setOperatorId(operator.id);
+      }
+    });
   }, []);
 
-  const kpiCards: Array<{
+  // Use React Query hook for automatic caching & refetching
+  const { data: rawData, isLoading: loading, error } = useProductsDashboard(operatorId);
+
+  // Transform data with memoization for performance
+  const data = useMemo(() => {
+    if (!rawData) {
+      return {
+        kpis: {
+          totalAccounts: 0,
+          activeAccounts: 0,
+          totalApplications: 0,
+          totalLines: 0,
+          totalDepartments: 0,
+          totalRoles: 0,
+        },
+        charts: {
+          accountsStatus: [] as Array<{ name: string; count: number }>,
+          accountsByDepartment: [] as Array<{ name: string; count: number }>,
+          accountsByApplication: [] as Array<{ name: string; count: number }>,
+          accountsByRole: [] as Array<{ name: string; count: number }>,
+        },
+      };
+    }
+    return rawData;
+  }, [rawData]);
+
+  // Memoize KPI cards to prevent unnecessary re-renders
+  const kpiCards = useMemo<Array<{
     title: string;
     value: number;
     icon: React.ComponentType<{ className?: string }>;
     trend: { value: number } | null;
-  }> = [
+  }>>(() => [
     {
       title: "Total Accounts",
       value: data.kpis.totalAccounts,
@@ -107,10 +142,32 @@ export default function ProductsDashboardPage() {
       icon: Shield,
       trend: null,
     },
-  ];
+  ], [data.kpis]);
+
+  if (loading) {
+    return (
+      <PermissionGuard menuName="Dashboard">
+        <DashboardSkeleton />
+      </PermissionGuard>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <PermissionGuard menuName="Dashboard">
+        <div className="space-y-6 p-1">
+          <div className="flex items-center justify-center h-[400px]">
+            <div className="text-center">
+              <p className="text-muted-foreground">Failed to load dashboard data</p>
+            </div>
+          </div>
+        </div>
+      </PermissionGuard>
+    );
+  }
 
   return (
-    <PermissionGuard menuName="dashboard">
+    <PermissionGuard menuName="Dashboard">
       <div className="space-y-6 p-1">
         {/* KPI Cards - Modern Grid Layout */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
@@ -171,11 +228,11 @@ export default function ProductsDashboardPage() {
                         data={data.charts.accountsStatus}
                         cx="50%"
                         cy="50%"
-                        labelLine={false}
+                        labelLine={{ stroke: 'hsl(var(--foreground))', strokeWidth: 2 }}
                         label={renderCustomizedLabel}
                         outerRadius={95}
                         innerRadius={60}
-                        fill="hsl(var(--primary))"
+                        fill="#8884d8"
                         dataKey="count"
                         paddingAngle={2}
                       >
@@ -183,32 +240,33 @@ export default function ProductsDashboardPage() {
                           <Cell 
                             key={`cell-${index}`} 
                             fill={STATUS_COLORS[entry.name as keyof typeof STATUS_COLORS]}
-                            strokeWidth={3}
-                            stroke="white"
+                            strokeWidth={2}
+                            stroke="hsl(var(--card))"
                           />
                         ))}
                       </Pie>
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px',
-                          fontFamily: 'Inter, sans-serif',
-                          color: 'hsl(var(--foreground))'
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#2D333B",
+                          border: "1px solid #22c55e",
+                          borderRadius: "8px",
+                          padding: "12px",
+                          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.3)",
                         }}
+                        itemStyle={{ color: "#FFFFFF", fontWeight: "bold" }}
                       />
                     </PieChart>
                   </ResponsiveContainer>
-                  <div className="flex justify-center gap-6 mt-4">
+                  {/* Legend - Raised Position */}
+                  <div className="grid grid-cols-2 gap-2 -mt-2">
                     {data.charts.accountsStatus.map((entry, index) => (
-                      <div key={index} className="flex items-center gap-2">
+                      <div key={index} className="flex items-center gap-2 bg-secondary/50 rounded-md px-3 py-2">
                         <div 
                           className="w-3 h-3 rounded-full" 
                           style={{ backgroundColor: STATUS_COLORS[entry.name as keyof typeof STATUS_COLORS] }}
                         />
-                        <span className="text-sm text-muted-foreground" style={{ fontFamily: 'Inter, sans-serif' }}>
-                          {entry.name}: {entry.count}
-                        </span>
+                        <span className="text-sm text-foreground font-medium">{entry.name}</span>
+                        <span className="ml-auto text-sm font-bold text-primary">{entry.count}</span>
                       </div>
                     ))}
                   </div>

@@ -3,98 +3,92 @@ import { supabase } from "@/lib/supabase";
 
 export async function GET(request: NextRequest) {
   try {
-    // Get all device data with counts
+    // Optimize: Use single query for devices with all relations to reduce round trips
+    const devicesWithRelationsQuery = supabase
+      .from("device_accounts")
+      .select(`
+        id,
+        status,
+        type_id,
+        brand_id,
+        user_use,
+        device_types:type_id(type_name),
+        device_brands:brand_id(brand_name)
+      `);
+
+    // Get all device data with counts in parallel - optimized queries
     const [
       devicesRes,
       activeDevicesRes,
       typesRes,
       brandsRes,
-      devicesByStatusRes,
-      devicesByTypeRes,
-      devicesByBrandRes,
-      devicesByUserUseRes,
+      devicesWithRelationsRes,
     ] = await Promise.all([
-      // Total devices
+      // Total devices (count only)
       supabase.from("device_accounts").select("id", { count: "exact", head: true }),
-      // Active devices
+      // Active devices (count only)
       supabase.from("device_accounts").select("id", { count: "exact", head: true }).eq("status", "active"),
-      // Total types
+      // Total types (count only)
       supabase.from("device_types").select("id", { count: "exact", head: true }),
-      // Total brands
+      // Total brands (count only)
       supabase.from("device_brands").select("id", { count: "exact", head: true }),
-      // Devices by status
-      supabase.from("device_accounts").select("status"),
-      // Devices by type
-      supabase.from("device_accounts").select(`
-        type_id,
-        device_types:type_id (
-          type_name
-        )
-      `),
-      // Devices by brand
-      supabase.from("device_accounts").select(`
-        brand_id,
-        device_brands:brand_id (
-          brand_name
-        )
-      `),
-      // Devices by user use
-      supabase.from("device_accounts").select("user_use").not("user_use", "is", null),
+      // Devices with all relations (single query for charts)
+      devicesWithRelationsQuery,
     ]);
 
     // Calculate inactive devices
     const inactiveDevices = (devicesRes.count || 0) - (activeDevicesRes.count || 0);
 
-    // Process devices by status
+    // Process all chart data from single query result
     const statusGroups: any = {};
-    devicesByStatusRes.data?.forEach((device: any) => {
+    const typeGroups: any = {};
+    const brandGroups: any = {};
+    const userUseGroups: any = {};
+    
+    devicesWithRelationsRes.data?.forEach((device: any) => {
+      // Process by status
       const status = device.status || "inactive";
       const key = status === "active" ? "Active" : "Inactive";
       statusGroups[key] = (statusGroups[key] || 0) + 1;
-    });
-    const devicesStatus = Object.entries(statusGroups).map(([name, count]) => ({
-      name,
-      count: count as number,
-    }));
-
-    // Process devices by type
-    const typeGroups: any = {};
-    devicesByTypeRes.data?.forEach((device: any) => {
+      
+      // Process by type
       if (device.device_types) {
         const typeName = device.device_types.type_name;
         typeGroups[typeName] = (typeGroups[typeName] || 0) + 1;
       }
+      
+      // Process by brand
+      if (device.device_brands) {
+        const brandName = device.device_brands.brand_name;
+        brandGroups[brandName] = (brandGroups[brandName] || 0) + 1;
+      }
+      
+      // Process by user use
+      if (device.user_use) {
+        const userUse = device.user_use;
+        userUseGroups[userUse] = (userUseGroups[userUse] || 0) + 1;
+      }
     });
+    
+    const devicesStatus = Object.entries(statusGroups).map(([name, count]) => ({
+      name,
+      count: count as number,
+    }));
+    
     const devicesByType = Object.entries(typeGroups)
       .map(([name, count]) => ({
         name,
         count: count as number,
       }))
       .sort((a, b) => b.count - a.count);
-
-    // Process devices by brand
-    const brandGroups: any = {};
-    devicesByBrandRes.data?.forEach((device: any) => {
-      if (device.device_brands) {
-        const brandName = device.device_brands.brand_name;
-        brandGroups[brandName] = (brandGroups[brandName] || 0) + 1;
-      }
-    });
+    
     const devicesByBrand = Object.entries(brandGroups)
       .map(([name, count]) => ({
         name,
         count: count as number,
       }))
       .sort((a, b) => b.count - a.count);
-
-    // Process devices by user use
-    const userUseGroups: any = {};
-    devicesByUserUseRes.data?.forEach((device: any) => {
-      if (device.user_use) {
-        const userUse = device.user_use;
-        userUseGroups[userUse] = (userUseGroups[userUse] || 0) + 1;
-      }
-    });
+    
     const devicesByUserUse = Object.entries(userUseGroups)
       .map(([name, count]) => ({
         name,

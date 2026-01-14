@@ -5,10 +5,12 @@ import { Smartphone, CheckCircle, Package, Tag, TrendingUp, ArrowUpRight } from 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, PieChart, Pie, Cell } from "recharts";
 import { PermissionGuard } from "@/components/auth/permission-guard";
+import { useDeviceDashboard } from "@/hooks/use-device-dashboard";
+import { DashboardSkeleton } from "@/components/ui/skeleton";
 
 const STATUS_COLORS = {
-  Active: "hsl(var(--primary))",
-  Inactive: "hsl(var(--muted-foreground))"
+  Active: "#22c55e",
+  Inactive: "#6b7280"
 };
 
 const CHART_COLORS = [
@@ -56,52 +58,53 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, nam
 };
 
 export default function DeviceManagementDashboardPage() {
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState({
-    kpis: {
-      totalDevices: 0,
-      activeDevices: 0,
-      totalTypes: 0,
-      totalBrands: 0,
-    },
-    charts: {
-      devicesStatus: [] as Array<{ name: string; count: number }>,
-      devicesByType: [] as Array<{ name: string; count: number }>,
-      devicesByBrand: [] as Array<{ name: string; count: number }>,
-      devicesByUserUse: [] as Array<{ name: string; count: number }>,
-    },
-  });
-
+  // Get operator ID from localStorage
+  const [operatorId, setOperatorId] = useState<string>();
+  
   useEffect(() => {
-    const fetchStats = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch("/api/device-management/dashboard/stats");
-        const json = await res.json();
-
-        if (res.ok) {
-          setData(json);
-        } else {
-          console.error("Failed to fetch stats:", json.error);
-        }
-      } catch (error) {
-        console.error("Error fetching stats:", error);
-      } finally {
-        setLoading(false);
+    // Use requestAnimationFrame for smoother initial load
+    requestAnimationFrame(() => {
+      const operatorStr = localStorage.getItem("operator");
+      if (operatorStr) {
+        const operator = JSON.parse(operatorStr);
+        setOperatorId(operator.id);
       }
-    };
-
-    fetchStats();
+    });
   }, []);
 
-  const kpiCards: Array<{
+  // Use React Query hook for automatic caching & refetching
+  const { data: rawData, isLoading: loading, error } = useDeviceDashboard(operatorId);
+
+  // Transform data with memoization for performance
+  const data = useMemo(() => {
+    if (!rawData) {
+      return {
+        kpis: {
+          totalDevices: 0,
+          activeDevices: 0,
+          totalTypes: 0,
+          totalBrands: 0,
+        },
+        charts: {
+          devicesStatus: [] as Array<{ name: string; count: number }>,
+          devicesByType: [] as Array<{ name: string; count: number }>,
+          devicesByBrand: [] as Array<{ name: string; count: number }>,
+          devicesByUserUse: [] as Array<{ name: string; count: number }>,
+        },
+      };
+    }
+    return rawData;
+  }, [rawData]);
+
+  // Memoize KPI cards to prevent unnecessary re-renders
+  const kpiCards = useMemo<Array<{
     title: string;
     value: number;
     icon: React.ComponentType<{ className?: string }>;
     color: string;
     bgColor: string;
     trend: { value: number } | null;
-  }> = [
+  }>>(() => [
     {
       title: "Total Devices",
       value: data.kpis.totalDevices,
@@ -134,10 +137,32 @@ export default function DeviceManagementDashboardPage() {
       bgColor: "bg-primary/5",
       trend: null,
     },
-  ];
+  ], [data.kpis]);
+
+  if (loading) {
+    return (
+      <PermissionGuard menuName="Dashboard">
+        <DashboardSkeleton />
+      </PermissionGuard>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <PermissionGuard menuName="Dashboard">
+        <div className="space-y-6 p-1">
+          <div className="flex items-center justify-center h-[400px]">
+            <div className="text-center">
+              <p className="text-muted-foreground">Failed to load dashboard data</p>
+            </div>
+          </div>
+        </div>
+      </PermissionGuard>
+    );
+  }
 
   return (
-    <PermissionGuard menuName="dashboard">
+    <PermissionGuard menuName="Dashboard">
       <div className="space-y-6 p-1">
         {/* KPI Cards - Modern Grid Layout */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -198,11 +223,11 @@ export default function DeviceManagementDashboardPage() {
                         data={data.charts.devicesStatus}
                         cx="50%"
                         cy="50%"
-                        labelLine={{ stroke: 'white', strokeWidth: 2 }}
+                        labelLine={{ stroke: 'hsl(var(--foreground))', strokeWidth: 2 }}
                         label={renderCustomizedLabel}
                         outerRadius={95}
                         innerRadius={60}
-                        fill="hsl(var(--primary))"
+                        fill="#8884d8"
                         dataKey="count"
                         paddingAngle={2}
                       >
@@ -210,31 +235,33 @@ export default function DeviceManagementDashboardPage() {
                           <Cell 
                             key={`cell-${index}`} 
                             fill={STATUS_COLORS[entry.name as keyof typeof STATUS_COLORS]}
-                            strokeWidth={3}
-                            stroke="white"
+                            strokeWidth={2}
+                            stroke="hsl(var(--card))"
                           />
                         ))}
                       </Pie>
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px',
-                          fontFamily: 'Inter, sans-serif'
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#2D333B",
+                          border: "1px solid #22c55e",
+                          borderRadius: "8px",
+                          padding: "12px",
+                          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.3)",
                         }}
+                        itemStyle={{ color: "#FFFFFF", fontWeight: "bold" }}
                       />
                     </PieChart>
                   </ResponsiveContainer>
-                  <div className="flex justify-center gap-6 mt-4">
+                  {/* Legend - Raised Position */}
+                  <div className="grid grid-cols-2 gap-2 -mt-2">
                     {data.charts.devicesStatus.map((entry, index) => (
-                      <div key={index} className="flex items-center gap-2">
+                      <div key={index} className="flex items-center gap-2 bg-secondary/50 rounded-md px-3 py-2">
                         <div 
                           className="w-3 h-3 rounded-full" 
                           style={{ backgroundColor: STATUS_COLORS[entry.name as keyof typeof STATUS_COLORS] }}
                         />
-                        <span className="text-sm text-muted-foreground" style={{ fontFamily: 'Inter, sans-serif' }}>
-                          {entry.name}: {entry.count}
-                        </span>
+                        <span className="text-sm text-foreground font-medium">{entry.name}</span>
+                        <span className="ml-auto text-sm font-bold text-primary">{entry.count}</span>
                       </div>
                     ))}
                   </div>

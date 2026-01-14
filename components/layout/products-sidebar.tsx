@@ -111,8 +111,12 @@ export function ProductsSidebar() {
   useEffect(() => {
     const settingsSubmenuPaths = settingsSubmenus.map(item => item.href);
     
-    if (settingsSubmenuPaths.some(path => pathname.startsWith(path))) {
+    // Only expand if we're actually on a settings submenu page
+    if (settingsSubmenuPaths.some(path => pathname === path || pathname.startsWith(path + "/"))) {
       setIsSettingsOpen(true);
+    } else if (pathname === "/products" || pathname === "/products/") {
+      // Close settings when on dashboard
+      setIsSettingsOpen(false);
     }
   }, [pathname]);
   
@@ -133,7 +137,11 @@ export function ProductsSidebar() {
             return null;
           }
           
-          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+          // For Dashboard, only match exact path or if it's the base path
+          // For other items, match exact path or paths starting with the href
+          const isActive = item.href === "/products" 
+            ? pathname === item.href || pathname === "/products/"
+            : pathname === item.href || pathname.startsWith(item.href + "/");
           const Icon = item.icon;
 
           return (
@@ -161,7 +169,7 @@ export function ProductsSidebar() {
               onClick={() => setIsSettingsOpen(!isSettingsOpen)}
               className={cn(
                 "flex w-full items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-                isSettingsOpen || visibleSettingsSubmenus.some(item => pathname.startsWith(item.href))
+                visibleSettingsSubmenus.some(item => pathname === item.href || pathname.startsWith(item.href + "/"))
                   ? "bg-primary text-primary-foreground"
                   : "text-foreground hover:bg-secondary hover:text-primary"
               )}

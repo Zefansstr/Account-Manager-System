@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { logActivity, getIpAddress, getUserAgent } from "@/lib/audit-logger";
 
 export async function GET() {
   try {
@@ -38,7 +39,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { code, name, description } = body;
+    const { code, name, description, userId } = body;
 
     const { data, error } = await supabase
       .from("product_roles")
@@ -47,6 +48,18 @@ export async function POST(request: Request) {
       .single();
 
     if (error) throw error;
+
+    // Log activity
+    await logActivity({
+      userId,
+      action: "CREATE",
+      tableName: "product_roles",
+      recordId: data.id,
+      newValue: { role_code: code, role_name: name },
+      ipAddress: getIpAddress(request),
+      userAgent: getUserAgent(request),
+    });
+
     return NextResponse.json({ data }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
