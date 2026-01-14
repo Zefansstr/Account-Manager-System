@@ -186,7 +186,7 @@ export default function DashboardPage() {
                       data={data.charts.accountsStatus}
                       cx="50%"
                       cy="50%"
-                      labelLine={false}
+                      labelLine={{ stroke: 'hsl(var(--foreground))', strokeWidth: 2 }}
                       label={renderCustomizedLabel}
                       outerRadius={95}
                       innerRadius={60}
