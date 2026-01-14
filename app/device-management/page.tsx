@@ -30,7 +30,7 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, nam
       <text 
         x={x} 
         y={y - 8} 
-        fill="white"
+        fill="hsl(var(--foreground))"
         textAnchor={x > cx ? 'start' : 'end'} 
         dominantBaseline="central" 
         fontSize="14" 
