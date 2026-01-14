@@ -124,7 +124,14 @@ export default function DeviceManagementAccountsPage() {
 
   useEffect(() => {
     fetchLookups();
-    fetchDevices();
+  }, []);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchDevices();
+    }, 300); // Debounce search
+
+    return () => clearTimeout(timeoutId);
   }, [page, searchQuery]);
 
   // Handle add device
