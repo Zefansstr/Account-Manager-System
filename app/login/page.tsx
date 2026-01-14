@@ -246,7 +246,9 @@ export default function LoginPage() {
               {/* Header with Logo */}
               <div className="text-center mb-8">
                 <div className="inline-flex items-center justify-center mb-4">
-                  <Logo width={64} height={64} />
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/70 shadow-lg shadow-primary/30 flex items-center justify-center">
+                    <Logo width={40} height={40} variant="white" />
+                  </div>
                 </div>
                 <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
                   Nex - Management
