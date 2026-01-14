@@ -57,10 +57,10 @@ export default function ProductsDashboardPage() {
         totalRoles: 0,
       },
       charts: {
-        accountsStatus: [],
-        accountsByDepartment: [],
-        accountsByApplication: [],
-        accountsByRole: [],
+        accountsStatus: [] as Array<{ name: string; count: number }>,
+        accountsByDepartment: [] as Array<{ name: string; count: number }>,
+        accountsByApplication: [] as Array<{ name: string; count: number }>,
+        accountsByRole: [] as Array<{ name: string; count: number }>,
       },
     };
   }, []);
