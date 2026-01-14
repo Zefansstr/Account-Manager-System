@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Eye, EyeOff, UserCog, Shield, ShieldCheck, Users, FileText, Settings, ArrowRight, Check, User, Lock, ArrowLeft, BarChart3, Sparkles, DollarSign, Gamepad2, LayoutDashboard, Package, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import LogoMark from "../../logo product/eficiency";
+import { Logo } from "@/components/ui/logo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -243,10 +243,10 @@ export default function LoginPage() {
           /* Login Form - Muncul Pertama Kali */
           <div className="w-full max-w-md mx-auto">
             <div className="backdrop-blur-md bg-white/5 border border-primary/30 rounded-3xl p-8 shadow-2xl shadow-primary/20 animate-[fadeIn_0.3s_ease-in-out] transition-all duration-300">
-              {/* Header with Icon */}
+              {/* Header with Logo */}
               <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/20 border border-primary/30 mb-4">
-                  <UserCog className="h-8 w-8 text-primary" strokeWidth={1.5} />
+                <div className="inline-flex items-center justify-center mb-4">
+                  <Logo width={64} height={64} />
                 </div>
                 <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
                   Nex - Management

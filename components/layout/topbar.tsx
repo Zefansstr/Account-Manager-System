@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { User, Shield, ArrowLeft, Sun, Moon } from "lucide-react";
+import { User, ArrowLeft, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/providers/theme-provider";
+import { Logo } from "@/components/ui/logo";
 
 export function Topbar() {
   const router = useRouter();
@@ -41,11 +42,9 @@ export function Topbar() {
     <header className="sticky top-0 z-50 w-full border-b border-border bg-card shadow-lg">
       <div className="flex h-16 items-center justify-between px-6">
         {/* Left: Logo/Title */}
-        <div className="flex items-center gap-2">
-          {/* Logo Icon - Small & Professional */}
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
-            <Shield className="h-5 w-5 text-primary" />
-          </div>
+        <div className="flex items-center gap-3">
+          {/* Logo */}
+          <Logo width={32} height={32} className="flex-shrink-0" />
           <h1 className="text-lg font-semibold text-foreground">
             {getModuleTitle()}
           </h1>
