@@ -43,8 +43,10 @@ export function Topbar() {
       <div className="flex h-16 items-center justify-between px-6">
         {/* Left: Logo/Title */}
         <div className="flex items-center gap-3">
-          {/* Logo */}
-          <Logo width={32} height={32} className="flex-shrink-0" />
+          {/* Logo with green circle background */}
+          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/70 shadow-md shadow-primary/30 flex-shrink-0">
+            <Logo width={20} height={20} />
+          </div>
           <h1 className="text-lg font-semibold text-foreground">
             {getModuleTitle()}
           </h1>
