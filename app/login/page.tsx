@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Eye, EyeOff, UserCog, Shield, ShieldCheck, Users, FileText, Settings, ArrowRight, Check, User, Lock, ArrowLeft, BarChart3, Sparkles, DollarSign, Gamepad2, LayoutDashboard, Package, Smartphone } from "lucide-react";
+import { Eye, EyeOff, UserCog, Shield, ShieldCheck, Users, FileText, Settings, ArrowRight, Check, User, Lock, ArrowLeft, BarChart3, Sparkles, DollarSign, Gamepad2, LayoutDashboard, Package, Smartphone, Laptop, Cog } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 
@@ -365,8 +365,8 @@ export default function LoginPage() {
                   
                   {/* Content */}
                   <div className="relative z-10">
-                    <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/70 mb-4 mx-auto group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-primary/30 p-3">
-                      <Logo width={40} height={40} />
+                    <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/70 mb-4 mx-auto group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-primary/30">
+                      <UserCog className="h-8 w-8 text-white" strokeWidth={1.5} />
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors">
                       Account Management
@@ -394,8 +394,8 @@ export default function LoginPage() {
                   
                   {/* Content */}
                   <div className="relative z-10">
-                    <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/70 mb-4 mx-auto group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-primary/30 p-3">
-                      <Logo width={40} height={40} />
+                    <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/70 mb-4 mx-auto group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-primary/30">
+                      <Package className="h-8 w-8 text-white" strokeWidth={1.5} />
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors">
                       Product Management
@@ -423,8 +423,8 @@ export default function LoginPage() {
                   
                   {/* Content */}
                   <div className="relative z-10">
-                    <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/70 mb-4 mx-auto group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-primary/30 p-3">
-                      <Logo width={40} height={40} />
+                    <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/70 mb-4 mx-auto group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-primary/30">
+                      <Laptop className="h-8 w-8 text-white" strokeWidth={1.5} />
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors">
                       Device Management
@@ -452,8 +452,8 @@ export default function LoginPage() {
                   
                   {/* Content */}
                   <div className="relative z-10">
-                    <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/70 mb-4 mx-auto group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-primary/30 p-3">
-                      <Logo width={40} height={40} />
+                    <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/70 mb-4 mx-auto group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-primary/30">
+                      <Cog className="h-8 w-8 text-white" strokeWidth={1.5} />
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors">
                       Operator Setting
