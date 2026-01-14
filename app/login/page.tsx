@@ -341,10 +341,10 @@ export default function LoginPage() {
           <div className="w-full max-w-6xl mx-auto">
             {/* Logo & Title */}
             <div className="text-center mb-12">
-              <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary/70 shadow-2xl shadow-primary/50 mb-6 relative">
-                <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" style={{ animationDuration: '3s' }} />
+              <div className="inline-flex items-center justify-center mb-6 relative">
+                <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" style={{ animationDuration: '3s', width: '96px', height: '96px', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
                 <div className="relative">
-                  <UserCog className="h-12 w-12 text-white" strokeWidth={1.5} />
+                  <Logo width={96} height={96} />
                 </div>
               </div>
               <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight">
@@ -365,8 +365,8 @@ export default function LoginPage() {
                   
                   {/* Content */}
                   <div className="relative z-10">
-                    <div className="flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-br from-primary to-primary/70 mb-4 mx-auto group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-primary/30">
-                      <UserCog className="h-8 w-8 text-white" strokeWidth={1.5} />
+                    <div className="flex items-center justify-center w-16 h-16 mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
+                      <Logo width={64} height={64} />
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors">
                       Account Management
@@ -394,8 +394,8 @@ export default function LoginPage() {
                   
                   {/* Content */}
                   <div className="relative z-10">
-                    <div className="flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-br from-primary to-primary/70 mb-4 mx-auto group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-primary/30">
-                      <Package className="h-8 w-8 text-white" strokeWidth={1.5} />
+                    <div className="flex items-center justify-center w-16 h-16 mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
+                      <Logo width={64} height={64} />
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors">
                       Product Management
@@ -423,8 +423,8 @@ export default function LoginPage() {
                   
                   {/* Content */}
                   <div className="relative z-10">
-                    <div className="flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-br from-primary to-primary/70 mb-4 mx-auto group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-primary/30">
-                      <Smartphone className="h-8 w-8 text-white" strokeWidth={1.5} />
+                    <div className="flex items-center justify-center w-16 h-16 mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
+                      <Logo width={64} height={64} />
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors">
                       Device Management
@@ -452,8 +452,8 @@ export default function LoginPage() {
                   
                   {/* Content */}
                   <div className="relative z-10">
-                    <div className="flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-br from-primary to-primary/70 mb-4 mx-auto group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-primary/30">
-                      <ShieldCheck className="h-8 w-8 text-white" strokeWidth={1.5} />
+                    <div className="flex items-center justify-center w-16 h-16 mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
+                      <Logo width={64} height={64} />
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors">
                       Operator Setting
