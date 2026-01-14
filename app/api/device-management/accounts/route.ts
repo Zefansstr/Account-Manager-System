@@ -35,7 +35,8 @@ export async function GET(request: NextRequest) {
 
     // Apply filters
     if (search) {
-      query = query.or(`code.ilike.%${search}%,item.ilike.%${search}%,note.ilike.%${search}%`);
+      // Search in code and user_use only
+      query = query.or(`code.ilike.%${search}%,user_use.ilike.%${search}%`);
     }
     if (typeId) {
       query = query.eq("type_id", typeId);

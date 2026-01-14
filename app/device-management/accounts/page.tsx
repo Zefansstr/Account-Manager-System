@@ -39,6 +39,8 @@ export default function DeviceManagementAccountsPage() {
   const [selected, setSelected] = useState<Device | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [filterBrand, setFilterBrand] = useState("");
   const [page, setPage] = useState(1);
   const [limit] = useState(20);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
@@ -104,6 +106,8 @@ export default function DeviceManagementAccountsPage() {
         limit: limit.toString(),
       });
       if (searchQuery) params.append("search", searchQuery);
+      if (filterType) params.append("typeId", filterType);
+      if (filterBrand) params.append("brandId", filterBrand);
 
       const res = await fetch(`/api/device-management/accounts?${params}`);
       const json = await res.json();
@@ -132,7 +136,7 @@ export default function DeviceManagementAccountsPage() {
     }, 300); // Debounce search
 
     return () => clearTimeout(timeoutId);
-  }, [page, searchQuery]);
+  }, [page, searchQuery, filterType, filterBrand]);
 
   // Handle add device
   const handleAdd = async () => {
@@ -185,12 +189,38 @@ export default function DeviceManagementAccountsPage() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="Search code, item, atau note..." 
+              placeholder="Search code or user use..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-64 pl-9" 
             />
           </div>
+          <select 
+            value={filterType}
+            onChange={(e) => {
+              setFilterType(e.target.value);
+              setPage(1); // Reset to first page when filter changes
+            }}
+            className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+          >
+            <option value="">All Types</option>
+            {types.map((type) => (
+              <option key={type.id} value={type.id}>{type.name}</option>
+            ))}
+          </select>
+          <select 
+            value={filterBrand}
+            onChange={(e) => {
+              setFilterBrand(e.target.value);
+              setPage(1); // Reset to first page when filter changes
+            }}
+            className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+          >
+            <option value="">All Brands</option>
+            {brands.map((brand) => (
+              <option key={brand.id} value={brand.id}>{brand.name}</option>
+            ))}
+          </select>
           <div className="text-sm text-muted-foreground ml-2">
             {pagination.total} total device{pagination.total !== 1 ? 's' : ''}
           </div>
