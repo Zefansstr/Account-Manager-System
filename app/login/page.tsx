@@ -304,8 +304,8 @@ export default function LoginPage() {
                 onClick={() => setShowLoginForm(true)}
                 className="px-8 py-4 bg-green-700 hover:bg-green-800 border border-green-600 rounded-lg text-white font-semibold shadow-lg shadow-green-700/30 transition-all duration-300 hover:shadow-xl hover:shadow-green-800/40 transform hover:scale-[1.05] active:scale-[0.95] flex items-center justify-center gap-2 mx-auto"
               >
-                <ArrowRight className="h-5 w-5" />
                 Sign In
+                <ArrowRight className="h-5 w-5" />
               </button>
             </div>
 
@@ -624,8 +624,8 @@ export default function LoginPage() {
                   </>
                 ) : (
                   <>
-                    <ArrowRight className="h-5 w-5" />
                     Sign In
+                    <ArrowRight className="h-5 w-5" />
                   </>
                 )}
               </button>
