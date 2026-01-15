@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
  
 // Image metadata
-export const alt = 'Account Management System'
+export const alt = 'NexGate'
 export const size = {
   width: 1200,
   height: 630,
@@ -75,7 +75,7 @@ export default async function OpenGraphImage() {
             marginBottom: 20,
           }}
         >
-          Account Management System
+          NexGate
         </div>
         
         {/* Description */}
