@@ -17,9 +17,12 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showProductsPage, setShowProductsPage] = useState(false);
+  const [showLoginForm, setShowLoginForm] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
-  // Check if already logged in on mount
+  // Check if already logged in on mount (client-side only)
   useEffect(() => {
+    setIsMounted(true);
     const operatorStr = localStorage.getItem("operator");
     if (operatorStr) {
       setIsLoggedIn(true);
@@ -43,10 +46,15 @@ export default function LoginPage() {
       if (res.ok && data.success) {
         localStorage.setItem("operator", JSON.stringify(data.operator));
         localStorage.setItem("permissions", JSON.stringify(data.permissions));
-        setIsLoggedIn(true);
         setError("");
         setUsername("");
         setPassword("");
+        // Close login form with fade out effect
+        setShowLoginForm(false);
+        // Add delay to show landing page with fade in effect (same as Explore More)
+        setTimeout(() => {
+          setIsLoggedIn(true);
+        }, 300);
       } else {
         setError(data.error || "Invalid credentials");
       }
@@ -87,11 +95,6 @@ export default function LoginPage() {
       icon: Users,
       title: "Account Management",
       description: "Intuitive dashboard",
-    },
-    {
-      icon: FileText,
-      title: "Audit Logs",
-      description: "Complete activity tracking",
     },
     {
       icon: Settings,
@@ -138,21 +141,24 @@ export default function LoginPage() {
   ];
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div 
+      className="relative min-h-screen overflow-y-auto overflow-x-hidden hide-scrollbar"
+      data-login-page
+    >
       {/* Background Image */}
       <div className="absolute inset-0">
         <Image
-          src="/background-2.jpg"
+          src="/pexels-catiamatos-1072179.jpg"
           alt="Background"
           fill
-          className="object-cover"
+          className="object-cover object-center"
           priority
           quality={90}
         />
         {/* Dark overlay for better text readability */}
-        <div className="absolute inset-0 bg-black/40 dark:bg-black/60" />
+        <div className="absolute inset-0 bg-black/20 dark:bg-black/40" />
         {/* Gradient overlay for depth */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/40" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/20" />
       </div>
 
       {/* Decorative Elements */}
@@ -160,24 +166,47 @@ export default function LoginPage() {
       <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-primary/5 rounded-full blur-3xl opacity-50" />
 
       {/* Hero Section */}
-      <section className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 py-20">
+      <section
+        className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 pb-20 pt-0"
+        style={{ 
+          visibility: isMounted ? 'visible' : 'hidden',
+          opacity: isMounted ? 1 : 0,
+          transition: isMounted ? 'opacity 0.2s ease-in' : 'none'
+        }}
+      >
         {showProductsPage && isLoggedIn ? (
           /* Products Page */
-          <div className="w-full max-w-6xl mx-auto animate-fadeInUp">
+          <div className="w-full max-w-6xl mx-auto" style={{ 
+            animation: 'slideInFromLeft 0.5s ease-out forwards',
+            opacity: 0,
+            transform: 'translateX(-100px)'
+          }}>
             {/* Back Button */}
             <button
               onClick={() => {
                 setShowProductsPage(false);
               }}
-              className="mb-6 flex items-center gap-2 text-gray-400 hover:text-white transition-colors group animate-fadeInUp"
-              style={{ animationDelay: '0.1s', opacity: 0, animationFillMode: 'forwards' }}
+              className="mb-6 flex items-center gap-2 text-gray-400 hover:text-white transition-colors group"
+              style={{ 
+                animation: 'slideInFromLeft 0.5s ease-out 0.1s forwards',
+                opacity: 0,
+                transform: 'translateX(-100px)'
+              }}
             >
               <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
               <span className="text-sm">Back to Home</span>
             </button>
 
-            <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl animate-fadeInUp transition-all duration-300" style={{ animationDelay: '0.2s', opacity: 0, animationFillMode: 'forwards' }}>
-              <div className="text-center mb-8 animate-fadeInUp" style={{ animationDelay: '0.3s', opacity: 0, animationFillMode: 'forwards' }}>
+            <div className="backdrop-blur-lg bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl transition-all duration-300" style={{ 
+              animation: 'slideInFromLeft 0.5s ease-out 0.2s forwards',
+              opacity: 0,
+              transform: 'translateX(-100px)'
+            }}>
+              <div className="text-center mb-8" style={{ 
+                animation: 'slideInFromLeft 0.5s ease-out 0.3s forwards',
+                opacity: 0,
+                transform: 'translateX(-100px)'
+              }}>
                 <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
                   Our Products
                 </h2>
@@ -195,25 +224,37 @@ export default function LoginPage() {
                       href={product.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="group flex items-center gap-3 hover:opacity-80 transition-opacity whitespace-nowrap flex-shrink-0 animate-fadeInUp"
-                      style={{ animationDelay: `${0.4 + index * 0.1}s`, opacity: 0, animationFillMode: 'forwards' }}
+                      className="group flex items-center gap-3 transition-all duration-300 whitespace-nowrap flex-shrink-0"
+                      style={{ 
+                        animation: `slideInFromLeft 0.5s ease-out ${0.4 + index * 0.1}s forwards`,
+                        opacity: 0,
+                        transform: 'translateX(-100px)'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (e.currentTarget.style.animation.includes('forwards')) {
+                          e.currentTarget.style.transform = 'scale(1.1)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = '';
+                      }}
                     >
                       {product.customLogo && product.name === "nexplan" ? (
-                        <div className="flex items-center gap-0">
+                        <div className="flex items-center gap-0 group-hover:scale-110 transition-transform duration-300">
                           <span className="text-4xl font-bold text-orange-500 -translate-y-1">_</span>
                           <span className="text-2xl font-semibold text-white">
                             {product.name}
                           </span>
                         </div>
                       ) : product.customComponent && product.name === "Efficiency Insight Dashboard" ? (
-                        <div className="flex items-center gap-3 whitespace-nowrap">
+                        <div className="flex items-center gap-3 whitespace-nowrap group-hover:scale-110 transition-transform duration-300">
                           <LogoMark sizeClass="w-10 h-10" />
                           <span className="text-base font-semibold text-white">
                             {product.name}
                           </span>
                         </div>
                       ) : (
-                        <>
+                        <div className="flex items-center gap-3 group-hover:scale-110 transition-transform duration-300">
                           <div className="h-10 flex items-center justify-center">
                             {product.logo ? (
                               <Image
@@ -232,7 +273,7 @@ export default function LoginPage() {
                           <span className="text-base font-semibold text-white">
                             {product.name}
                           </span>
-                        </>
+                        </div>
                       )}
                     </a>
                   );
@@ -241,104 +282,7 @@ export default function LoginPage() {
             </div>
           </div>
         ) : !isLoggedIn ? (
-          /* Login Form - Muncul Pertama Kali */
-          <div className="w-full max-w-md mx-auto">
-            <div className="backdrop-blur-md bg-white/5 border border-primary/30 rounded-3xl p-8 shadow-2xl shadow-primary/20 animate-[fadeIn_0.3s_ease-in-out] transition-all duration-300">
-              {/* Header with Logo */}
-              <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center mb-4">
-                  <Logo width={96} height={96} variant="green" />
-                </div>
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
-                  Nex - Management
-                </h2>
-                <p className="text-gray-400 text-sm">
-                  Sign In To Access All Management System
-                </p>
-              </div>
-
-              <form onSubmit={handleLogin} className="space-y-5" autoComplete="off" data-form-type="other">
-                {/* Username Field */}
-                <div>
-                  <label className="flex items-center gap-2 text-white mb-2 text-sm font-medium">
-                    <User className="h-4 w-4" />
-                    Username
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Enter your username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full px-4 py-3 backdrop-blur-md bg-[#0a0e27]/80 border border-primary/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300"
-                    required
-                    autoComplete="off"
-                    name="user-identifier"
-                    data-lpignore="true"
-                  />
-                </div>
-
-                {/* Password Field */}
-                <div>
-                  <label className="flex items-center gap-2 text-white mb-2 text-sm font-medium">
-                    <Lock className="h-4 w-4" />
-                    Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-4 py-3 backdrop-blur-md bg-[#0a0e27]/80 border border-primary/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 pr-12"
-                      required
-                      autoComplete="off"
-                      name="user-secret"
-                      data-lpignore="true"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-5 w-5" />
-                      ) : (
-                        <Eye className="h-5 w-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Error Message */}
-                {error && (
-                  <div className="backdrop-blur-md bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm">
-                    {error}
-                  </div>
-                )}
-
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3 bg-primary border border-primary/30 rounded-lg text-white font-semibold shadow-lg shadow-primary/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary/40 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
-                >
-                  {loading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Signing in...
-                    </>
-                  ) : (
-                    <>
-                      <ArrowRight className="h-5 w-5" />
-                      Sign In
-                    </>
-                  )}
-                </button>
-              </form>
-            </div>
-          </div>
-        ) : (
-          /* Landing Page Content - Sama Persis dengan Sebelumnya */
+          /* Landing Page dengan Button Sign In */
           <div className="w-full max-w-6xl mx-auto">
             {/* Logo & Title */}
             <div className="text-center mb-12">
@@ -349,8 +293,66 @@ export default function LoginPage() {
                 </div>
               </div>
               <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight">
-                Account Management System
+                NexGate
               </h1>
+              <p className="text-gray-400 text-lg mb-8">
+                Sign In To Access All Management System
+              </p>
+              
+              {/* Sign In Button */}
+              <button
+                onClick={() => setShowLoginForm(true)}
+                className="px-8 py-4 bg-green-700 hover:bg-green-800 border border-green-600 rounded-lg text-white font-semibold shadow-lg shadow-green-700/30 transition-all duration-300 hover:shadow-xl hover:shadow-green-800/40 transform hover:scale-[1.05] active:scale-[0.95] flex items-center justify-center gap-2 mx-auto"
+              >
+                <ArrowRight className="h-5 w-5" />
+                Sign In
+              </button>
+            </div>
+
+            {/* Features Grid */}
+            <div className="w-full mx-auto px-8" style={{ maxWidth: '1400px' }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                {features.map((feature, index) => {
+                  const Icon = feature.icon;
+                  return (
+                    <div
+                      key={index}
+                      className="group backdrop-blur-md bg-white/5 border border-white/10 rounded-xl p-7 hover:bg-white/10 hover:border-primary/50 transition-all duration-300 transform hover:-translate-y-1 flex items-start gap-5"
+                    >
+                      <div className="w-16 h-16 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/30 transition-colors">
+                        <Icon className="h-8 w-8 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-semibold text-white mb-2 leading-tight">
+                          {feature.title}
+                        </h3>
+                        <p className="text-sm text-gray-400 leading-relaxed">
+                          {feature.description}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Landing Page Content - Sama Persis dengan Sebelumnya */
+          <div className="relative w-full max-w-6xl mx-auto">
+            {/* Title */}
+            <div 
+              className="text-center mb-12"
+              style={{ 
+                animation: 'fadeInUp 0.6s ease-out 0s forwards',
+                opacity: 0
+              }}
+            >
+              <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight">
+                Choose Your Module
+              </h1>
+              <p className="text-gray-400 text-lg">
+                Select a module to get started
+              </p>
             </div>
 
             {/* Sign In, Products & Device Management Buttons - Unified Color Design */}
@@ -360,9 +362,11 @@ export default function LoginPage() {
                 <button
                   onClick={() => handleSelectModule("dashboard")}
                   className="group relative overflow-hidden backdrop-blur-md bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl transition-all duration-300 hover:bg-white/10 hover:border-primary/50 hover:-translate-y-2 transform"
+                  style={{ 
+                    animation: 'fadeInUp 0.6s ease-out 0.1s forwards',
+                    opacity: 0
+                  }}
                 >
-                  {/* Glow Effect on Hover */}
-                  <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
                   
                   {/* Content */}
                   <div className="relative z-10">
@@ -389,9 +393,11 @@ export default function LoginPage() {
                 <button
                   onClick={() => handleSelectModule("products")}
                   className="group relative overflow-hidden backdrop-blur-md bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl transition-all duration-300 hover:bg-white/10 hover:border-primary/50 hover:-translate-y-2 transform"
+                  style={{ 
+                    animation: 'fadeInUp 0.6s ease-out 0.2s forwards',
+                    opacity: 0
+                  }}
                 >
-                  {/* Glow Effect on Hover */}
-                  <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
                   
                   {/* Content */}
                   <div className="relative z-10">
@@ -418,9 +424,11 @@ export default function LoginPage() {
                 <button
                   onClick={() => handleSelectModule("asset-management")}
                   className="group relative overflow-hidden backdrop-blur-md bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl transition-all duration-300 hover:bg-white/10 hover:border-primary/50 hover:-translate-y-2 transform"
+                  style={{ 
+                    animation: 'fadeInUp 0.6s ease-out 0.3s forwards',
+                    opacity: 0
+                  }}
                 >
-                  {/* Glow Effect on Hover */}
-                  <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
                   
                   {/* Content */}
                   <div className="relative z-10">
@@ -447,9 +455,11 @@ export default function LoginPage() {
                 <button
                   onClick={() => handleSelectModule("operators")}
                   className="group relative overflow-hidden backdrop-blur-md bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl transition-all duration-300 hover:bg-white/10 hover:border-primary/50 hover:-translate-y-2 transform"
+                  style={{ 
+                    animation: 'fadeInUp 0.6s ease-out 0.4s forwards',
+                    opacity: 0
+                  }}
                 >
-                  {/* Glow Effect on Hover */}
-                  <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
                   
                   {/* Content */}
                   <div className="relative z-10">
@@ -474,40 +484,14 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Features Grid - Below Sign In Button */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
-              {features.map((feature, index) => {
-                const Icon = feature.icon;
-                return (
-                  <div
-                    key={index}
-                    className="group backdrop-blur-md bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 hover:border-primary/50 transition-all duration-300 transform hover:-translate-y-1 flex items-center gap-4"
-                  >
-                    <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/30 transition-colors">
-                      <Icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-base font-semibold text-white mb-1">
-                        {feature.title}
-                      </h3>
-                      <p className="text-xs text-gray-400 leading-tight">
-                        {feature.description}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Explore More & Logout Buttons - Side by Side */}
-            <div className="text-center mb-4 flex items-center justify-center gap-4">
-              <button
-                onClick={() => setShowProductsPage(true)}
-                className="px-8 py-4 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold rounded-full shadow-lg transition-all duration-300 hover:shadow-xl transform hover:scale-[1.05] active:scale-[0.95] flex items-center justify-center gap-2 min-w-[180px]"
-              >
-                Explore More
-                <ArrowRight className="h-5 w-5" />
-              </button>
+            {/* Explore More & Logout Buttons - Below 4 Buttons */}
+            <div 
+              className="text-center mt-8 flex items-center justify-center gap-4"
+              style={{ 
+                animation: 'fadeInUp 0.6s ease-out 0.5s forwards',
+                opacity: 0
+              }}
+            >
               <button
                 onClick={() => {
                   localStorage.removeItem("operator");
@@ -516,7 +500,14 @@ export default function LoginPage() {
                 }}
                 className="px-8 py-4 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-white font-semibold rounded-full shadow-lg shadow-red-500/20 transition-all duration-300 hover:shadow-xl hover:shadow-red-500/30 transform hover:scale-[1.05] active:scale-[0.95] flex items-center justify-center gap-2 min-w-[180px]"
               >
+                <ArrowLeft className="h-5 w-5" />
                 Logout
+              </button>
+              <button
+                onClick={() => setShowProductsPage(true)}
+                className="px-8 py-4 backdrop-blur-md bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold rounded-full shadow-lg transition-all duration-300 hover:shadow-xl transform hover:scale-[1.05] active:scale-[0.95] flex items-center justify-center gap-2 min-w-[180px]"
+              >
+                Explore More
                 <ArrowRight className="h-5 w-5" />
               </button>
             </div>
@@ -524,13 +515,132 @@ export default function LoginPage() {
         )}
       </section>
 
+      {/* Login Modal Popup */}
+      {showLoginForm && !isLoggedIn && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => {
+              setShowLoginForm(false);
+              setError("");
+            }}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative w-full max-w-md backdrop-blur-md bg-white/5 border border-primary/30 rounded-3xl p-8 shadow-2xl shadow-primary/20 animate-[fadeIn_0.3s_ease-in-out]">
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                setShowLoginForm(false);
+                setError("");
+              }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Header with Logo */}
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center mb-4">
+                <Logo width={96} height={96} variant="green" />
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
+                Welcome Back!
+              </h2>
+            </div>
+
+            <form onSubmit={handleLogin} className="space-y-5" autoComplete="off" data-form-type="other">
+              {/* Username Field */}
+              <div>
+                <label className="flex items-center gap-2 text-white mb-2 text-sm font-medium">
+                  <User className="h-4 w-4" />
+                  Username
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter your username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full px-4 py-3 backdrop-blur-md bg-white/5 border border-primary/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300"
+                  required
+                  autoComplete="off"
+                  name="user-identifier"
+                  data-lpignore="true"
+                />
+              </div>
+
+              {/* Password Field */}
+              <div>
+                <label className="flex items-center gap-2 text-white mb-2 text-sm font-medium">
+                  <Lock className="h-4 w-4" />
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-4 py-3 backdrop-blur-md bg-white/5 border border-primary/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 pr-12"
+                    required
+                    autoComplete="off"
+                    name="user-secret"
+                    data-lpignore="true"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Error Message */}
+              {error && (
+                <div className="backdrop-blur-md bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-green-700 hover:bg-green-800 border border-green-600 rounded-lg text-white font-semibold shadow-lg shadow-green-700/30 transition-all duration-300 hover:shadow-xl hover:shadow-green-800/40 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  <>
+                    <ArrowRight className="h-5 w-5" />
+                    Sign In
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Footer */}
       {!showProductsPage && (
         <footer className="relative z-10 border-t border-white/10 py-4 -mt-8">
           <div className="max-w-6xl mx-auto px-6">
             <div className="text-center">
               <p className="text-sm text-gray-500">
-                © 2025 Account Management System. All rights reserved.
+                © 2025 NexGate. All rights reserved.
               </p>
             </div>
           </div>
@@ -539,4 +649,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
