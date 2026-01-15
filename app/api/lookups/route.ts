@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const module = searchParams.get("module") || "account-management"; // account-management, product-management, device-management
+    const module = searchParams.get("module") || "account-management"; // account-management, product-management, asset-management
 
     // Determine which tables to query based on module
     let applicationsTable = "applications";
@@ -19,15 +19,15 @@ export async function GET(request: NextRequest) {
       linesTable = "product_lines";
       departmentsTable = "product_departments";
       rolesTable = "product_roles";
-    } else if (module === "device-management") {
-      applicationsTable = "device_types";
-      linesTable = "device_brands";
-      // Device management doesn't have departments/roles
+    } else if (module === "asset-management") {
+      applicationsTable = "asset_types";
+      linesTable = "asset_brands";
+      // Asset management doesn't have departments/roles
     }
 
     // Fetch all lookups in parallel
     const [applicationsRes, linesRes, departmentsRes, rolesRes] = await Promise.all([
-      module === "device-management"
+      module === "asset-management"
         ? supabase
             .from(applicationsTable)
             .select("id, type_code, type_name")
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
             .select("id, app_code, app_name")
             .order("created_at", { ascending: false })
             .limit(500),
-      module === "device-management"
+      module === "asset-management"
         ? supabase
             .from(linesTable)
             .select("id, brand_code, brand_name")
@@ -49,14 +49,14 @@ export async function GET(request: NextRequest) {
             .select("id, line_code, line_name")
             .order("created_at", { ascending: false })
             .limit(500),
-      module !== "device-management" 
+      module !== "asset-management" 
         ? supabase
             .from(departmentsTable)
             .select("id, department_code, department_name")
             .order("created_at", { ascending: false })
             .limit(500)
         : Promise.resolve({ data: [], error: null }),
-      module !== "device-management"
+      module !== "asset-management"
         ? supabase
             .from(rolesTable)
             .select("id, role_code, role_name")

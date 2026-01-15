@@ -5,7 +5,7 @@ import { logActivity, getIpAddress, getUserAgent } from "@/lib/audit-logger";
 export async function GET() {
   try {
     const { data, error } = await supabase
-      .from("device_brands")
+      .from("asset_brands")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(200);
@@ -16,7 +16,7 @@ export async function GET() {
     const transformed = await Promise.all(
       (data || []).map(async (brand: any) => {
         const { count } = await supabase
-          .from("device_accounts")
+          .from("asset_accounts")
           .select("*", { count: "exact", head: true })
           .eq("brand_id", brand.id);
         
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     const { code, name, description, userId } = body;
 
     const { data, error } = await supabase
-      .from("device_brands")
+      .from("asset_brands")
       .insert([{ brand_code: code, brand_name: name, description: description || null }])
       .select()
       .single();
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     await logActivity({
       userId,
       action: "CREATE",
-      tableName: "device_brands",
+      tableName: "asset_brands",
       recordId: data.id,
       newValue: { brand_code: code, brand_name: name },
       ipAddress: getIpAddress(request),

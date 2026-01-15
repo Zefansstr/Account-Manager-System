@@ -9,10 +9,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const { code, name, description, userId } = body;
 
     // Get old value
-    const { data: oldData } = await supabase.from("device_brands").select("*").eq("id", id).single();
+    const { data: oldData } = await supabase.from("asset_brands").select("*").eq("id", id).single();
 
     const { data, error } = await supabase
-      .from("device_brands")
+      .from("asset_brands")
       .update({ brand_code: code, brand_name: name, description: description || null, updated_at: new Date().toISOString() })
       .eq("id", id)
       .select()
@@ -24,7 +24,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     await logActivity({
       userId,
       action: "UPDATE",
-      tableName: "device_brands",
+      tableName: "asset_brands",
       recordId: id,
       oldValue: { brand_code: oldData?.brand_code, brand_name: oldData?.brand_name },
       newValue: { brand_code: code, brand_name: name },
@@ -45,16 +45,16 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     const { userId } = body;
 
     // Get data before delete
-    const { data: oldData } = await supabase.from("device_brands").select("*").eq("id", id).single();
+    const { data: oldData } = await supabase.from("asset_brands").select("*").eq("id", id).single();
 
-    const { error } = await supabase.from("device_brands").delete().eq("id", id);
+    const { error } = await supabase.from("asset_brands").delete().eq("id", id);
     if (error) throw error;
 
     // Log activity
     await logActivity({
       userId,
       action: "DELETE",
-      tableName: "device_brands",
+      tableName: "asset_brands",
       recordId: id,
       oldValue: { brand_code: oldData?.brand_code, brand_name: oldData?.brand_name },
       ipAddress: getIpAddress(request),

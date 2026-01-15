@@ -5,7 +5,7 @@ import { Smartphone, CheckCircle, Package, Tag, TrendingUp, ArrowUpRight } from 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, PieChart, Pie, Cell } from "recharts";
 import { PermissionGuard } from "@/components/auth/permission-guard";
-import { useDeviceDashboard } from "@/hooks/use-device-dashboard";
+import { useAssetDashboard } from "@/hooks/use-asset-dashboard";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
 
 const STATUS_COLORS = {
@@ -57,7 +57,7 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, nam
   );
 };
 
-export default function DeviceManagementDashboardPage() {
+export default function AssetManagementDashboardPage() {
   // Get operator ID from localStorage
   const [operatorId, setOperatorId] = useState<string>();
   
@@ -73,23 +73,23 @@ export default function DeviceManagementDashboardPage() {
   }, []);
 
   // Use React Query hook for automatic caching & refetching
-  const { data: rawData, isLoading: loading, error } = useDeviceDashboard(operatorId);
+  const { data: rawData, isLoading: loading, error } = useAssetDashboard(operatorId);
 
   // Transform data with memoization for performance
   const data = useMemo(() => {
     if (!rawData) {
       return {
         kpis: {
-          totalDevices: 0,
-          activeDevices: 0,
+          totalAssets: 0,
+          activeAssets: 0,
           totalTypes: 0,
           totalBrands: 0,
         },
         charts: {
-          devicesStatus: [] as Array<{ name: string; count: number }>,
-          devicesByType: [] as Array<{ name: string; count: number }>,
-          devicesByBrand: [] as Array<{ name: string; count: number }>,
-          devicesByUserUse: [] as Array<{ name: string; count: number }>,
+          assetsStatus: [] as Array<{ name: string; count: number }>,
+          assetsByType: [] as Array<{ name: string; count: number }>,
+          assetsByBrand: [] as Array<{ name: string; count: number }>,
+          assetsByUserUse: [] as Array<{ name: string; count: number }>,
         },
       };
     }
@@ -106,16 +106,16 @@ export default function DeviceManagementDashboardPage() {
     trend: { value: number } | null;
   }>>(() => [
     {
-      title: "Total Devices",
-      value: data.kpis.totalDevices,
+      title: "Total Assets",
+      value: data.kpis.totalAssets,
       icon: Smartphone,
       color: "text-primary",
       bgColor: "bg-primary/5",
       trend: null,
     },
     {
-      title: "Active Devices",
-      value: data.kpis.activeDevices,
+      title: "Active Assets",
+      value: data.kpis.activeAssets,
       icon: CheckCircle,
       color: "text-primary",
       bgColor: "bg-primary/5",
@@ -211,16 +211,16 @@ export default function DeviceManagementDashboardPage() {
                 <div className="p-2 bg-primary/5 rounded-lg">
                   <CheckCircle className="h-5 w-5 text-primary" />
                 </div>
-                Active vs Inactive Devices
+                Active vs Inactive Assets
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6 px-6 pb-6">
-              {data.charts.devicesStatus.length > 0 ? (
+              {data.charts.assetsStatus.length > 0 ? (
                 <div className="space-y-2">
                   <ResponsiveContainer width="100%" height={280}>
                     <PieChart>
                       <Pie
-                        data={data.charts.devicesStatus}
+                        data={data.charts.assetsStatus}
                         cx="50%"
                         cy="50%"
                         labelLine={{ stroke: 'hsl(var(--foreground))', strokeWidth: 2 }}
@@ -231,7 +231,7 @@ export default function DeviceManagementDashboardPage() {
                         dataKey="count"
                         paddingAngle={2}
                       >
-                        {data.charts.devicesStatus.map((entry, index) => (
+                        {data.charts.assetsStatus.map((entry, index) => (
                           <Cell 
                             key={`cell-${index}`} 
                             fill={STATUS_COLORS[entry.name as keyof typeof STATUS_COLORS]}
@@ -254,7 +254,7 @@ export default function DeviceManagementDashboardPage() {
                   </ResponsiveContainer>
                   {/* Legend - Raised Position */}
                   <div className="grid grid-cols-2 gap-2 -mt-2">
-                    {data.charts.devicesStatus.map((entry, index) => (
+                    {data.charts.assetsStatus.map((entry, index) => (
                       <div key={index} className="flex items-center gap-2 bg-secondary/50 rounded-md px-3 py-2">
                         <div 
                           className="w-3 h-3 rounded-full" 
@@ -291,9 +291,9 @@ export default function DeviceManagementDashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6 px-6 pb-6">
-              {data.charts.devicesByType.length > 0 ? (
+              {data.charts.assetsByType.length > 0 ? (
                 <ResponsiveContainer width="100%" height={320}>
-                  <BarChart data={data.charts.devicesByType}>
+                  <BarChart data={data.charts.assetsByType}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis 
                       dataKey="name" 
@@ -350,9 +350,9 @@ export default function DeviceManagementDashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6 px-6 pb-6">
-              {data.charts.devicesByBrand.length > 0 ? (
+              {data.charts.assetsByBrand.length > 0 ? (
                 <ResponsiveContainer width="100%" height={320}>
-                  <BarChart data={data.charts.devicesByBrand}>
+                  <BarChart data={data.charts.assetsByBrand}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis 
                       dataKey="name" 
@@ -406,9 +406,9 @@ export default function DeviceManagementDashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6 px-6 pb-6">
-              {data.charts.devicesByUserUse.length > 0 ? (
+              {data.charts.assetsByUserUse.length > 0 ? (
                 <ResponsiveContainer width="100%" height={320}>
-                  <BarChart data={data.charts.devicesByUserUse}>
+                  <BarChart data={data.charts.assetsByUserUse}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis 
                       dataKey="name" 

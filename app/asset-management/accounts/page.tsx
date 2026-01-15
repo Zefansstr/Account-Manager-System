@@ -28,7 +28,7 @@ type Device = {
 
 type LookupData = { id: string; code: string; name: string }[];
 
-export default function DeviceManagementAccountsPage() {
+export default function AssetManagementAccountsPage() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(false);
   const [types, setTypes] = useState<LookupData>([]);
@@ -87,7 +87,7 @@ export default function DeviceManagementAccountsPage() {
   const fetchLookups = async () => {
     try {
       // Use combined lookup endpoint to reduce API calls from 2 to 1
-      const res = await fetch("/api/lookups?module=device-management");
+      const res = await fetch("/api/lookups?module=asset-management");
       const json = await res.json();
       setTypes(json.data?.applications || []); // Applications = Types for device management
       setBrands(json.data?.lines || []); // Lines = Brands for device management
@@ -109,7 +109,7 @@ export default function DeviceManagementAccountsPage() {
       if (filterType) params.append("typeId", filterType);
       if (filterBrand) params.append("brandId", filterBrand);
 
-      const res = await fetch(`/api/device-management/accounts?${params}`);
+      const res = await fetch(`/api/asset-management/accounts?${params}`);
       const json = await res.json();
 
       if (res.ok) {
@@ -149,7 +149,7 @@ export default function DeviceManagementAccountsPage() {
       const operatorStr = localStorage.getItem("operator");
       const userId = operatorStr ? JSON.parse(operatorStr).id : null;
 
-      const res = await fetch("/api/device-management/accounts", {
+      const res = await fetch("/api/asset-management/accounts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

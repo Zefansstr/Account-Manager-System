@@ -218,9 +218,9 @@ export default function OperatorRolesPage() {
   const [productDepartments, setProductDepartments] = useState<any[]>([]);
   const [productRoles, setProductRoles] = useState<any[]>([]);
   
-  // Device Management lookup data
-  const [deviceTypes, setDeviceTypes] = useState<any[]>([]);
-  const [deviceBrands, setDeviceBrands] = useState<any[]>([]);
+  // Asset Management lookup data
+  const [assetTypes, setAssetTypes] = useState<any[]>([]);
+  const [assetBrands, setAssetBrands] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
     role_code: "",
@@ -297,28 +297,28 @@ export default function OperatorRolesPage() {
         setProductRoles([]);
       }
       
-      // Device Management lookups
+      // Asset Management lookups
       try {
-        const [deviceTypeRes, deviceBrandRes] = await Promise.all([
-          fetch("/api/device-management/applications"),
-          fetch("/api/device-management/lines"),
+        const [assetTypeRes, assetBrandRes] = await Promise.all([
+          fetch("/api/asset-management/applications"),
+          fetch("/api/asset-management/lines"),
         ]);
-        const [deviceTypeData, deviceBrandData] = await Promise.all([
-          deviceTypeRes.json(),
-          deviceBrandRes.json(),
+        const [assetTypeData, assetBrandData] = await Promise.all([
+          assetTypeRes.json(),
+          assetBrandRes.json(),
         ]);
         // Only set if response is successful and has data
-        if (deviceTypeRes.ok) {
-          setDeviceTypes(deviceTypeData.data || []);
+        if (assetTypeRes.ok) {
+          setAssetTypes(assetTypeData.data || []);
         }
-        if (deviceBrandRes.ok) {
-          setDeviceBrands(deviceBrandData.data || []);
+        if (assetBrandRes.ok) {
+          setAssetBrands(assetBrandData.data || []);
         }
-      } catch (deviceError) {
-        console.error("Error fetching device lookups:", deviceError);
+      } catch (assetError) {
+        console.error("Error fetching asset lookups:", assetError);
         // Set empty arrays if error
-        setDeviceTypes([]);
-        setDeviceBrands([]);
+        setAssetTypes([]);
+        setAssetBrands([]);
       }
     } catch (error) {
       console.error("Error fetching lookups:", error);
@@ -916,17 +916,17 @@ export default function OperatorRolesPage() {
               </div>
             </button>
 
-            {/* Device Management */}
+            {/* Asset Management */}
             <button
-              onClick={() => selectedRole && openPermissionDialog(selectedRole, "device-management")}
+              onClick={() => selectedRole && openPermissionDialog(selectedRole, "asset-management")}
               className="w-full flex items-center gap-3 p-4 border border-border rounded-lg hover:bg-secondary/50 hover:border-primary/50 transition-colors text-left"
             >
               <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-primary/20 border border-primary/30">
                 <Smartphone className="h-6 w-6 text-primary" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-foreground">Device Management</h3>
-                <p className="text-sm text-muted-foreground">Manage Device Management permissions</p>
+                <h3 className="font-semibold text-foreground">Asset Management</h3>
+                <p className="text-sm text-muted-foreground">Manage Asset Management permissions</p>
               </div>
             </button>
 
@@ -963,7 +963,7 @@ export default function OperatorRolesPage() {
           <DialogHeader>
             <DialogTitle className="text-foreground flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
-              Manage Permissions - {selectedRole?.role_name} ({selectedModule === "account-management" ? "Account Management" : selectedModule === "product-management" ? "Product Management" : selectedModule === "device-management" ? "Device Management" : selectedModule === "operator-setting" ? "Operator Setting" : selectedModule})
+              Manage Permissions - {selectedRole?.role_name} ({selectedModule === "account-management" ? "Account Management" : selectedModule === "product-management" ? "Product Management" : selectedModule === "asset-management" ? "Asset Management" : selectedModule === "operator-setting" ? "Operator Setting" : selectedModule})
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-6 py-4">
@@ -982,8 +982,8 @@ export default function OperatorRolesPage() {
                 if (!["dashboard", "accounts", "applications", "lines", "departments", "roles"].includes(menuName)) {
                   return null;
                 }
-              } else if (selectedModule === "device-management") {
-                // Device Management: show dashboard, accounts, applications (Type), lines (Brand)
+              } else if (selectedModule === "asset-management") {
+                // Asset Management: show dashboard, accounts, applications (Type), lines (Brand)
                 if (!["dashboard", "accounts", "applications", "lines"].includes(menuName)) {
                   return null;
                 }
@@ -996,11 +996,11 @@ export default function OperatorRolesPage() {
 
               // Get module-specific config
               const getModuleConfig = () => {
-                if (selectedModule === "device-management") {
+                if (selectedModule === "asset-management") {
                   if (menuName === "accounts") {
                     return {
                       ...config,
-                      label: "Device",
+                      label: "Assets",
                       columns: [
                         { key: "status", label: "Status" },
                         { key: "code", label: "Code" },
@@ -1012,7 +1012,7 @@ export default function OperatorRolesPage() {
                         { key: "note", label: "Note" },
                         { key: "action", label: "Action" },
                       ],
-                      actions: config.actions.filter(a => a.key !== "import"), // Remove import for Device
+                      actions: config.actions.filter(a => a.key !== "import"), // Remove import for Assets
                     };
                   }
                   if (menuName === "applications") {
@@ -1022,7 +1022,7 @@ export default function OperatorRolesPage() {
                       columns: [
                         { key: "code", label: "Code" },
                         { key: "name", label: "Type Name" },
-                        { key: "total_devices", label: "Total Devices" },
+                        { key: "total_assets", label: "Total Assets" },
                         { key: "action", label: "Action" },
                       ],
                     };
@@ -1034,7 +1034,7 @@ export default function OperatorRolesPage() {
                       columns: [
                         { key: "code", label: "Code" },
                         { key: "name", label: "Brand Name" },
-                        { key: "total_devices", label: "Total Devices" },
+                        { key: "total_assets", label: "Total Assets" },
                         { key: "action", label: "Action" },
                       ],
                     };
@@ -1204,17 +1204,17 @@ export default function OperatorRolesPage() {
               </div>
             </button>
 
-            {/* Device Management */}
+            {/* Asset Management */}
             <button
-              onClick={() => selectedRole && openDataFilterDialog(selectedRole, "device-management")}
+              onClick={() => selectedRole && openDataFilterDialog(selectedRole, "asset-management")}
               className="w-full flex items-center gap-3 p-4 border border-border rounded-lg hover:bg-secondary/50 hover:border-primary/50 transition-colors text-left"
             >
               <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-primary/20 border border-primary/30">
                 <Smartphone className="h-6 w-6 text-primary" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-foreground">Device Management</h3>
-                <p className="text-sm text-muted-foreground">Manage Device Management data filters</p>
+                <h3 className="font-semibold text-foreground">Asset Management</h3>
+                <p className="text-sm text-muted-foreground">Manage Asset Management data filters</p>
               </div>
             </button>
           </div>
@@ -1237,7 +1237,7 @@ export default function OperatorRolesPage() {
           <DialogHeader>
             <DialogTitle className="text-foreground flex items-center gap-2">
               <Filter className="h-5 w-5 text-primary" />
-              Data Filter - {selectedRole?.role_name} ({selectedDataFilterModule === "account-management" ? "Account Management" : selectedDataFilterModule === "product-management" ? "Product Management" : selectedDataFilterModule === "device-management" ? "Device Management" : selectedDataFilterModule === "operator-setting" ? "Operator Setting" : selectedDataFilterModule})
+              Data Filter - {selectedRole?.role_name} ({selectedDataFilterModule === "account-management" ? "Account Management" : selectedDataFilterModule === "product-management" ? "Product Management" : selectedDataFilterModule === "asset-management" ? "Asset Management" : selectedDataFilterModule === "operator-setting" ? "Operator Setting" : selectedDataFilterModule})
             </DialogTitle>
             <p className="text-sm text-muted-foreground">
               Control which data this role can see. <strong>Empty selection = Show NO data</strong>
@@ -1566,12 +1566,12 @@ export default function OperatorRolesPage() {
               </div>
             )}
 
-            {/* Device Management Data Filter */}
-            {selectedDataFilterModule === "device-management" && permissions['accounts'] && (
+            {/* Asset Management Data Filter */}
+            {selectedDataFilterModule === "asset-management" && permissions['accounts'] && (
               <div className="border border-border rounded-lg p-4 bg-secondary/10">
                 <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                   <span className="bg-primary/20 text-primary px-3 py-1 rounded-md">
-                    Device Accounts Data Filter
+                    Asset Accounts Data Filter
                   </span>
                 </h3>
                 
@@ -1582,14 +1582,14 @@ export default function OperatorRolesPage() {
                     <label className="flex items-center gap-2 cursor-pointer text-xs text-primary">
                       <input
                         type="checkbox"
-                        checked={deviceTypes.every(type => permissions['accounts'].allowed_applications?.includes(type.id))}
+                        checked={assetTypes.every(type => permissions['accounts'].allowed_applications?.includes(type.id))}
                         onChange={(e) => {
                           if (e.target.checked) {
                             setPermissions((prev) => ({
                               ...prev,
                               accounts: {
                                 ...prev.accounts,
-                                allowed_applications: deviceTypes.map(t => t.id),
+                                allowed_applications: assetTypes.map(t => t.id),
                               },
                             }));
                           } else {
@@ -1608,12 +1608,12 @@ export default function OperatorRolesPage() {
                     </label>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
-                    {deviceTypes.length === 0 ? (
+                    {assetTypes.length === 0 ? (
                       <div className="col-span-3 text-sm text-muted-foreground py-2">
-                        No device types found. Please add types in Device Management module first.
+                        No asset types found. Please add types in Asset Management module first.
                       </div>
                     ) : (
-                      deviceTypes.map((type) => (
+                      assetTypes.map((type) => (
                         <label key={type.id} className="flex items-center gap-2 cursor-pointer text-sm">
                           <input
                             type="checkbox"
@@ -1635,14 +1635,14 @@ export default function OperatorRolesPage() {
                     <label className="flex items-center gap-2 cursor-pointer text-xs text-primary">
                       <input
                         type="checkbox"
-                        checked={deviceBrands.every(brand => permissions['accounts'].allowed_lines?.includes(brand.id))}
+                        checked={assetBrands.every(brand => permissions['accounts'].allowed_lines?.includes(brand.id))}
                         onChange={(e) => {
                           if (e.target.checked) {
                             setPermissions((prev) => ({
                               ...prev,
                               accounts: {
                                 ...prev.accounts,
-                                allowed_lines: deviceBrands.map(b => b.id),
+                                allowed_lines: assetBrands.map(b => b.id),
                               },
                             }));
                           } else {
@@ -1661,12 +1661,12 @@ export default function OperatorRolesPage() {
                     </label>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
-                    {deviceBrands.length === 0 ? (
+                    {assetBrands.length === 0 ? (
                       <div className="col-span-3 text-sm text-muted-foreground py-2">
-                        No device brands found. Please add brands in Device Management module first.
+                        No asset brands found. Please add brands in Asset Management module first.
                       </div>
                     ) : (
-                      deviceBrands.map((brand) => (
+                      assetBrands.map((brand) => (
                         <label key={brand.id} className="flex items-center gap-2 cursor-pointer text-sm">
                           <input
                             type="checkbox"

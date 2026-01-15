@@ -4,7 +4,7 @@
 -- This allows roles to have permissions per module:
 -- - account-management
 -- - product-management
--- - device-management
+-- - asset-management
 -- - operator-setting
 
 -- Step 1: Add module column with default value
@@ -21,7 +21,7 @@ ALTER TABLE operator_role_permissions
 ALTER COLUMN module SET NOT NULL;
 
 -- Step 4: Add comment to explain the column
-COMMENT ON COLUMN operator_role_permissions.module IS 'Module name: account-management, product-management, device-management, operator-setting';
+COMMENT ON COLUMN operator_role_permissions.module IS 'Module name: account-management, product-management, asset-management, operator-setting';
 
 -- Step 5: Drop old unique constraint
 ALTER TABLE operator_role_permissions 
