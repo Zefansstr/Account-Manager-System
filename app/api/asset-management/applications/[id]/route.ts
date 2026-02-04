@@ -10,7 +10,7 @@ export async function GET(
   try {
     const { id } = await params;
     const { data, error } = await supabase
-      .from("device_types")
+      .from("asset_types")
       .select("*")
       .eq("id", id)
       .single();
@@ -35,13 +35,13 @@ export async function PUT(
 
     // Get old value before update
     const { data: oldData } = await supabase
-      .from("device_types")
+      .from("asset_types")
       .select("*")
       .eq("id", id)
       .single();
 
     const { data, error } = await supabase
-      .from("device_types")
+      .from("asset_types")
       .update({
         type_code: code,
         type_name: name,
@@ -58,7 +58,7 @@ export async function PUT(
     await logActivity({
       userId,
       action: "UPDATE",
-      tableName: "device_types",
+      tableName: "asset_types",
       recordId: id,
       oldValue: { type_code: oldData?.type_code, type_name: oldData?.type_name },
       newValue: { type_code: code, type_name: name },
@@ -84,13 +84,13 @@ export async function DELETE(
 
     // Get data before delete
     const { data: oldData } = await supabase
-      .from("device_types")
+      .from("asset_types")
       .select("*")
       .eq("id", id)
       .single();
 
     const { error } = await supabase
-      .from("device_types")
+      .from("asset_types")
       .delete()
       .eq("id", id);
 
@@ -100,7 +100,7 @@ export async function DELETE(
     await logActivity({
       userId,
       action: "DELETE",
-      tableName: "device_types",
+      tableName: "asset_types",
       recordId: id,
       oldValue: { type_code: oldData?.type_code, type_name: oldData?.type_name },
       ipAddress: getIpAddress(request),

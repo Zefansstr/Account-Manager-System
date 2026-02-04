@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Topbar } from "@/components/layout/topbar";
-import { DeviceManagementSidebar } from "@/components/layout/device-management-sidebar";
+import { AssetManagementSidebar } from "@/components/layout/asset-management-sidebar";
 import { NoAccess } from "@/components/auth/no-access";
 import * as permissions from "@/lib/permissions";
 import { isSuperAdmin } from "@/lib/permissions";
@@ -26,7 +26,7 @@ const hasModuleAccess = (moduleName: string): boolean => {
 };
 import { Toaster } from "react-hot-toast";
 
-export default function DeviceManagementLayout({
+export default function AssetManagementLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -45,7 +45,7 @@ export default function DeviceManagementLayout({
       }
 
       // Check module access (cached for performance)
-      const access = hasModuleAccess("device-management");
+      const access = hasModuleAccess("asset-management");
       setHasAccess(access);
       setIsChecking(false);
     };
@@ -71,7 +71,7 @@ export default function DeviceManagementLayout({
     return (
       <div className="min-h-screen bg-background">
         <Topbar />
-        <NoAccess moduleName="device-management" />
+        <NoAccess moduleName="asset-management" />
       </div>
     );
   }
@@ -109,7 +109,7 @@ export default function DeviceManagementLayout({
       
       <Topbar />
       <div className="flex">
-        <DeviceManagementSidebar />
+        <AssetManagementSidebar />
         <main className="flex-1 p-4">
           {children}
         </main>

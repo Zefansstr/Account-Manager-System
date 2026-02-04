@@ -58,7 +58,7 @@ export default function LoginPage() {
   };
 
   // Handle module selection - langsung redirect tanpa login lagi
-  const handleSelectModule = (module: "dashboard" | "products" | "device-management" | "operators") => {
+  const handleSelectModule = (module: "dashboard" | "products" | "asset-management" | "operators") => {
     // Navigate immediately - let layout handle loading state
     // Using router.push with shallow routing for faster navigation
     switch (module) {
@@ -68,8 +68,8 @@ export default function LoginPage() {
       case "products":
         router.push("/products");
         break;
-      case "device-management":
-        router.push("/device-management");
+      case "asset-management":
+        router.push("/asset-management");
         break;
       case "operators":
         router.push("/operators");
@@ -414,9 +414,9 @@ export default function LoginPage() {
                   <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/5 to-transparent rounded-3xl" />
                 </button>
 
-                {/* Device Management Card */}
+                {/* Asset Management Card */}
                 <button
-                  onClick={() => handleSelectModule("device-management")}
+                  onClick={() => handleSelectModule("asset-management")}
                   className="group relative overflow-hidden backdrop-blur-md bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl transition-all duration-300 hover:bg-white/10 hover:border-primary/50 hover:-translate-y-2 transform"
                 >
                   {/* Glow Effect on Hover */}
@@ -428,10 +428,10 @@ export default function LoginPage() {
                       <Laptop className="h-8 w-8 text-white" strokeWidth={1.5} />
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors">
-                      Device Management
+                      Asset Management
                     </h3>
                     <p className="text-sm text-gray-400 mb-4">
-                      Control Device Access
+                      Control Asset Access
                     </p>
                     <div className="flex items-center justify-center gap-2 text-primary font-medium text-sm">
                       <span>Get Started</span>

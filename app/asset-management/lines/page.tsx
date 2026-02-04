@@ -18,7 +18,7 @@ type Line = {
   accountCount: number;
 };
 
-export default function DeviceManagementLinesPage() {
+export default function AssetManagementLinesPage() {
   const [lines, setLines] = useState<Line[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -31,7 +31,7 @@ export default function DeviceManagementLinesPage() {
   const fetchLines = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/device-management/lines");
+      const res = await fetch("/api/asset-management/lines");
       const json = await res.json();
       if (res.ok) {
         setLines(json.data || []);
@@ -59,7 +59,7 @@ export default function DeviceManagementLinesPage() {
       const operatorStr = localStorage.getItem("operator");
       const operator = operatorStr ? JSON.parse(operatorStr) : null;
       
-      const res = await fetch("/api/device-management/lines", {
+      const res = await fetch("/api/asset-management/lines", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -91,7 +91,7 @@ export default function DeviceManagementLinesPage() {
       const operatorStr = localStorage.getItem("operator");
       const operator = operatorStr ? JSON.parse(operatorStr) : null;
       
-      const res = await fetch(`/api/device-management/lines/${selected.id}`, {
+      const res = await fetch(`/api/asset-management/lines/${selected.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -124,7 +124,7 @@ export default function DeviceManagementLinesPage() {
       const operatorStr = localStorage.getItem("operator");
       const operator = operatorStr ? JSON.parse(operatorStr) : null;
       
-      const res = await fetch(`/api/device-management/lines/${selected.id}`, {
+      const res = await fetch(`/api/asset-management/lines/${selected.id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

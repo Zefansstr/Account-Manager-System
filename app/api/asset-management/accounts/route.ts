@@ -17,15 +17,15 @@ export async function GET(request: NextRequest) {
 
     // Build query
     let query = supabase
-      .from("device_accounts")
+      .from("asset_accounts")
       .select(`
         *,
-        device_types:type_id (
+        asset_types:type_id (
           id,
           type_code,
           type_name
         ),
-        device_brands:brand_id (
+        asset_brands:brand_id (
           id,
           brand_code,
           brand_name
@@ -56,19 +56,19 @@ export async function GET(request: NextRequest) {
     if (error) throw error;
 
     // Transform data
-    const transformed = (data || []).map((device: any) => ({
-      id: device.id,
-      code: device.code,
-      type: device.device_types?.type_name || null,
-      typeId: device.type_id,
-      brand: device.device_brands?.brand_name || null,
-      brandId: device.brand_id,
-      item: device.item,
-      specification: device.specification || null,
-      userUse: device.user_use || null,
-      note: device.note || null,
-      status: device.status || "active",
-      createdAt: device.created_at,
+    const transformed = (data || []).map((asset: any) => ({
+      id: asset.id,
+      code: asset.code,
+      type: asset.asset_types?.type_name || null,
+      typeId: asset.type_id,
+      brand: asset.asset_brands?.brand_name || null,
+      brandId: asset.brand_id,
+      item: asset.item,
+      specification: asset.specification || null,
+      userUse: asset.user_use || null,
+      note: asset.note || null,
+      status: asset.status || "active",
+      createdAt: asset.created_at,
     }));
 
     return NextResponse.json({
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
     }
 
     const { data, error } = await supabase
-      .from("device_accounts")
+      .from("asset_accounts")
       .insert([
         {
           code,
@@ -122,7 +122,7 @@ export async function POST(request: Request) {
     await logActivity({
       userId,
       action: "CREATE",
-      tableName: "device_accounts",
+      tableName: "asset_accounts",
       recordId: data.id,
       newValue: { code, item, type: typeId, brand: brandId },
       ipAddress: getIpAddress(request),

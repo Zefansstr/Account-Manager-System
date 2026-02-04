@@ -25,7 +25,7 @@ type Application = {
   accountCount: number;
 };
 
-export default function DeviceManagementApplicationsPage() {
+export default function AssetManagementApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -38,7 +38,7 @@ export default function DeviceManagementApplicationsPage() {
   const fetchApplications = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/device-management/applications");
+      const res = await fetch("/api/asset-management/applications");
       const json = await res.json();
       if (res.ok) {
         setApplications(json.data || []);
@@ -66,7 +66,7 @@ export default function DeviceManagementApplicationsPage() {
       const operatorStr = localStorage.getItem("operator");
       const operator = operatorStr ? JSON.parse(operatorStr) : null;
       
-      const res = await fetch("/api/device-management/applications", {
+      const res = await fetch("/api/asset-management/applications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -98,7 +98,7 @@ export default function DeviceManagementApplicationsPage() {
       const operatorStr = localStorage.getItem("operator");
       const operator = operatorStr ? JSON.parse(operatorStr) : null;
       
-      const res = await fetch(`/api/device-management/applications/${selectedApp.id}`, {
+      const res = await fetch(`/api/asset-management/applications/${selectedApp.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -131,7 +131,7 @@ export default function DeviceManagementApplicationsPage() {
       const operatorStr = localStorage.getItem("operator");
       const operator = operatorStr ? JSON.parse(operatorStr) : null;
       
-      const res = await fetch(`/api/device-management/applications/${selectedApp.id}`, {
+      const res = await fetch(`/api/asset-management/applications/${selectedApp.id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

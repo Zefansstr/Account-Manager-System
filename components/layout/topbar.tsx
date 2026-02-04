@@ -30,8 +30,8 @@ export function Topbar() {
   const getModuleTitle = () => {
     if (pathname?.startsWith("/products")) {
       return "Product Management";
-    } else if (pathname?.startsWith("/device-management")) {
-      return "Device Management";
+    } else if (pathname?.startsWith("/asset-management")) {
+      return "Asset Management";
     } else if (pathname === "/operators" || pathname === "/operator-roles" || pathname?.startsWith("/audit-logs")) {
       return "Operator Setting";
     }

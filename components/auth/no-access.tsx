@@ -13,8 +13,8 @@ export function NoAccess({ moduleName }: NoAccessProps) {
 
   const getModuleDisplayName = () => {
     switch (moduleName) {
-      case "device-management":
-        return "Device Management";
+      case "asset-management":
+        return "Asset Management";
       case "product-management":
         return "Product Management";
       case "account-management":

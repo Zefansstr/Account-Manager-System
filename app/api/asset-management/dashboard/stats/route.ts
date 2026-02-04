@@ -3,41 +3,41 @@ import { supabase } from "@/lib/supabase";
 
 export async function GET(request: NextRequest) {
   try {
-    // Optimize: Use single query for devices with all relations to reduce round trips
-    const devicesWithRelationsQuery = supabase
-      .from("device_accounts")
+    // Optimize: Use single query for assets with all relations to reduce round trips
+    const assetsWithRelationsQuery = supabase
+      .from("asset_accounts")
       .select(`
         id,
         status,
         type_id,
         brand_id,
         user_use,
-        device_types:type_id(type_name),
-        device_brands:brand_id(brand_name)
+        asset_types:type_id(type_name),
+        asset_brands:brand_id(brand_name)
       `);
 
-    // Get all device data with counts in parallel - optimized queries
+    // Get all asset data with counts in parallel - optimized queries
     const [
-      devicesRes,
-      activeDevicesRes,
+      assetsRes,
+      activeAssetsRes,
       typesRes,
       brandsRes,
-      devicesWithRelationsRes,
+      assetsWithRelationsRes,
     ] = await Promise.all([
-      // Total devices (count only)
-      supabase.from("device_accounts").select("id", { count: "exact", head: true }),
-      // Active devices (count only)
-      supabase.from("device_accounts").select("id", { count: "exact", head: true }).eq("status", "active"),
+      // Total assets (count only)
+      supabase.from("asset_accounts").select("id", { count: "exact", head: true }),
+      // Active assets (count only)
+      supabase.from("asset_accounts").select("id", { count: "exact", head: true }).eq("status", "active"),
       // Total types (count only)
-      supabase.from("device_types").select("id", { count: "exact", head: true }),
+      supabase.from("asset_types").select("id", { count: "exact", head: true }),
       // Total brands (count only)
-      supabase.from("device_brands").select("id", { count: "exact", head: true }),
-      // Devices with all relations (single query for charts)
-      devicesWithRelationsQuery,
+      supabase.from("asset_brands").select("id", { count: "exact", head: true }),
+      // Assets with all relations (single query for charts)
+      assetsWithRelationsQuery,
     ]);
 
-    // Calculate inactive devices
-    const inactiveDevices = (devicesRes.count || 0) - (activeDevicesRes.count || 0);
+    // Calculate inactive assets
+    const inactiveAssets = (assetsRes.count || 0) - (activeAssetsRes.count || 0);
 
     // Process all chart data from single query result
     const statusGroups: any = {};
@@ -45,51 +45,51 @@ export async function GET(request: NextRequest) {
     const brandGroups: any = {};
     const userUseGroups: any = {};
     
-    devicesWithRelationsRes.data?.forEach((device: any) => {
+    assetsWithRelationsRes.data?.forEach((asset: any) => {
       // Process by status
-      const status = device.status || "inactive";
+      const status = asset.status || "inactive";
       const key = status === "active" ? "Active" : "Inactive";
       statusGroups[key] = (statusGroups[key] || 0) + 1;
       
       // Process by type
-      if (device.device_types) {
-        const typeName = device.device_types.type_name;
+      if (asset.asset_types) {
+        const typeName = asset.asset_types.type_name;
         typeGroups[typeName] = (typeGroups[typeName] || 0) + 1;
       }
       
       // Process by brand
-      if (device.device_brands) {
-        const brandName = device.device_brands.brand_name;
+      if (asset.asset_brands) {
+        const brandName = asset.asset_brands.brand_name;
         brandGroups[brandName] = (brandGroups[brandName] || 0) + 1;
       }
       
       // Process by user use
-      if (device.user_use) {
-        const userUse = device.user_use;
+      if (asset.user_use) {
+        const userUse = asset.user_use;
         userUseGroups[userUse] = (userUseGroups[userUse] || 0) + 1;
       }
     });
     
-    const devicesStatus = Object.entries(statusGroups).map(([name, count]) => ({
+    const assetsStatus = Object.entries(statusGroups).map(([name, count]) => ({
       name,
       count: count as number,
     }));
     
-    const devicesByType = Object.entries(typeGroups)
+    const assetsByType = Object.entries(typeGroups)
       .map(([name, count]) => ({
         name,
         count: count as number,
       }))
       .sort((a, b) => b.count - a.count);
     
-    const devicesByBrand = Object.entries(brandGroups)
+    const assetsByBrand = Object.entries(brandGroups)
       .map(([name, count]) => ({
         name,
         count: count as number,
       }))
       .sort((a, b) => b.count - a.count);
     
-    const devicesByUserUse = Object.entries(userUseGroups)
+    const assetsByUserUse = Object.entries(userUseGroups)
       .map(([name, count]) => ({
         name,
         count: count as number,
@@ -99,40 +99,40 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       kpis: {
-        totalDevices: devicesRes.count || 0,
-        activeDevices: activeDevicesRes.count || 0,
+        totalAssets: assetsRes.count || 0,
+        activeAssets: activeAssetsRes.count || 0,
         totalTypes: typesRes.count || 0,
         totalBrands: brandsRes.count || 0,
       },
       charts: {
-        devicesStatus: devicesStatus.length > 0 ? devicesStatus : [
+        assetsStatus: assetsStatus.length > 0 ? assetsStatus : [
           { name: "Active", count: 0 },
           { name: "Inactive", count: 0 },
         ],
-        devicesByType: devicesByType,
-        devicesByBrand: devicesByBrand,
-        devicesByUserUse: devicesByUserUse,
+        assetsByType: assetsByType,
+        assetsByBrand: assetsByBrand,
+        assetsByUserUse: assetsByUserUse,
       },
     });
   } catch (error: any) {
-    console.error("Error fetching device management stats:", error);
+    console.error("Error fetching asset management stats:", error);
     return NextResponse.json(
       {
         error: error.message,
         kpis: {
-          totalDevices: 0,
-          activeDevices: 0,
+          totalAssets: 0,
+          activeAssets: 0,
           totalTypes: 0,
           totalBrands: 0,
         },
         charts: {
-          devicesStatus: [
+          assetsStatus: [
             { name: "Active", count: 0 },
             { name: "Inactive", count: 0 },
           ],
-          devicesByType: [],
-          devicesByBrand: [],
-          devicesByUserUse: [],
+          assetsByType: [],
+          assetsByBrand: [],
+          assetsByUserUse: [],
         },
       },
       { status: 500 }
