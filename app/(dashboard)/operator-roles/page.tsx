@@ -231,6 +231,22 @@ const MENU_CONFIG: Record<string, {
       { key: "action", label: "Action" },
     ],
   },
+  devices: {
+    label: "Devices",
+    actions: [
+      { key: "view", label: "View" },
+      { key: "create", label: "Create" },
+      { key: "edit", label: "Edit" },
+      { key: "delete", label: "Delete" },
+    ],
+    columns: [
+      { key: "code", label: "Code" },
+      { key: "name", label: "Device Name" },
+      { key: "description", label: "Description" },
+      { key: "status", label: "Status" },
+      { key: "action", label: "Action" },
+    ],
+  },
 };
 
 export default function OperatorRolesPage() {
@@ -1038,7 +1054,8 @@ export default function OperatorRolesPage() {
                       columns: [
                         { key: "code", label: "Code" },
                         { key: "name", label: "Device Name" },
-                        { key: "total_assets", label: "Total Assets" },
+                        { key: "description", label: "Description" },
+                        { key: "status", label: "Status" },
                         { key: "action", label: "Action" },
                       ],
                     };
