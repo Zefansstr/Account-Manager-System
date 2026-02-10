@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 interface PopoverContextValue {
   open: boolean;
   setOpen: (open: boolean) => void;
-  triggerRef: React.RefObject<HTMLElement>;
+  triggerRef: React.RefObject<HTMLElement | null>;
 }
 
 const PopoverContext = React.createContext<PopoverContextValue | undefined>(undefined);
@@ -21,7 +21,7 @@ interface PopoverProps {
 const Popover = ({ open: controlledOpen, onOpenChange, children }: PopoverProps) => {
   const [internalOpen, setInternalOpen] = React.useState(false);
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
-  const triggerRef = React.useRef<HTMLElement>(null);
+  const triggerRef = React.useRef<HTMLElement | null>(null);
   const setOpen = React.useCallback(
     (newOpen: boolean) => {
       if (controlledOpen === undefined) {
