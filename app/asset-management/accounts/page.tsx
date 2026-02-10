@@ -36,12 +36,17 @@ export default function AssetManagementAccountsPage() {
   const [loading, setLoading] = useState(false);
   const [departments, setDepartments] = useState<LookupData>([]);
   const [deviceList, setDeviceList] = useState<LookupData>([]);
+  const [brandList, setBrandList] = useState<string[]>([]);
+  const [locationList, setLocationList] = useState<string[]>([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<Device | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterDevice, setFilterDevice] = useState("");
+  const [filterBrand, setFilterBrand] = useState("");
+  const [filterLocation, setFilterLocation] = useState("");
   const [page, setPage] = useState(1);
   const [limit] = useState(20);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
@@ -133,6 +138,9 @@ export default function AssetManagementAccountsPage() {
         limit: limit.toString(),
       });
       if (searchQuery) params.append("search", searchQuery);
+      if (filterDevice) params.append("deviceId", filterDevice);
+      if (filterBrand) params.append("brand", filterBrand);
+      if (filterLocation) params.append("storageLocation", filterLocation);
 
       const res = await fetch(`/api/asset-management/accounts?${params}`);
       const json = await res.json();
@@ -148,6 +156,30 @@ export default function AssetManagementAccountsPage() {
       toast.error("Failed to fetch assets");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch unique brands and locations for filter dropdowns
+  const fetchFilterOptions = async () => {
+    try {
+      const res = await fetch("/api/asset-management/accounts?limit=1000");
+      const json = await res.json();
+      
+      if (res.ok && json.data) {
+        // Get unique brands
+        const brands = new Set<string>();
+        const locations = new Set<string>();
+        
+        json.data.forEach((asset: Device) => {
+          if (asset.brand) brands.add(asset.brand);
+          if (asset.storageLocation) locations.add(asset.storageLocation);
+        });
+        
+        setBrandList(Array.from(brands).sort());
+        setLocationList(Array.from(locations).sort());
+      }
+    } catch (error) {
+      console.error("Error fetching filter options:", error);
     }
   };
 
@@ -167,6 +199,7 @@ export default function AssetManagementAccountsPage() {
   useEffect(() => {
     fetchLookups();
     fetchDeviceList();
+    fetchFilterOptions();
   }, []);
 
   useEffect(() => {
@@ -175,7 +208,7 @@ export default function AssetManagementAccountsPage() {
     }, 300); // Debounce search
 
     return () => clearTimeout(timeoutId);
-  }, [page, searchQuery]);
+  }, [page, searchQuery, filterDevice, filterBrand, filterLocation]);
 
   // Handle add device
   const handleAdd = async () => {
@@ -273,16 +306,58 @@ export default function AssetManagementAccountsPage() {
       <div className="space-y-3">
       {/* Filter Row */}
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="Search code or user use..." 
+              placeholder="Search all fields..." 
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setPage(1); // Reset to first page when search changes
+              }}
               className="w-64 pl-9" 
             />
           </div>
+          <select 
+            value={filterDevice}
+            onChange={(e) => {
+              setFilterDevice(e.target.value);
+              setPage(1);
+            }}
+            className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+          >
+            <option value="">All Devices</option>
+            {deviceList.map((device) => (
+              <option key={device.id} value={device.name}>{device.name}</option>
+            ))}
+          </select>
+          <select 
+            value={filterBrand}
+            onChange={(e) => {
+              setFilterBrand(e.target.value);
+              setPage(1);
+            }}
+            className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+          >
+            <option value="">All Brands</option>
+            {brandList.map((brand) => (
+              <option key={brand} value={brand}>{brand}</option>
+            ))}
+          </select>
+          <select 
+            value={filterLocation}
+            onChange={(e) => {
+              setFilterLocation(e.target.value);
+              setPage(1);
+            }}
+            className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+          >
+            <option value="">All Locations</option>
+            {locationList.map((location) => (
+              <option key={location} value={location}>{location}</option>
+            ))}
+          </select>
           <div className="text-sm text-muted-foreground ml-2">
             {pagination.total} total asset{pagination.total !== 1 ? 's' : ''}
           </div>

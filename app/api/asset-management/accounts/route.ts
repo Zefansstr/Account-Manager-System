@@ -12,6 +12,9 @@ export async function GET(request: NextRequest) {
     const typeId = searchParams.get("typeId") || "";
     const brandId = searchParams.get("brandId") || "";
     const status = searchParams.get("status") || "";
+    const deviceId = searchParams.get("deviceId") || "";
+    const brand = searchParams.get("brand") || "";
+    const storageLocation = searchParams.get("storageLocation") || "";
 
     const offset = (page - 1) * limit;
 
@@ -30,14 +33,32 @@ export async function GET(request: NextRequest) {
 
     // Apply filters
     if (search) {
-      // Search in code and user_use only
-      query = query.or(`code.ilike.%${search}%,user_use.ilike.%${search}%`);
+      // Search in all relevant fields
+      query = query.or(
+        `code.ilike.%${search}%,` +
+        `item.ilike.%${search}%,` +
+        `brand.ilike.%${search}%,` +
+        `user_use.ilike.%${search}%,` +
+        `department_team.ilike.%${search}%,` +
+        `storage_location.ilike.%${search}%,` +
+        `note.ilike.%${search}%`
+      );
     }
     if (typeId) {
       query = query.eq("type_id", typeId);
     }
     if (status) {
       query = query.eq("status", status);
+    }
+    if (deviceId) {
+      // Filter by device (item field matches device name)
+      query = query.eq("item", deviceId);
+    }
+    if (brand) {
+      query = query.eq("brand", brand);
+    }
+    if (storageLocation) {
+      query = query.eq("storage_location", storageLocation);
     }
 
     // Apply pagination
