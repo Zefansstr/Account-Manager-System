@@ -189,6 +189,48 @@ const MENU_CONFIG: Record<string, {
       { key: "created_at", label: "Date" },
     ],
   },
+  AssignmentLog: {
+    label: "Assignment Log",
+    actions: [
+      { key: "view", label: "View" },
+      { key: "create", label: "Create" },
+      { key: "edit", label: "Edit" },
+      { key: "delete", label: "Delete" },
+    ],
+    columns: [
+      { key: "date", label: "Date" },
+      { key: "assetCode", label: "Asset Code" },
+      { key: "assetItem", label: "Device" },
+      { key: "assignedTo", label: "Assigned To" },
+      { key: "department", label: "Department" },
+      { key: "reason", label: "Reason" },
+      { key: "handledBy", label: "Handled By" },
+      { key: "remark", label: "Remark" },
+      { key: "action", label: "Action" },
+    ],
+  },
+  MaintenanceLog: {
+    label: "Maintenance Log",
+    actions: [
+      { key: "view", label: "View" },
+      { key: "create", label: "Create" },
+      { key: "edit", label: "Edit" },
+      { key: "delete", label: "Delete" },
+    ],
+    columns: [
+      { key: "date", label: "Date" },
+      { key: "assetCode", label: "Asset Code" },
+      { key: "assetItem", label: "Device" },
+      { key: "issueDescription", label: "Issue Description" },
+      { key: "currentStatus", label: "Status" },
+      { key: "maintenanceResult", label: "Result" },
+      { key: "cost", label: "Cost" },
+      { key: "maintenanceUnit", label: "Unit" },
+      { key: "operator", label: "Operator" },
+      { key: "remark", label: "Remark" },
+      { key: "action", label: "Action" },
+    ],
+  },
 };
 
 export default function OperatorRolesPage() {
@@ -218,10 +260,6 @@ export default function OperatorRolesPage() {
   const [productDepartments, setProductDepartments] = useState<any[]>([]);
   const [productRoles, setProductRoles] = useState<any[]>([]);
   
-  // Asset Management lookup data
-  const [assetTypes, setAssetTypes] = useState<any[]>([]);
-  const [assetBrands, setAssetBrands] = useState<any[]>([]);
-
   const [formData, setFormData] = useState({
     role_code: "",
     role_name: "",
@@ -297,29 +335,7 @@ export default function OperatorRolesPage() {
         setProductRoles([]);
       }
       
-      // Asset Management lookups
-      try {
-        const [assetTypeRes, assetBrandRes] = await Promise.all([
-          fetch("/api/asset-management/applications"),
-          fetch("/api/asset-management/lines"),
-        ]);
-        const [assetTypeData, assetBrandData] = await Promise.all([
-          assetTypeRes.json(),
-          assetBrandRes.json(),
-        ]);
-        // Only set if response is successful and has data
-        if (assetTypeRes.ok) {
-          setAssetTypes(assetTypeData.data || []);
-        }
-        if (assetBrandRes.ok) {
-          setAssetBrands(assetBrandData.data || []);
-        }
-      } catch (assetError) {
-        console.error("Error fetching asset lookups:", assetError);
-        // Set empty arrays if error
-        setAssetTypes([]);
-        setAssetBrands([]);
-      }
+      // Asset Management lookups - removed (Type and Brand are no longer used)
     } catch (error) {
       console.error("Error fetching lookups:", error);
     }
@@ -983,8 +999,8 @@ export default function OperatorRolesPage() {
                   return null;
                 }
               } else if (selectedModule === "asset-management") {
-                // Asset Management: show dashboard, accounts, applications (Type), lines (Brand)
-                if (!["dashboard", "accounts", "applications", "lines"].includes(menuName)) {
+                // Asset Management: show dashboard, accounts, AssignmentLog, MaintenanceLog, devices, departments
+                if (!["dashboard", "accounts", "AssignmentLog", "MaintenanceLog", "devices", "departments"].includes(menuName)) {
                   return null;
                 }
               } else if (selectedModule === "operator-setting") {
@@ -1004,36 +1020,36 @@ export default function OperatorRolesPage() {
                       columns: [
                         { key: "status", label: "Status" },
                         { key: "code", label: "Code" },
-                        { key: "type", label: "Type" },
                         { key: "brand", label: "Brand" },
-                        { key: "item", label: "Item" },
-                        { key: "specification", label: "Specification" },
+                        { key: "item", label: "Device" },
                         { key: "user_use", label: "User Use" },
+                        { key: "department_team", label: "Department" },
+                        { key: "storage_location", label: "Storage Location" },
                         { key: "note", label: "Note" },
                         { key: "action", label: "Action" },
                       ],
                       actions: config.actions.filter(a => a.key !== "import"), // Remove import for Assets
                     };
                   }
-                  if (menuName === "applications") {
+                  if (menuName === "devices") {
                     return {
                       ...config,
-                      label: "Type",
+                      label: "Devices",
                       columns: [
                         { key: "code", label: "Code" },
-                        { key: "name", label: "Type Name" },
+                        { key: "name", label: "Device Name" },
                         { key: "total_assets", label: "Total Assets" },
                         { key: "action", label: "Action" },
                       ],
                     };
                   }
-                  if (menuName === "lines") {
+                  if (menuName === "departments") {
                     return {
                       ...config,
-                      label: "Brand",
+                      label: "Departments",
                       columns: [
                         { key: "code", label: "Code" },
-                        { key: "name", label: "Brand Name" },
+                        { key: "name", label: "Department Name" },
                         { key: "total_assets", label: "Total Assets" },
                         { key: "action", label: "Action" },
                       ],
@@ -1575,110 +1591,8 @@ export default function OperatorRolesPage() {
                   </span>
                 </h3>
                 
-                {/* Types Filter */}
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-medium text-foreground">Allowed Types:</h4>
-                    <label className="flex items-center gap-2 cursor-pointer text-xs text-primary">
-                      <input
-                        type="checkbox"
-                        checked={assetTypes.every(type => permissions['accounts'].allowed_applications?.includes(type.id))}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setPermissions((prev) => ({
-                              ...prev,
-                              accounts: {
-                                ...prev.accounts,
-                                allowed_applications: assetTypes.map(t => t.id),
-                              },
-                            }));
-                          } else {
-                            setPermissions((prev) => ({
-                              ...prev,
-                              accounts: {
-                                ...prev.accounts,
-                                allowed_applications: [],
-                              },
-                            }));
-                          }
-                        }}
-                        className="w-3 h-3 accent-primary"
-                      />
-                      <span className="font-medium">Select All</span>
-                    </label>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {assetTypes.length === 0 ? (
-                      <div className="col-span-3 text-sm text-muted-foreground py-2">
-                        No asset types found. Please add types in Asset Management module first.
-                      </div>
-                    ) : (
-                      assetTypes.map((type) => (
-                        <label key={type.id} className="flex items-center gap-2 cursor-pointer text-sm">
-                          <input
-                            type="checkbox"
-                            checked={permissions['accounts'].allowed_applications?.includes(type.id) || false}
-                            onChange={() => toggleDataFilter('accounts', 'applications', type.id)}
-                            className="w-4 h-4 accent-primary"
-                          />
-                          <span className="text-foreground">{type.name}</span>
-                        </label>
-                      ))
-                    )}
-                  </div>
-                </div>
-                
-                {/* Brands Filter */}
-                <div className="mb-4 border-t border-border pt-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-medium text-foreground">Allowed Brands:</h4>
-                    <label className="flex items-center gap-2 cursor-pointer text-xs text-primary">
-                      <input
-                        type="checkbox"
-                        checked={assetBrands.every(brand => permissions['accounts'].allowed_lines?.includes(brand.id))}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setPermissions((prev) => ({
-                              ...prev,
-                              accounts: {
-                                ...prev.accounts,
-                                allowed_lines: assetBrands.map(b => b.id),
-                              },
-                            }));
-                          } else {
-                            setPermissions((prev) => ({
-                              ...prev,
-                              accounts: {
-                                ...prev.accounts,
-                                allowed_lines: [],
-                              },
-                            }));
-                          }
-                        }}
-                        className="w-3 h-3 accent-primary"
-                      />
-                      <span className="font-medium">Select All</span>
-                    </label>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {assetBrands.length === 0 ? (
-                      <div className="col-span-3 text-sm text-muted-foreground py-2">
-                        No asset brands found. Please add brands in Asset Management module first.
-                      </div>
-                    ) : (
-                      assetBrands.map((brand) => (
-                        <label key={brand.id} className="flex items-center gap-2 cursor-pointer text-sm">
-                          <input
-                            type="checkbox"
-                            checked={permissions['accounts'].allowed_lines?.includes(brand.id) || false}
-                            onChange={() => toggleDataFilter('accounts', 'lines', brand.id)}
-                            className="w-4 h-4 accent-primary"
-                          />
-                          <span className="text-foreground">{brand.name}</span>
-                        </label>
-                      ))
-                    )}
-                  </div>
+                <div className="text-sm text-muted-foreground py-4">
+                  Data filters are not available for Asset Management module. All assets are accessible based on action permissions.
                 </div>
               </div>
             )}

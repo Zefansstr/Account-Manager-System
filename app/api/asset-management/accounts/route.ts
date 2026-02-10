@@ -24,11 +24,6 @@ export async function GET(request: NextRequest) {
           id,
           type_code,
           type_name
-        ),
-        asset_brands:brand_id (
-          id,
-          brand_code,
-          brand_name
         )
       `, { count: "exact" })
       .order("created_at", { ascending: false });
@@ -40,9 +35,6 @@ export async function GET(request: NextRequest) {
     }
     if (typeId) {
       query = query.eq("type_id", typeId);
-    }
-    if (brandId) {
-      query = query.eq("brand_id", brandId);
     }
     if (status) {
       query = query.eq("status", status);
@@ -61,14 +53,17 @@ export async function GET(request: NextRequest) {
       code: asset.code,
       type: asset.asset_types?.type_name || null,
       typeId: asset.type_id,
-      brand: asset.asset_brands?.brand_name || null,
-      brandId: asset.brand_id,
+      brand: asset.brand || null,
       item: asset.item,
-      specification: asset.specification || null,
       userUse: asset.user_use || null,
       note: asset.note || null,
       status: asset.status || "active",
+      departmentTeam: asset.department_team || null,
+      storageLocation: asset.storage_location || null,
+      purchaseAmount: asset.purchase_amount || null,
+      currency: asset.currency || null,
       createdAt: asset.created_at,
+      updatedAt: asset.updated_at,
     }));
 
     return NextResponse.json({
@@ -89,7 +84,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { code, typeId, brandId, item, specification, userUse, note, userId } = body;
+    const { code, typeId, brand, item, userUse, note, departmentTeam, storageLocation, purchaseAmount, currency, userId } = body;
 
     if (!code || !item) {
       return NextResponse.json(
@@ -104,12 +99,15 @@ export async function POST(request: Request) {
         {
           code,
           type_id: typeId || null,
-          brand_id: brandId || null,
+          brand: brand || null,
           item,
-          specification: specification || null,
           user_use: userUse || null,
           note: note || null,
-          status: "active",
+          department_team: departmentTeam || null,
+          storage_location: storageLocation || null,
+          purchase_amount: purchaseAmount || null,
+          currency: currency || null,
+          status: "not_used", // Default status for new assets
           created_by: userId || null,
         },
       ])
@@ -124,7 +122,7 @@ export async function POST(request: Request) {
       action: "CREATE",
       tableName: "asset_accounts",
       recordId: data.id,
-      newValue: { code, item, type: typeId, brand: brandId },
+      newValue: { code, item, type: typeId, brand },
       ipAddress: getIpAddress(request),
       userAgent: getUserAgent(request),
     });

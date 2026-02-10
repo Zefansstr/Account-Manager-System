@@ -20,30 +20,23 @@ export async function GET(request: NextRequest) {
       departmentsTable = "product_departments";
       rolesTable = "product_roles";
     } else if (module === "asset-management") {
-      applicationsTable = "asset_types";
-      linesTable = "asset_brands";
-      // Asset management doesn't have departments/roles
+      // Asset management doesn't use applications/types or lines/brands anymore
+      // Only uses departments and devices (devices are fetched separately)
+      applicationsTable = "";
+      linesTable = "";
     }
 
     // Fetch all lookups in parallel
     const [applicationsRes, linesRes, departmentsRes, rolesRes] = await Promise.all([
       module === "asset-management"
-        ? supabase
-            .from(applicationsTable)
-            .select("id, type_code, type_name")
-            .order("created_at", { ascending: false })
-            .limit(500)
+        ? Promise.resolve({ data: [], error: null }) // Asset management doesn't use types/applications
         : supabase
             .from(applicationsTable)
             .select("id, app_code, app_name")
             .order("created_at", { ascending: false })
             .limit(500),
       module === "asset-management"
-        ? supabase
-            .from(linesTable)
-            .select("id, brand_code, brand_name")
-            .order("created_at", { ascending: false })
-            .limit(500)
+        ? Promise.resolve({ data: [], error: null }) // Asset management doesn't use brands/lines
         : supabase
             .from(linesTable)
             .select("id, line_code, line_name")
@@ -74,8 +67,8 @@ export async function GET(request: NextRequest) {
 
     const transformLine = (line: any) => ({
       id: line.id,
-      code: line.line_code || line.brand_code,
-      name: line.line_name || line.brand_name,
+      code: line.line_code || line.currency_code,
+      name: line.line_name || line.currency_name,
     });
 
     const transformDepartment = (dept: any) => ({

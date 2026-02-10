@@ -1,60 +1,17 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { Smartphone, CheckCircle, Package, Tag, TrendingUp, ArrowUpRight } from "lucide-react";
+import { Smartphone, CheckCircle, Building2, Tag, TrendingUp, ArrowUpRight, Warehouse } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, PieChart, Pie, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, Legend } from "recharts";
 import { PermissionGuard } from "@/components/auth/permission-guard";
 import { useAssetDashboard } from "@/hooks/use-asset-dashboard";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
 
-const STATUS_COLORS = {
-  Active: "#22c55e",
-  Inactive: "#6b7280"
-};
-
-const CHART_COLORS = [
-  "hsl(var(--primary))",
-  "hsl(var(--primary) / 0.8)",
-  "hsl(var(--primary) / 0.6)",
-  "hsl(var(--primary) / 0.4)",
-  "hsl(var(--primary) / 0.2)",
-];
-
-const RADIAN = Math.PI / 180;
-const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, count }: any) => {
-  const radius = outerRadius + 25;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-  return (
-    <g>
-      <text 
-        x={x} 
-        y={y - 8} 
-        fill="hsl(var(--foreground))"
-        textAnchor={x > cx ? 'start' : 'end'} 
-        dominantBaseline="central" 
-        fontSize="14" 
-        fontWeight="600"
-        fontFamily="Inter, sans-serif"
-      >
-        {name}
-      </text>
-      <text 
-        x={x} 
-        y={y + 8} 
-        fill="hsl(var(--primary))"
-        textAnchor={x > cx ? 'start' : 'end'} 
-        dominantBaseline="central" 
-        fontSize="12" 
-        fontWeight="500"
-        fontFamily="Inter, sans-serif"
-      >
-        count : {count}
-      </text>
-    </g>
-  );
+const CHART_COLORS = {
+  active: "#22c55e",
+  inactive: "#ef4444",
+  primary: "hsl(var(--primary))",
 };
 
 export default function AssetManagementDashboardPage() {
@@ -80,16 +37,16 @@ export default function AssetManagementDashboardPage() {
     if (!rawData) {
       return {
         kpis: {
-          totalAssets: 0,
-          activeAssets: 0,
-          totalTypes: 0,
+          totalDevices: 0,
           totalBrands: 0,
+          totalActiveStatus: 0,
+          totalDepartments: 0,
         },
         charts: {
-          assetsStatus: [] as Array<{ name: string; count: number }>,
-          assetsByType: [] as Array<{ name: string; count: number }>,
-          assetsByBrand: [] as Array<{ name: string; count: number }>,
-          assetsByUserUse: [] as Array<{ name: string; count: number }>,
+          activeInactiveByDevice: [] as Array<{ name: string; active: number; inactive: number }>,
+          usedByDepartment: [] as Array<{ name: string; count: number }>,
+          totalActiveByBrand: [] as Array<{ name: string; count: number }>,
+          totalByStorageArea: [] as Array<{ name: string; count: number }>,
         },
       };
     }
@@ -106,25 +63,9 @@ export default function AssetManagementDashboardPage() {
     trend: { value: number } | null;
   }>>(() => [
     {
-      title: "Total Assets",
-      value: data.kpis.totalAssets,
+      title: "Total Devices",
+      value: data.kpis.totalDevices,
       icon: Smartphone,
-      color: "text-primary",
-      bgColor: "bg-primary/5",
-      trend: null,
-    },
-    {
-      title: "Active Assets",
-      value: data.kpis.activeAssets,
-      icon: CheckCircle,
-      color: "text-primary",
-      bgColor: "bg-primary/5",
-      trend: null,
-    },
-    {
-      title: "Total Types",
-      value: data.kpis.totalTypes,
-      icon: Package,
       color: "text-primary",
       bgColor: "bg-primary/5",
       trend: null,
@@ -133,6 +74,22 @@ export default function AssetManagementDashboardPage() {
       title: "Total Brands",
       value: data.kpis.totalBrands,
       icon: Tag,
+      color: "text-primary",
+      bgColor: "bg-primary/5",
+      trend: null,
+    },
+    {
+      title: "Total Active Status",
+      value: data.kpis.totalActiveStatus,
+      icon: CheckCircle,
+      color: "text-primary",
+      bgColor: "bg-primary/5",
+      trend: null,
+    },
+    {
+      title: "Total Department",
+      value: data.kpis.totalDepartments,
+      icon: Building2,
       color: "text-primary",
       bgColor: "bg-primary/5",
       trend: null,
@@ -204,68 +161,59 @@ export default function AssetManagementDashboardPage() {
 
         {/* Charts Row 1 */}
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Active vs Inactive Devices - Donut Chart */}
+          {/* Active/Inactive Device per Device - Grouped Bar Chart */}
           <Card className="border-border bg-card shadow-sm hover:shadow-md transition-all duration-300 rounded-xl overflow-hidden">
             <CardHeader className="border-b border-border bg-gradient-to-r from-primary/5 to-card px-6 py-4">
               <CardTitle className="text-foreground flex items-center gap-2 text-lg font-semibold" style={{ fontFamily: 'Poppins, sans-serif' }}>
                 <div className="p-2 bg-primary/5 rounded-lg">
                   <CheckCircle className="h-5 w-5 text-primary" />
                 </div>
-                Active vs Inactive Assets
+                Active/Inactive Device per Device
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6 px-6 pb-6">
-              {data.charts.assetsStatus.length > 0 ? (
-                <div className="space-y-2">
-                  <ResponsiveContainer width="100%" height={280}>
-                    <PieChart>
-                      <Pie
-                        data={data.charts.assetsStatus}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={{ stroke: 'hsl(var(--foreground))', strokeWidth: 2 }}
-                        label={renderCustomizedLabel}
-                        outerRadius={95}
-                        innerRadius={60}
-                        fill="#8884d8"
-                        dataKey="count"
-                        paddingAngle={2}
-                      >
-                        {data.charts.assetsStatus.map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={STATUS_COLORS[entry.name as keyof typeof STATUS_COLORS]}
-                            strokeWidth={2}
-                            stroke="hsl(var(--card))"
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "#2D333B",
-                          border: "1px solid #22c55e",
-                          borderRadius: "8px",
-                          padding: "12px",
-                          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.3)",
-                        }}
-                        itemStyle={{ color: "#FFFFFF", fontWeight: "bold" }}
+              {data.charts.activeInactiveByDevice.length > 0 ? (
+                <ResponsiveContainer width="100%" height={320}>
+                  <BarChart data={data.charts.activeInactiveByDevice}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis 
+                      dataKey="name" 
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontFamily: 'Inter, sans-serif' }}
+                      stroke="hsl(var(--border))"
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
+                    />
+                    <YAxis 
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
+                      stroke="hsl(var(--border))"
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        fontFamily: 'Inter, sans-serif'
+                      }}
+                      cursor={{ fill: 'hsl(var(--primary) / 0.05)' }}
+                    />
+                    <Legend />
+                    <Bar dataKey="active" fill={CHART_COLORS.active} radius={[8, 8, 0, 0]} name="Active">
+                      <LabelList 
+                        dataKey="active" 
+                        position="top" 
+                        style={{ fill: 'hsl(var(--foreground))', fontSize: '11px', fontFamily: 'Inter, sans-serif', fontWeight: '600' }}
                       />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  {/* Legend - Raised Position */}
-                  <div className="grid grid-cols-2 gap-2 -mt-2">
-                    {data.charts.assetsStatus.map((entry, index) => (
-                      <div key={index} className="flex items-center gap-2 bg-secondary/50 rounded-md px-3 py-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: STATUS_COLORS[entry.name as keyof typeof STATUS_COLORS] }}
-                        />
-                        <span className="text-sm text-foreground font-medium">{entry.name}</span>
-                        <span className="ml-auto text-sm font-bold text-primary">{entry.count}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                    </Bar>
+                    <Bar dataKey="inactive" fill={CHART_COLORS.inactive} radius={[8, 8, 0, 0]} name="Inactive">
+                      <LabelList 
+                        dataKey="inactive" 
+                        position="top" 
+                        style={{ fill: 'hsl(var(--foreground))', fontSize: '11px', fontFamily: 'Inter, sans-serif', fontWeight: '600' }}
+                      />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
               ) : (
                 <div className="flex items-center justify-center h-[320px] text-muted-foreground">
                   <div className="text-center">
@@ -280,25 +228,28 @@ export default function AssetManagementDashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Devices by Type - Bar Chart */}
+          {/* Used Device Per Department - Bar Chart */}
           <Card className="border-border bg-card shadow-sm hover:shadow-md transition-all duration-300 rounded-xl overflow-hidden">
             <CardHeader className="border-b border-border bg-gradient-to-r from-primary/5 to-card px-6 py-4">
               <CardTitle className="text-foreground flex items-center gap-2 text-lg font-semibold" style={{ fontFamily: 'Poppins, sans-serif' }}>
                 <div className="p-2 bg-primary/5 rounded-lg">
-                  <Package className="h-5 w-5 text-primary" />
+                  <Building2 className="h-5 w-5 text-primary" />
                 </div>
-                Total Devices by Type
+                Used Device Per Department
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6 px-6 pb-6">
-              {data.charts.assetsByType.length > 0 ? (
+              {data.charts.usedByDepartment.length > 0 ? (
                 <ResponsiveContainer width="100%" height={320}>
-                  <BarChart data={data.charts.assetsByType}>
+                  <BarChart data={data.charts.usedByDepartment}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis 
                       dataKey="name" 
                       tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
                       stroke="hsl(var(--border))"
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
                     />
                     <YAxis 
                       tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
@@ -313,7 +264,7 @@ export default function AssetManagementDashboardPage() {
                       }}
                       cursor={{ fill: 'hsl(var(--primary) / 0.05)' }}
                     />
-                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]}>
+                    <Bar dataKey="count" fill={CHART_COLORS.primary} radius={[8, 8, 0, 0]}>
                       <LabelList 
                         dataKey="count" 
                         position="top" 
@@ -326,7 +277,7 @@ export default function AssetManagementDashboardPage() {
                 <div className="flex items-center justify-center h-[320px] text-muted-foreground">
                   <div className="text-center">
                     <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-primary/5 dark:bg-primary/10 flex items-center justify-center">
-                      <Package className="h-8 w-8 text-muted-foreground" />
+                      <Building2 className="h-8 w-8 text-muted-foreground" />
                     </div>
                     <p className="text-sm font-medium text-foreground" style={{ fontFamily: 'Inter, sans-serif' }}>No data available</p>
                     <p className="text-xs text-muted-foreground mt-1">Data will appear here once available</p>
@@ -339,25 +290,28 @@ export default function AssetManagementDashboardPage() {
 
         {/* Charts Row 2 */}
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Devices by Brand - Bar Chart */}
+          {/* Total Active Per Brand - Bar Chart */}
           <Card className="border-border bg-card shadow-sm hover:shadow-md transition-all duration-300 rounded-xl overflow-hidden">
             <CardHeader className="border-b border-border bg-gradient-to-r from-primary/5 to-card px-6 py-4">
               <CardTitle className="text-foreground flex items-center gap-2 text-lg font-semibold" style={{ fontFamily: 'Poppins, sans-serif' }}>
                 <div className="p-2 bg-primary/5 rounded-lg">
                   <Tag className="h-5 w-5 text-primary" />
                 </div>
-                Total Devices by Brand
+                Total Active Per Brand
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6 px-6 pb-6">
-              {data.charts.assetsByBrand.length > 0 ? (
+              {data.charts.totalActiveByBrand.length > 0 ? (
                 <ResponsiveContainer width="100%" height={320}>
-                  <BarChart data={data.charts.assetsByBrand}>
+                  <BarChart data={data.charts.totalActiveByBrand}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis 
                       dataKey="name" 
                       tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
                       stroke="hsl(var(--border))"
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
                     />
                     <YAxis 
                       tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
@@ -372,7 +326,7 @@ export default function AssetManagementDashboardPage() {
                       }}
                       cursor={{ fill: 'hsl(var(--primary) / 0.05)' }}
                     />
-                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]}>
+                    <Bar dataKey="count" fill={CHART_COLORS.active} radius={[8, 8, 0, 0]}>
                       <LabelList 
                         dataKey="count" 
                         position="top" 
@@ -395,25 +349,28 @@ export default function AssetManagementDashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Devices by User Use - Bar Chart */}
+          {/* Total Device Used On Storage Area - Bar Chart */}
           <Card className="border-border bg-card shadow-sm hover:shadow-md transition-all duration-300 rounded-xl overflow-hidden">
             <CardHeader className="border-b border-border bg-gradient-to-r from-primary/5 to-card px-6 py-4">
               <CardTitle className="text-foreground flex items-center gap-2 text-lg font-semibold" style={{ fontFamily: 'Poppins, sans-serif' }}>
                 <div className="p-2 bg-primary/5 rounded-lg">
-                  <TrendingUp className="h-5 w-5 text-primary" />
+                  <Warehouse className="h-5 w-5 text-primary" />
                 </div>
-                Total Devices by User Use
+                Total Device Used On Storage Area
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6 px-6 pb-6">
-              {data.charts.assetsByUserUse.length > 0 ? (
+              {data.charts.totalByStorageArea.length > 0 ? (
                 <ResponsiveContainer width="100%" height={320}>
-                  <BarChart data={data.charts.assetsByUserUse}>
+                  <BarChart data={data.charts.totalByStorageArea}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis 
                       dataKey="name" 
                       tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
                       stroke="hsl(var(--border))"
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
                     />
                     <YAxis 
                       tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
@@ -428,7 +385,7 @@ export default function AssetManagementDashboardPage() {
                       }}
                       cursor={{ fill: 'hsl(var(--primary) / 0.05)' }}
                     />
-                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]}>
+                    <Bar dataKey="count" fill={CHART_COLORS.primary} radius={[8, 8, 0, 0]}>
                       <LabelList 
                         dataKey="count" 
                         position="top" 
@@ -441,7 +398,7 @@ export default function AssetManagementDashboardPage() {
                 <div className="flex items-center justify-center h-[320px] text-muted-foreground">
                   <div className="text-center">
                     <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-primary/5 dark:bg-primary/10 flex items-center justify-center">
-                      <TrendingUp className="h-8 w-8 text-muted-foreground" />
+                      <Warehouse className="h-8 w-8 text-muted-foreground" />
                     </div>
                     <p className="text-sm font-medium text-foreground" style={{ fontFamily: 'Inter, sans-serif' }}>No data available</p>
                     <p className="text-xs text-muted-foreground mt-1">Data will appear here once available</p>

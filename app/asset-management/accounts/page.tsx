@@ -18,12 +18,15 @@ type Device = {
   type: string;
   typeId?: string;
   brand: string;
-  brandId?: string;
   item: string;
-  specification: string;
   userUse: string;
   note?: string;
   status?: string;
+  departmentTeam?: string;
+  storageLocation?: string;
+  purchaseAmount?: number;
+  currency?: string;
+  updatedAt?: string;
 };
 
 type LookupData = { id: string; code: string; name: string }[];
@@ -31,16 +34,14 @@ type LookupData = { id: string; code: string; name: string }[];
 export default function AssetManagementAccountsPage() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(false);
-  const [types, setTypes] = useState<LookupData>([]);
-  const [brands, setBrands] = useState<LookupData>([]);
+  const [departments, setDepartments] = useState<LookupData>([]);
+  const [deviceList, setDeviceList] = useState<LookupData>([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<Device | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterType, setFilterType] = useState("");
-  const [filterBrand, setFilterBrand] = useState("");
   const [page, setPage] = useState(1);
   const [limit] = useState(20);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
@@ -48,24 +49,49 @@ export default function AssetManagementAccountsPage() {
   const [formData, setFormData] = useState({
     code: "",
     typeId: "",
-    brandId: "",
+    brand: "",
     item: "",
-    specification: "",
     userUse: "",
     note: "",
+    departmentTeam: "",
+    storageLocation: "",
+    purchaseAmount: "",
+    currency: "",
   });
 
   const menuName = "Accounts";
+
+  // Get status badge color
+  const getStatusBadge = (status: string | undefined) => {
+    if (!status) {
+      return <Badge variant="secondary" className="bg-muted text-muted-foreground">inactive</Badge>;
+    }
+
+    const statusLower = status.toLowerCase();
+    
+    if (statusLower === "active") {
+      return <Badge className="bg-green-500 text-white">Active</Badge>;
+    } else if (statusLower === "maintenance") {
+      return <Badge className="bg-red-500 text-white">Maintenance</Badge>;
+    } else if (statusLower === "not_used") {
+      return <Badge variant="secondary" className="bg-gray-500 text-white">Not Used</Badge>;
+    } else {
+      return <Badge variant="secondary" className="bg-muted text-muted-foreground">{status}</Badge>;
+    }
+  };
 
   const resetForm = () => {
     setFormData({
       code: "",
       typeId: "",
-      brandId: "",
+      brand: "",
       item: "",
-      specification: "",
       userUse: "",
       note: "",
+      departmentTeam: "",
+      storageLocation: "",
+      purchaseAmount: "",
+      currency: "",
     });
   };
 
@@ -83,17 +109,18 @@ export default function AssetManagementAccountsPage() {
     );
   };
 
-  // Fetch Type and Brand for dropdowns
+  // Fetch Type for dropdown
   const fetchLookups = async () => {
     try {
-      // Use combined lookup endpoint to reduce API calls from 2 to 1
-      const res = await fetch("/api/lookups?module=asset-management");
-      const json = await res.json();
-      setTypes(json.data?.applications || []); // Applications = Types for device management
-      setBrands(json.data?.lines || []); // Lines = Brands for device management
+      // Fetch departments
+      const deptRes = await fetch("/api/asset-management/departments");
+      const deptJson = await deptRes.json();
+      if (deptRes.ok) {
+        setDepartments(deptJson.data || []);
+      }
     } catch (error) {
       console.error("Error fetching lookups:", error);
-      toast.error("Failed to fetch types and brands.");
+      toast.error("Failed to fetch departments.");
     }
   };
 
@@ -106,8 +133,6 @@ export default function AssetManagementAccountsPage() {
         limit: limit.toString(),
       });
       if (searchQuery) params.append("search", searchQuery);
-      if (filterType) params.append("typeId", filterType);
-      if (filterBrand) params.append("brandId", filterBrand);
 
       const res = await fetch(`/api/asset-management/accounts?${params}`);
       const json = await res.json();
@@ -116,18 +141,32 @@ export default function AssetManagementAccountsPage() {
         setDevices(json.data || []);
         setPagination(json.pagination || { page: 1, limit: 20, total: 0, totalPages: 1 });
       } else {
-        toast.error(json.error || "Failed to fetch devices");
+        toast.error(json.error || "Failed to fetch assets");
       }
     } catch (error) {
       console.error("Error fetching devices:", error);
-      toast.error("Failed to fetch devices");
+      toast.error("Failed to fetch assets");
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch device list for dropdown
+  const fetchDeviceList = async () => {
+    try {
+      const res = await fetch("/api/asset-management/devices");
+      const json = await res.json();
+      if (res.ok) {
+        setDeviceList(json.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching device list:", error);
+    }
+  };
+
   useEffect(() => {
     fetchLookups();
+    fetchDeviceList();
   }, []);
 
   useEffect(() => {
@@ -136,12 +175,12 @@ export default function AssetManagementAccountsPage() {
     }, 300); // Debounce search
 
     return () => clearTimeout(timeoutId);
-  }, [page, searchQuery, filterType, filterBrand]);
+  }, [page, searchQuery]);
 
   // Handle add device
   const handleAdd = async () => {
     if (!formData.code || !formData.item) {
-      toast.error("Code and Item are required");
+      toast.error("Code and Device are required");
       return;
     }
 
@@ -152,14 +191,17 @@ export default function AssetManagementAccountsPage() {
       const res = await fetch("/api/asset-management/accounts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+          body: JSON.stringify({
           code: formData.code,
           typeId: formData.typeId || null,
-          brandId: formData.brandId || null,
+          brand: formData.brand || null,
           item: formData.item,
-          specification: formData.specification || null,
           userUse: formData.userUse || null,
           note: formData.note || null,
+          departmentTeam: formData.departmentTeam || null,
+          storageLocation: formData.storageLocation || null,
+          purchaseAmount: formData.purchaseAmount ? parseFloat(formData.purchaseAmount) : null,
+          currency: formData.currency || null,
           userId,
         }),
       });
@@ -167,16 +209,62 @@ export default function AssetManagementAccountsPage() {
       const json = await res.json();
 
       if (res.ok) {
-        toast.success(`Device "${formData.code}" created successfully!`);
+        toast.success(`Asset "${formData.code}" created successfully!`);
         setIsAddOpen(false);
         resetForm();
         fetchDevices();
       } else {
-        toast.error(json.error || "Failed to create device");
+        toast.error(json.error || "Failed to create asset");
       }
     } catch (error: any) {
       console.error("Error creating device:", error);
-      toast.error(error.message || "Failed to create device. Please try again.");
+      toast.error(error.message || "Failed to create asset. Please try again.");
+    }
+  };
+
+  // Handle edit device
+  const handleEdit = async () => {
+    if (!selected || !formData.code || !formData.item) {
+      toast.error("Code and Item are required");
+      return;
+    }
+
+    try {
+      const operatorStr = localStorage.getItem("operator");
+      const userId = operatorStr ? JSON.parse(operatorStr).id : null;
+
+      const res = await fetch(`/api/asset-management/accounts/${selected.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: formData.code,
+          typeId: formData.typeId || null,
+          brand: formData.brand || null,
+          item: formData.item,
+          userUse: formData.userUse || null,
+          note: formData.note || null,
+          departmentTeam: formData.departmentTeam || null,
+          storageLocation: formData.storageLocation || null,
+          purchaseAmount: formData.purchaseAmount ? parseFloat(formData.purchaseAmount) : null,
+          currency: formData.currency || null,
+          userId,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (res.ok) {
+        toast.success(`Asset "${formData.code}" updated successfully!`);
+        setIsEditOpen(false);
+        resetForm();
+        setSelected(null);
+        fetchDevices();
+      } else {
+        toast.error(json.error || "Failed to update asset");
+      }
+    } catch (error: any) {
+      console.error("Error updating asset:", error);
+      toast.error(error.message || "Failed to update asset. Please try again.");
     }
   };
 
@@ -195,43 +283,14 @@ export default function AssetManagementAccountsPage() {
               className="w-64 pl-9" 
             />
           </div>
-          <select 
-            value={filterType}
-            onChange={(e) => {
-              setFilterType(e.target.value);
-              setPage(1); // Reset to first page when filter changes
-            }}
-            className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-          >
-            <option value="">All Types</option>
-            {types.map((type) => (
-              <option key={type.id} value={type.id}>{type.name}</option>
-            ))}
-          </select>
-          <select 
-            value={filterBrand}
-            onChange={(e) => {
-              setFilterBrand(e.target.value);
-              setPage(1); // Reset to first page when filter changes
-            }}
-            className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-          >
-            <option value="">All Brands</option>
-            {brands.map((brand) => (
-              <option key={brand.id} value={brand.id}>{brand.name}</option>
-            ))}
-          </select>
           <div className="text-sm text-muted-foreground ml-2">
-            {pagination.total} total device{pagination.total !== 1 ? 's' : ''}
+            {pagination.total} total asset{pagination.total !== 1 ? 's' : ''}
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" disabled>
-            Import Excel
-          </Button>
           <Button onClick={() => setIsAddOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Device
+            Add Asset
           </Button>
         </div>
       </div>
@@ -250,24 +309,27 @@ export default function AssetManagementAccountsPage() {
                     )}
                   </button>
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Status</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Code</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Type</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Asset ID</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Device</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Brand</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Item</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Specification</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">User Use</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Note</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Status</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">User</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Department</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Location</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Purchase</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Currency</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Last Updated</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Remarks</th>
                 <th className="px-4 py-3 text-center text-sm font-semibold text-foreground">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-8 text-center text-muted-foreground">Loading...</td>
+                  <td colSpan={13} className="px-4 py-8 text-center text-muted-foreground">Loading...</td>
                 </tr>
               ) : devices.length === 0 ? (
-                <tr><td colSpan={10} className="px-4 py-8 text-center text-muted-foreground">No devices found</td></tr>
+                <tr><td colSpan={13} className="px-4 py-8 text-center text-muted-foreground">No devices found</td></tr>
               ) : (
                 devices.map((device) => (
                   <tr key={device.id} className="border-b border-border hover:bg-secondary/50 transition-colors">
@@ -281,23 +343,9 @@ export default function AssetManagementAccountsPage() {
                       </button>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant={device.status === "active" ? "default" : "secondary"} className={device.status === "active" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}>
-                        {device.status || "inactive"}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3">
                       <span className="font-mono text-sm font-medium text-primary">{device.code || "-"}</span>
                     </td>
-                    <td className="px-4 py-3">
-                      {device.type ? (
-                        <Badge variant="secondary" className="bg-primary/20 text-primary border-primary flex items-center gap-2">
-                          <Laptop className="h-3 w-3 text-white" />
-                          {device.type}
-                        </Badge>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">-</span>
-                      )}
-                    </td>
+                    <td className="px-4 py-3 text-sm text-foreground">{device.item || "-"}</td>
                     <td className="px-4 py-3">
                       {device.brand ? (
                         <Badge variant="secondary">{device.brand}</Badge>
@@ -305,16 +353,55 @@ export default function AssetManagementAccountsPage() {
                         <span className="text-sm text-muted-foreground">-</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm text-foreground">{device.item || "-"}</td>
-                    <td className="px-4 py-3 text-sm text-foreground">{device.specification || "-"}</td>
+                    <td className="px-4 py-3">
+                      {getStatusBadge(device.status)}
+                    </td>
                     <td className="px-4 py-3 text-sm text-foreground">{device.userUse || "-"}</td>
+                    <td className="px-4 py-3 text-sm text-foreground">{device.departmentTeam || "-"}</td>
+                    <td className="px-4 py-3 text-sm text-foreground">{device.storageLocation || "-"}</td>
+                    <td className="px-4 py-3 text-sm text-foreground">
+                      {device.purchaseAmount ? (
+                        <span>{new Intl.NumberFormat('id-ID').format(device.purchaseAmount)}</span>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-foreground">{device.currency || "-"}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                      {device.updatedAt ? (
+                        new Date(device.updatedAt).toLocaleString('id-ID', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      ) : (
+                        "-"
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{device.note || "-"}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-2">
                         <Button variant="ghost" size="sm" className="hover:bg-primary/10 hover:text-primary">
                           <Power className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="hover:bg-primary/10 hover:text-primary">
+                        <Button variant="ghost" size="sm" className="hover:bg-primary/10 hover:text-primary" onClick={() => {
+                          setSelected(device);
+                          setFormData({
+                            code: device.code || "",
+                            typeId: device.typeId || "",
+                            brand: device.brand || "",
+                            item: device.item || "",
+                            userUse: device.userUse || "",
+                            note: device.note || "",
+                            departmentTeam: device.departmentTeam || "",
+                            storageLocation: device.storageLocation || "",
+                            purchaseAmount: device.purchaseAmount ? device.purchaseAmount.toString() : "",
+                            currency: device.currency || "",
+                          });
+                          setIsEditOpen(true);
+                        }}>
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="sm" className="hover:bg-destructive/10">
@@ -347,8 +434,8 @@ export default function AssetManagementAccountsPage() {
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Add New Device</DialogTitle>
-            <DialogDescription>Create a new device entry</DialogDescription>
+            <DialogTitle>Add New Asset</DialogTitle>
+            <DialogDescription>Create a new asset entry</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
             <div className="grid gap-2">
@@ -356,43 +443,51 @@ export default function AssetManagementAccountsPage() {
               <Input value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} placeholder="e.g. DEV001" />
             </div>
             <div className="grid gap-2">
-              <Label>Type</Label>
-              <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={formData.typeId} onChange={(e) => setFormData({ ...formData, typeId: e.target.value })}>
-                <option value="">Select Type</option>
-                {types.map((type) => (
-                  <option key={type.id} value={type.id}>{type.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="grid gap-2">
               <Label>Brand</Label>
-              <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={formData.brandId} onChange={(e) => setFormData({ ...formData, brandId: e.target.value })}>
-                <option value="">Select Brand</option>
-                {brands.map((brand) => (
-                  <option key={brand.id} value={brand.id}>{brand.name}</option>
+              <Input value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value })} placeholder="e.g. Apple, Dell, HP" />
+            </div>
+            <div className="grid gap-2">
+              <Label>Device *</Label>
+              <select
+                value={formData.item}
+                onChange={(e) => setFormData({ ...formData, item: e.target.value })}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">Select Device</option>
+                {deviceList.map((device) => (
+                  <option key={device.id} value={device.name}>
+                    {device.name}
+                  </option>
                 ))}
               </select>
             </div>
             <div className="grid gap-2">
-              <Label>Item *</Label>
-              <Input value={formData.item} onChange={(e) => setFormData({ ...formData, item: e.target.value })} placeholder="e.g. Laptop" />
-            </div>
-            <div className="col-span-2 grid gap-2">
-              <Label>Specification</Label>
-              <Textarea value={formData.specification} onChange={(e) => setFormData({ ...formData, specification: e.target.value })} placeholder="Device specifications" />
+              <Label>Storage Location</Label>
+              <Input value={formData.storageLocation} onChange={(e) => setFormData({ ...formData, storageLocation: e.target.value })} placeholder="e.g. Warehouse A, Room 101" />
             </div>
             <div className="grid gap-2">
-              <Label>User Use</Label>
-              <Input value={formData.userUse} onChange={(e) => setFormData({ ...formData, userUse: e.target.value })} placeholder="e.g. John Doe" />
+              <Label>Purchase Amount</Label>
+              <Input type="number" step="0.01" value={formData.purchaseAmount} onChange={(e) => setFormData({ ...formData, purchaseAmount: e.target.value })} placeholder="e.g. 5000000" />
+            </div>
+            <div className="grid gap-2">
+              <Label>Currency</Label>
+              <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={formData.currency} onChange={(e) => setFormData({ ...formData, currency: e.target.value })}>
+                <option value="">Select Currency</option>
+                <option value="IDR">IDR</option>
+                <option value="USD">USD</option>
+                <option value="SGD">SGD</option>
+                <option value="MYR">MYR</option>
+                <option value="EUR">EUR</option>
+              </select>
             </div>
             <div className="col-span-2 grid gap-2">
-              <Label>Note</Label>
-              <Textarea value={formData.note} onChange={(e) => setFormData({ ...formData, note: e.target.value })} placeholder="Optional note" />
+              <Label>Remarks</Label>
+              <Textarea value={formData.note} onChange={(e) => setFormData({ ...formData, note: e.target.value })} placeholder="Optional remarks" />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddOpen(false); resetForm(); }}>Cancel</Button>
-            <Button onClick={handleAdd} disabled={!formData.code || !formData.item}>Add Device</Button>
+            <Button onClick={handleAdd} disabled={!formData.code || !formData.item}>Add Asset</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -401,8 +496,8 @@ export default function AssetManagementAccountsPage() {
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Edit Device</DialogTitle>
-            <DialogDescription>Update device information</DialogDescription>
+            <DialogTitle>Edit Asset</DialogTitle>
+            <DialogDescription>Update asset information</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
             <div className="grid gap-2">
@@ -410,43 +505,51 @@ export default function AssetManagementAccountsPage() {
               <Input value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} />
             </div>
             <div className="grid gap-2">
-              <Label>Type</Label>
-              <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={formData.typeId} onChange={(e) => setFormData({ ...formData, typeId: e.target.value })}>
-                <option value="">Select Type</option>
-                {types.map((type) => (
-                  <option key={type.id} value={type.id}>{type.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="grid gap-2">
               <Label>Brand</Label>
-              <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={formData.brandId} onChange={(e) => setFormData({ ...formData, brandId: e.target.value })}>
-                <option value="">Select Brand</option>
-                {brands.map((brand) => (
-                  <option key={brand.id} value={brand.id}>{brand.name}</option>
+              <Input value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value })} placeholder="e.g. Apple, Dell, HP" />
+            </div>
+            <div className="grid gap-2">
+              <Label>Device *</Label>
+              <select
+                value={formData.item}
+                onChange={(e) => setFormData({ ...formData, item: e.target.value })}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">Select Device</option>
+                {deviceList.map((device) => (
+                  <option key={device.id} value={device.name}>
+                    {device.name}
+                  </option>
                 ))}
               </select>
             </div>
             <div className="grid gap-2">
-              <Label>Item *</Label>
-              <Input value={formData.item} onChange={(e) => setFormData({ ...formData, item: e.target.value })} />
-            </div>
-            <div className="col-span-2 grid gap-2">
-              <Label>Specification</Label>
-              <Textarea value={formData.specification} onChange={(e) => setFormData({ ...formData, specification: e.target.value })} />
+              <Label>Storage Location</Label>
+              <Input value={formData.storageLocation} onChange={(e) => setFormData({ ...formData, storageLocation: e.target.value })} placeholder="e.g. Warehouse A, Room 101" />
             </div>
             <div className="grid gap-2">
-              <Label>User Use</Label>
-              <Input value={formData.userUse} onChange={(e) => setFormData({ ...formData, userUse: e.target.value })} />
+              <Label>Purchase Amount</Label>
+              <Input type="number" step="0.01" value={formData.purchaseAmount} onChange={(e) => setFormData({ ...formData, purchaseAmount: e.target.value })} placeholder="e.g. 5000000" />
+            </div>
+            <div className="grid gap-2">
+              <Label>Currency</Label>
+              <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={formData.currency} onChange={(e) => setFormData({ ...formData, currency: e.target.value })}>
+                <option value="">Select Currency</option>
+                <option value="IDR">IDR</option>
+                <option value="USD">USD</option>
+                <option value="SGD">SGD</option>
+                <option value="MYR">MYR</option>
+                <option value="EUR">EUR</option>
+              </select>
             </div>
             <div className="col-span-2 grid gap-2">
-              <Label>Note</Label>
-              <Textarea value={formData.note} onChange={(e) => setFormData({ ...formData, note: e.target.value })} />
+              <Label>Remarks</Label>
+              <Textarea value={formData.note} onChange={(e) => setFormData({ ...formData, note: e.target.value })} placeholder="Optional remarks" />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsEditOpen(false); resetForm(); }}>Cancel</Button>
-            <Button onClick={() => setIsEditOpen(false)} disabled={!formData.code || !formData.item}>Update Device</Button>
+            <Button onClick={handleEdit} disabled={!formData.code || !formData.item}>Update Asset</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -455,9 +558,9 @@ export default function AssetManagementAccountsPage() {
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Device</DialogTitle>
+            <DialogTitle>Delete Asset</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete device <strong>{selected?.code}</strong>? This action cannot be undone.
+              Are you sure you want to delete asset <strong>{selected?.code}</strong>? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

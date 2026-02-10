@@ -7,13 +7,16 @@ import {
   LayoutDashboard,
   Users,
   Settings,
-  AppWindow,
   Layers,
   Building2,
   Shield,
   ChevronDown,
   ChevronRight,
   Laptop,
+  FileText,
+  Wrench,
+  DollarSign,
+  Monitor,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { canViewMenu, isSuperAdmin } from "@/lib/permissions";
@@ -26,25 +29,37 @@ const menuItems = [
     menuName: "Dashboard",
   },
   {
-    title: "Assets",
+    title: "Assets Master",
     href: "/asset-management/accounts",
     icon: Laptop,
     menuName: "Accounts",
+  },
+  {
+    title: "Assignment Log",
+    href: "/asset-management/assignment-log",
+    icon: FileText,
+    menuName: "AssignmentLog",
+  },
+  {
+    title: "Maintenance Log",
+    href: "/asset-management/maintenance-log",
+    icon: Wrench,
+    menuName: "MaintenanceLog",
   },
 ];
 
 const settingsSubmenus = [
   {
-    title: "Type",
-    href: "/asset-management/applications",
-    icon: AppWindow,
-    menuName: "Applications",
+    title: "Device",
+    href: "/asset-management/devices",
+    icon: Monitor,
+    menuName: "Devices",
   },
   {
-    title: "Brand",
-    href: "/asset-management/lines",
-    icon: Layers,
-    menuName: "Lines",
+    title: "Department",
+    href: "/asset-management/departments",
+    icon: Building2,
+    menuName: "Departments",
   },
 ];
 
@@ -63,8 +78,8 @@ export function AssetManagementSidebar() {
       if (admin) {
         // Super Admin can see everything
         setVisibleMenus([
-          "Dashboard", "Accounts", 
-          "Applications", "Lines"
+          "Dashboard", "Accounts", "AssignmentLog", "MaintenanceLog",
+          "Devices", "Departments"
         ]);
       } else {
         // Filter menus based on permissions

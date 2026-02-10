@@ -243,7 +243,7 @@ export function hasModuleAccess(moduleName: string): boolean {
   const moduleMenus: Record<string, string[]> = {
     "account-management": ["dashboard", "accounts", "applications", "lines", "departments", "roles"],
     "product-management": ["dashboard", "accounts", "applications", "lines", "departments", "roles"],
-    "asset-management": ["dashboard", "accounts", "applications", "lines"],
+    "asset-management": ["dashboard", "accounts", "AssignmentLog", "MaintenanceLog", "devices", "departments"],
     "operator-setting": ["operators", "operator roles", "audit logs"],
   };
   

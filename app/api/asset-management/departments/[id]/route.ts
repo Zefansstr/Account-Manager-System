@@ -2,49 +2,31 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { logActivity, getIpAddress, getUserAgent } from "@/lib/audit-logger";
 
-// GET single device type
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params;
-    const { data, error } = await supabase
-      .from("asset_types")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    if (error) throw error;
-
-    return NextResponse.json({ data });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
-
-// PUT update device type
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const body = await request.json();
     const { code, name, description, userId } = body;
 
+    if (!code || !name) {
+      return NextResponse.json(
+        { error: "Code and Name are required" },
+        { status: 400 }
+      );
+    }
+
     // Get old value before update
     const { data: oldData } = await supabase
-      .from("asset_types")
+      .from("asset_departments")
       .select("*")
       .eq("id", id)
       .single();
 
     const { data, error } = await supabase
-      .from("asset_types")
+      .from("asset_departments")
       .update({
-        type_code: code,
-        type_name: name,
+        department_code: code,
+        department_name: name,
         description: description || null,
         updated_at: new Date().toISOString(),
       })
@@ -58,10 +40,10 @@ export async function PUT(
     await logActivity({
       userId,
       action: "UPDATE",
-      tableName: "asset_types",
+      tableName: "asset_departments",
       recordId: id,
-      oldValue: { type_code: oldData?.type_code, type_name: oldData?.type_name },
-      newValue: { type_code: code, type_name: name },
+      oldValue: { department_code: oldData?.department_code, department_name: oldData?.department_name },
+      newValue: { department_code: code, department_name: name },
       ipAddress: getIpAddress(request),
       userAgent: getUserAgent(request),
     });
@@ -72,25 +54,21 @@ export async function PUT(
   }
 }
 
-// DELETE device type
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const body = await request.json().catch(() => ({}));
-    const { userId } = body;
+    const searchParams = new URL(request.url).searchParams;
+    const userId = searchParams.get("userId") || undefined;
 
-    // Get data before delete
+    // Get old value before delete
     const { data: oldData } = await supabase
-      .from("asset_types")
+      .from("asset_departments")
       .select("*")
       .eq("id", id)
       .single();
 
     const { error } = await supabase
-      .from("asset_types")
+      .from("asset_departments")
       .delete()
       .eq("id", id);
 
@@ -100,14 +78,14 @@ export async function DELETE(
     await logActivity({
       userId,
       action: "DELETE",
-      tableName: "asset_types",
+      tableName: "asset_departments",
       recordId: id,
-      oldValue: { type_code: oldData?.type_code, type_name: oldData?.type_name },
+      oldValue: { department_code: oldData?.department_code, department_name: oldData?.department_name },
       ipAddress: getIpAddress(request),
       userAgent: getUserAgent(request),
     });
 
-    return NextResponse.json({ message: "Type deleted successfully" });
+    return NextResponse.json({ message: "Department deleted successfully" });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

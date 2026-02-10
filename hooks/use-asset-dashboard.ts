@@ -7,23 +7,25 @@ import { useQuery } from '@tanstack/react-query';
 
 // Asset Dashboard stats types
 export interface AssetDashboardKPIs {
-  totalAssets: number;
-  activeAssets: number;
-  totalTypes: number;
+  totalDevices: number;
   totalBrands: number;
+  totalActiveStatus: number;
+  totalDepartments: number;
 }
 
 export interface ChartData {
   name: string;
-  count: number;
+  count?: number;
+  active?: number;
+  used?: number;
   [key: string]: any; // Allow additional properties for Recharts compatibility
 }
 
 export interface AssetDashboardCharts {
-  assetsStatus: ChartData[];
-  assetsByType: ChartData[];
-  assetsByBrand: ChartData[];
-  assetsByUserUse: ChartData[];
+  activeInactiveByDevice: ChartData[];
+  usedByDepartment: ChartData[];
+  totalActiveByBrand: ChartData[];
+  totalByStorageArea: ChartData[];
 }
 
 export interface AssetDashboardData {
