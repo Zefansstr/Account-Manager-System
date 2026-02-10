@@ -54,7 +54,10 @@ export function DatePicker({ value, onChange, placeholder = "Pick a date", class
           </Button>
         </PopoverTrigger>
         {open && (
-          <PopoverContent className="w-auto p-0 mt-1" align="start">
+          <PopoverContent 
+            className="w-auto p-0 mt-1 animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200" 
+            align="start"
+          >
             <Calendar selected={selectedDate} onSelect={handleSelect} />
           </PopoverContent>
         )}

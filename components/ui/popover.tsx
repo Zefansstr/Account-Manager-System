@@ -234,8 +234,22 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
                 content.style.left = `${left}px`;
               }
               
+              // Set styles
               content.style.zIndex = "9999";
               content.style.pointerEvents = "auto";
+              
+              // Set initial state for animation
+              content.style.opacity = "0";
+              content.style.transform = "scale(0.96) translateY(-2px)";
+              
+              // Animate in smoothly with better easing curve
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  content.style.transition = "opacity 250ms cubic-bezier(0.16, 1, 0.3, 1), transform 250ms cubic-bezier(0.16, 1, 0.3, 1)";
+                  content.style.opacity = "1";
+                  content.style.transform = "scale(1) translateY(0)";
+                });
+              });
             });
           });
         };
@@ -273,7 +287,7 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
         )}
         style={{ 
           pointerEvents: 'auto',
-          zIndex: 9999
+          zIndex: 9999,
         }}
         {...props}
       >

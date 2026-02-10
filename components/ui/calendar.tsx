@@ -44,7 +44,7 @@ export function Calendar({ selected, onSelect, className }: CalendarProps) {
 
   return (
     <div 
-      className={cn("p-3 bg-card rounded-lg", className)}
+      className={cn("p-3 bg-card rounded-lg transition-all duration-200", className)}
       style={{ pointerEvents: 'auto' }}
       onClick={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
