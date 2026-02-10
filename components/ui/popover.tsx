@@ -238,7 +238,11 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
     );
 
     if (typeof document !== 'undefined') {
-      return createPortal(content, document.body);
+      // Try to find dialog content to render inside dialog, otherwise use body
+      const dialogContent = triggerRef.current?.closest('[role="dialog"]') as HTMLElement;
+      const portalTarget = dialogContent || document.body;
+      
+      return createPortal(content, portalTarget);
     }
 
     return content;
