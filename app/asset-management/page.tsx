@@ -9,9 +9,11 @@ import { useAssetDashboard } from "@/hooks/use-asset-dashboard";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
 
 const CHART_COLORS = {
-  active: "#22c55e",
-  inactive: "#ef4444",
-  primary: "hsl(var(--primary))",
+  active: "#22c55e",      // Green for active status
+  inactive: "#ef4444",     // Red for inactive status
+  primary: "#22c55e",      // Primary green color (same as active for consistency)
+  secondary: "#3b82f6",    // Blue for secondary data
+  accent: "#8b5cf6",      // Purple for accent
 };
 
 export default function AssetManagementDashboardPage() {
@@ -326,7 +328,7 @@ export default function AssetManagementDashboardPage() {
                       }}
                       cursor={{ fill: 'hsl(var(--primary) / 0.05)' }}
                     />
-                    <Bar dataKey="count" fill={CHART_COLORS.active} radius={[8, 8, 0, 0]}>
+                    <Bar dataKey="count" fill={CHART_COLORS.primary} radius={[8, 8, 0, 0]}>
                       <LabelList 
                         dataKey="count" 
                         position="top" 
