@@ -14,17 +14,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch asset with type information
+    // Fetch asset information
     const { data, error } = await supabase
       .from("asset_accounts")
       .select(`
         id,
         code,
-        item,
-        asset_types:type_id (
-          id,
-          type_name
-        )
+        item
       `)
       .eq("code", code.trim())
       .single();
@@ -42,7 +38,7 @@ export async function GET(request: NextRequest) {
         id: data.id,
         code: data.code,
         item: data.item,
-        typeName: data.asset_types?.type_name || null,
+        typeName: null, // Type field has been removed, return null
       },
     });
   } catch (error: any) {
