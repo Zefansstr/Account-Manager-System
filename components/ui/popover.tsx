@@ -165,31 +165,75 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
                 return;
               }
               
-              let top = triggerRect.bottom + sideOffset;
-              let left = triggerRect.left;
+              // Check if trigger is inside a dialog
+              const dialog = trigger.closest('[role="dialog"]') as HTMLElement;
+              const isInDialog = !!dialog;
               
-              if (align === "center") {
-                left = triggerRect.left + (triggerRect.width / 2) - (content.offsetWidth / 2);
-              } else if (align === "end") {
-                left = triggerRect.right - content.offsetWidth;
-              }
+              let top: number;
+              let left: number;
+              let position: 'fixed' | 'absolute' = 'fixed';
+              
+              if (isInDialog) {
+                // If inside dialog, use absolute positioning relative to dialog
+                const dialogRect = dialog.getBoundingClientRect();
+                const triggerRelativeTop = triggerRect.top - dialogRect.top;
+                const triggerRelativeLeft = triggerRect.left - dialogRect.left;
+                
+                top = triggerRelativeTop + triggerRect.height + sideOffset;
+                left = triggerRelativeLeft;
+                
+                if (align === "center") {
+                  left = triggerRelativeLeft + (triggerRect.width / 2) - (content.offsetWidth / 2);
+                } else if (align === "end") {
+                  left = triggerRelativeLeft + triggerRect.width - content.offsetWidth;
+                }
+                
+                // Check if content goes off dialog horizontally
+                if (left + content.offsetWidth > dialogRect.width - 10) {
+                  left = dialogRect.width - content.offsetWidth - 10;
+                }
+                if (left < 10) left = 10;
+                
+                // Check if content goes off dialog vertically
+                if (top + content.offsetHeight > dialogRect.height - 10) {
+                  // Show above trigger instead
+                  top = triggerRelativeTop - content.offsetHeight - sideOffset;
+                }
+                if (top < 10) top = 10;
+                
+                position = 'absolute';
+                content.style.position = position;
+                content.style.top = `${top}px`;
+                content.style.left = `${left}px`;
+              } else {
+                // If not in dialog, use fixed positioning
+                top = triggerRect.bottom + sideOffset;
+                left = triggerRect.left;
+                
+                if (align === "center") {
+                  left = triggerRect.left + (triggerRect.width / 2) - (content.offsetWidth / 2);
+                } else if (align === "end") {
+                  left = triggerRect.right - content.offsetWidth;
+                }
 
-              // Check if content goes off screen horizontally
-              if (left + content.offsetWidth > window.innerWidth - 10) {
-                left = window.innerWidth - content.offsetWidth - 10;
-              }
-              if (left < 10) left = 10;
+                // Check if content goes off screen horizontally
+                if (left + content.offsetWidth > window.innerWidth - 10) {
+                  left = window.innerWidth - content.offsetWidth - 10;
+                }
+                if (left < 10) left = 10;
 
-              // Check if content goes off screen vertically (below)
-              if (top + content.offsetHeight > window.innerHeight - 10) {
-                // Show above trigger instead
-                top = triggerRect.top - content.offsetHeight - sideOffset;
+                // Check if content goes off screen vertically (below)
+                if (top + content.offsetHeight > window.innerHeight - 10) {
+                  // Show above trigger instead
+                  top = triggerRect.top - content.offsetHeight - sideOffset;
+                }
+                if (top < 10) top = 10;
+                
+                content.style.position = position;
+                content.style.top = `${top}px`;
+                content.style.left = `${left}px`;
               }
-              if (top < 10) top = 10;
-
-              content.style.position = "fixed";
-              content.style.top = `${top}px`;
-              content.style.left = `${left}px`;
+              
               content.style.zIndex = "9999";
               content.style.pointerEvents = "auto";
             });
