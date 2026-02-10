@@ -176,43 +176,51 @@ export default function AssetManagementDashboardPage() {
             <CardContent className="pt-6 px-6 pb-6">
               {data.charts.activeInactiveByDevice.length > 0 ? (
                 <ResponsiveContainer width="100%" height={320}>
-                  <BarChart data={data.charts.activeInactiveByDevice}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <BarChart data={data.charts.activeInactiveByDevice} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+                    <defs>
+                      <linearGradient id="colorActive" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#22c55e" stopOpacity={0.9}/>
+                        <stop offset="95%" stopColor="#22c55e" stopOpacity={0.6}/>
+                      </linearGradient>
+                      <linearGradient id="colorInactive" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.9}/>
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0.6}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#444C56" opacity={0.3} />
                     <XAxis 
                       dataKey="name" 
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontFamily: 'Inter, sans-serif' }}
-                      stroke="hsl(var(--border))"
+                      stroke="#ADBAC7"
+                      tick={{ fill: "#ADBAC7", fontSize: 12 }}
+                      tickLine={false}
                       angle={-45}
                       textAnchor="end"
                       height={80}
                     />
                     <YAxis 
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
-                      stroke="hsl(var(--border))"
+                      stroke="#ADBAC7" 
+                      tick={{ fill: "#ADBAC7", fontSize: 12 }} 
+                      tickLine={false}
+                      axisLine={false}
                     />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        fontFamily: 'Inter, sans-serif'
+                    <Tooltip
+                      cursor={{ fill: 'rgba(34, 197, 94, 0.1)' }}
+                      contentStyle={{
+                        backgroundColor: "#2D333B",
+                        border: "2px solid #22c55e",
+                        borderRadius: "8px",
+                        padding: "12px",
+                        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.3)",
                       }}
-                      cursor={{ fill: 'hsl(var(--primary) / 0.05)' }}
+                      itemStyle={{ color: "#22c55e", fontWeight: "bold", fontSize: "14px" }}
+                      labelStyle={{ color: "#FFFFFF", fontWeight: "bold" }}
                     />
                     <Legend />
-                    <Bar dataKey="active" fill={CHART_COLORS.active} radius={[8, 8, 0, 0]} name="Active">
-                      <LabelList 
-                        dataKey="active" 
-                        position="top" 
-                        style={{ fill: 'hsl(var(--foreground))', fontSize: '11px', fontFamily: 'Inter, sans-serif', fontWeight: '600' }}
-                      />
+                    <Bar dataKey="active" fill="url(#colorActive)" radius={[8, 8, 0, 0]} maxBarSize={60} name="Active">
+                      <LabelList dataKey="active" position="top" fill="#22c55e" fontWeight="bold" />
                     </Bar>
-                    <Bar dataKey="inactive" fill={CHART_COLORS.inactive} radius={[8, 8, 0, 0]} name="Inactive">
-                      <LabelList 
-                        dataKey="inactive" 
-                        position="top" 
-                        style={{ fill: 'hsl(var(--foreground))', fontSize: '11px', fontFamily: 'Inter, sans-serif', fontWeight: '600' }}
-                      />
+                    <Bar dataKey="inactive" fill="url(#colorInactive)" radius={[8, 8, 0, 0]} maxBarSize={60} name="Inactive">
+                      <LabelList dataKey="inactive" position="top" fill="#ef4444" fontWeight="bold" />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
@@ -243,35 +251,43 @@ export default function AssetManagementDashboardPage() {
             <CardContent className="pt-6 px-6 pb-6">
               {data.charts.usedByDepartment.length > 0 ? (
                 <ResponsiveContainer width="100%" height={320}>
-                  <BarChart data={data.charts.usedByDepartment}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <BarChart data={data.charts.usedByDepartment} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+                    <defs>
+                      <linearGradient id="colorDept" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#22c55e" stopOpacity={0.9}/>
+                        <stop offset="95%" stopColor="#22c55e" stopOpacity={0.6}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#444C56" opacity={0.3} />
                     <XAxis 
                       dataKey="name" 
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
-                      stroke="hsl(var(--border))"
+                      stroke="#ADBAC7"
+                      tick={{ fill: "#ADBAC7", fontSize: 12 }}
+                      tickLine={false}
                       angle={-45}
                       textAnchor="end"
                       height={80}
                     />
                     <YAxis 
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
-                      stroke="hsl(var(--border))"
+                      stroke="#ADBAC7" 
+                      tick={{ fill: "#ADBAC7", fontSize: 12 }} 
+                      tickLine={false}
+                      axisLine={false}
                     />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        fontFamily: 'Inter, sans-serif'
+                    <Tooltip
+                      cursor={{ fill: 'rgba(34, 197, 94, 0.1)' }}
+                      contentStyle={{
+                        backgroundColor: "#2D333B",
+                        border: "2px solid #22c55e",
+                        borderRadius: "8px",
+                        padding: "12px",
+                        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.3)",
                       }}
-                      cursor={{ fill: 'hsl(var(--primary) / 0.05)' }}
+                      itemStyle={{ color: "#22c55e", fontWeight: "bold", fontSize: "14px" }}
+                      labelStyle={{ color: "#FFFFFF", fontWeight: "bold" }}
                     />
-                    <Bar dataKey="count" fill={CHART_COLORS.primary} radius={[8, 8, 0, 0]}>
-                      <LabelList 
-                        dataKey="count" 
-                        position="top" 
-                        style={{ fill: 'hsl(var(--foreground))', fontSize: '12px', fontFamily: 'Inter, sans-serif', fontWeight: '600' }}
-                      />
+                    <Bar dataKey="count" fill="url(#colorDept)" radius={[8, 8, 0, 0]} maxBarSize={60}>
+                      <LabelList dataKey="count" position="top" fill="#22c55e" fontWeight="bold" />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
@@ -305,35 +321,43 @@ export default function AssetManagementDashboardPage() {
             <CardContent className="pt-6 px-6 pb-6">
               {data.charts.totalActiveByBrand.length > 0 ? (
                 <ResponsiveContainer width="100%" height={320}>
-                  <BarChart data={data.charts.totalActiveByBrand}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <BarChart data={data.charts.totalActiveByBrand} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+                    <defs>
+                      <linearGradient id="colorBrand" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#22c55e" stopOpacity={0.9}/>
+                        <stop offset="95%" stopColor="#22c55e" stopOpacity={0.6}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#444C56" opacity={0.3} />
                     <XAxis 
                       dataKey="name" 
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
-                      stroke="hsl(var(--border))"
+                      stroke="#ADBAC7"
+                      tick={{ fill: "#ADBAC7", fontSize: 12 }}
+                      tickLine={false}
                       angle={-45}
                       textAnchor="end"
                       height={80}
                     />
                     <YAxis 
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
-                      stroke="hsl(var(--border))"
+                      stroke="#ADBAC7" 
+                      tick={{ fill: "#ADBAC7", fontSize: 12 }} 
+                      tickLine={false}
+                      axisLine={false}
                     />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        fontFamily: 'Inter, sans-serif'
+                    <Tooltip
+                      cursor={{ fill: 'rgba(34, 197, 94, 0.1)' }}
+                      contentStyle={{
+                        backgroundColor: "#2D333B",
+                        border: "2px solid #22c55e",
+                        borderRadius: "8px",
+                        padding: "12px",
+                        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.3)",
                       }}
-                      cursor={{ fill: 'hsl(var(--primary) / 0.05)' }}
+                      itemStyle={{ color: "#22c55e", fontWeight: "bold", fontSize: "14px" }}
+                      labelStyle={{ color: "#FFFFFF", fontWeight: "bold" }}
                     />
-                    <Bar dataKey="count" fill={CHART_COLORS.primary} radius={[8, 8, 0, 0]}>
-                      <LabelList 
-                        dataKey="count" 
-                        position="top" 
-                        style={{ fill: 'hsl(var(--foreground))', fontSize: '12px', fontFamily: 'Inter, sans-serif', fontWeight: '600' }}
-                      />
+                    <Bar dataKey="count" fill="url(#colorBrand)" radius={[8, 8, 0, 0]} maxBarSize={60}>
+                      <LabelList dataKey="count" position="top" fill="#22c55e" fontWeight="bold" />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
@@ -364,35 +388,43 @@ export default function AssetManagementDashboardPage() {
             <CardContent className="pt-6 px-6 pb-6">
               {data.charts.totalByStorageArea.length > 0 ? (
                 <ResponsiveContainer width="100%" height={320}>
-                  <BarChart data={data.charts.totalByStorageArea}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <BarChart data={data.charts.totalByStorageArea} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+                    <defs>
+                      <linearGradient id="colorStorage" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#22c55e" stopOpacity={0.9}/>
+                        <stop offset="95%" stopColor="#22c55e" stopOpacity={0.6}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#444C56" opacity={0.3} />
                     <XAxis 
                       dataKey="name" 
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
-                      stroke="hsl(var(--border))"
+                      stroke="#ADBAC7"
+                      tick={{ fill: "#ADBAC7", fontSize: 12 }}
+                      tickLine={false}
                       angle={-45}
                       textAnchor="end"
                       height={80}
                     />
                     <YAxis 
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
-                      stroke="hsl(var(--border))"
+                      stroke="#ADBAC7" 
+                      tick={{ fill: "#ADBAC7", fontSize: 12 }} 
+                      tickLine={false}
+                      axisLine={false}
                     />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        fontFamily: 'Inter, sans-serif'
+                    <Tooltip
+                      cursor={{ fill: 'rgba(34, 197, 94, 0.1)' }}
+                      contentStyle={{
+                        backgroundColor: "#2D333B",
+                        border: "2px solid #22c55e",
+                        borderRadius: "8px",
+                        padding: "12px",
+                        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.3)",
                       }}
-                      cursor={{ fill: 'hsl(var(--primary) / 0.05)' }}
+                      itemStyle={{ color: "#22c55e", fontWeight: "bold", fontSize: "14px" }}
+                      labelStyle={{ color: "#FFFFFF", fontWeight: "bold" }}
                     />
-                    <Bar dataKey="count" fill={CHART_COLORS.primary} radius={[8, 8, 0, 0]}>
-                      <LabelList 
-                        dataKey="count" 
-                        position="top" 
-                        style={{ fill: 'hsl(var(--foreground))', fontSize: '12px', fontFamily: 'Inter, sans-serif', fontWeight: '600' }}
-                      />
+                    <Bar dataKey="count" fill="url(#colorStorage)" radius={[8, 8, 0, 0]} maxBarSize={60}>
+                      <LabelList dataKey="count" position="top" fill="#22c55e" fontWeight="bold" />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
