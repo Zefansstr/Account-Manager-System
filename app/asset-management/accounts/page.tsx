@@ -706,17 +706,17 @@ export default function AssetManagementAccountsPage() {
           <DialogHeader>
             <DialogTitle>Deactivate Asset</DialogTitle>
             <DialogDescription>
-              Are you sure you want to deactivate asset <strong>{selected?.code}</strong>? 
-              <br />
-              <br />
-              This will:
-              <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>Set status to "Inactive"</li>
-                <li>Remove user assignment</li>
-                <li>Remove department assignment</li>
-              </ul>
+              Are you sure you want to deactivate asset <strong>{selected?.code}</strong>?
             </DialogDescription>
           </DialogHeader>
+          <div className="text-sm text-muted-foreground mt-2">
+            This will:
+            <ul className="list-disc list-inside mt-2 space-y-1">
+              <li>Set status to "Inactive"</li>
+              <li>Remove user assignment</li>
+              <li>Remove department assignment</li>
+            </ul>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsInactiveOpen(false)}>Cancel</Button>
             <Button variant="destructive" onClick={handleInactive}>Deactivate</Button>
