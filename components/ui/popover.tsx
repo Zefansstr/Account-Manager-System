@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 interface PopoverContextValue {
   open: boolean;
   setOpen: (open: boolean) => void;
+  triggerRef: React.RefObject<HTMLElement>;
 }
 
 const PopoverContext = React.createContext<PopoverContextValue | undefined>(undefined);
@@ -20,6 +21,7 @@ interface PopoverProps {
 const Popover = ({ open: controlledOpen, onOpenChange, children }: PopoverProps) => {
   const [internalOpen, setInternalOpen] = React.useState(false);
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const triggerRef = React.useRef<HTMLElement>(null);
   const setOpen = React.useCallback(
     (newOpen: boolean) => {
       if (controlledOpen === undefined) {
@@ -31,7 +33,7 @@ const Popover = ({ open: controlledOpen, onOpenChange, children }: PopoverProps)
   );
 
   return (
-    <PopoverContext.Provider value={{ open, setOpen }}>
+    <PopoverContext.Provider value={{ open, setOpen, triggerRef }}>
       {children}
     </PopoverContext.Provider>
   );
@@ -50,9 +52,24 @@ const PopoverTrigger = React.forwardRef<HTMLButtonElement, PopoverTriggerProps>(
       context.setOpen(!context.open);
     };
 
+    // Combined ref callback to set both forwarded ref and context ref
+    const setRefs = React.useCallback((node: HTMLElement | null) => {
+      // Set forwarded ref
+      if (typeof ref === 'function') {
+        ref(node);
+      } else if (ref) {
+        (ref as React.MutableRefObject<HTMLElement | null>).current = node;
+      }
+      // Set context ref
+      if (context.triggerRef) {
+        (context.triggerRef as React.MutableRefObject<HTMLElement | null>).current = node;
+      }
+    }, [ref, context.triggerRef]);
+
     if (asChild && React.isValidElement(children)) {
       const childElement = children as React.ReactElement<React.HTMLAttributes<HTMLElement>>;
       const mergedProps: React.HTMLAttributes<HTMLElement> & { ref?: React.Ref<HTMLElement>; "data-popover-trigger"?: boolean } = {
+        ref: setRefs,
         onClick: (e: React.MouseEvent<HTMLElement>) => {
           handleClick();
           if (childElement.props.onClick) {
@@ -61,15 +78,12 @@ const PopoverTrigger = React.forwardRef<HTMLButtonElement, PopoverTriggerProps>(
         },
         "data-popover-trigger": true,
       };
-      if (ref) {
-        mergedProps.ref = ref as React.Ref<HTMLElement>;
-      }
       return React.cloneElement(childElement, mergedProps);
     }
 
     return (
       <button
-        ref={ref}
+        ref={setRefs}
         type="button"
         onClick={handleClick}
         data-popover-trigger
@@ -91,22 +105,10 @@ interface PopoverContentProps extends React.HTMLAttributes<HTMLDivElement> {
 const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
   ({ className, align = "start", sideOffset = 4, children, ...props }, ref) => {
     const context = React.useContext(PopoverContext);
-    const triggerRef = React.useRef<HTMLElement | null>(null);
+    if (!context) throw new Error("PopoverContent must be used within Popover");
+    
     const contentRef = React.useRef<HTMLDivElement>(null);
-
-    React.useEffect(() => {
-      if (context?.open) {
-        // Use requestAnimationFrame to ensure DOM is ready
-        requestAnimationFrame(() => {
-          const trigger = document.querySelector('[data-popover-trigger]') as HTMLElement;
-          if (trigger) {
-            triggerRef.current = trigger;
-          }
-        });
-      } else {
-        triggerRef.current = null;
-      }
-    }, [context?.open]);
+    const triggerRef = context.triggerRef;
 
     React.useEffect(() => {
       if (!context?.open) return;
@@ -141,7 +143,7 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
     }, [context?.open, context?.setOpen]);
 
     React.useEffect(() => {
-      if (context?.open) {
+      if (context?.open && triggerRef.current) {
         // Use requestAnimationFrame with double frame to ensure DOM is fully rendered
         const updatePosition = () => {
           // First frame: ensure trigger is found
@@ -150,10 +152,8 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
             requestAnimationFrame(() => {
               if (!context?.open) return;
               
-              const trigger = document.querySelector('[data-popover-trigger]') as HTMLElement;
+              const trigger = triggerRef.current;
               if (!trigger || !contentRef.current) return;
-              
-              triggerRef.current = trigger;
               
               const triggerRect = trigger.getBoundingClientRect();
               const content = contentRef.current;
@@ -209,7 +209,7 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
           window.removeEventListener("scroll", handleScroll, true);
         };
       }
-    }, [context?.open, align, sideOffset]);
+    }, [context?.open, align, sideOffset, triggerRef]);
 
     if (!context?.open) return null;
 
