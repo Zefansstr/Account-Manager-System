@@ -5,10 +5,10 @@ import { logActivity, getIpAddress, getUserAgent } from "@/lib/audit-logger";
 // PUT update asset account
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { code, typeId, brand, item, userUse, note, departmentTeam, storageLocation, purchaseAmount, currency, userId } = body;
 
@@ -73,10 +73,10 @@ export async function PUT(
 // DELETE asset account
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get("userId") || undefined;
 

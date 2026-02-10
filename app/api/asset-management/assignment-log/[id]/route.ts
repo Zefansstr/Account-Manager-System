@@ -5,10 +5,10 @@ import { logActivity, getIpAddress, getUserAgent } from "@/lib/audit-logger";
 // PUT update assignment log
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { date, assetId, assignedTo, department, reason, handledBy, remark, userId } = body;
 
@@ -128,10 +128,10 @@ export async function PUT(
 // DELETE assignment log
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get("userId") || undefined;
 
