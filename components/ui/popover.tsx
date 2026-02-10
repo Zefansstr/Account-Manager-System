@@ -53,16 +53,16 @@ const PopoverTrigger = React.forwardRef<HTMLButtonElement, PopoverTriggerProps>(
     };
 
     // Combined ref callback to set both forwarded ref and context ref
-    const setRefs = React.useCallback((node: HTMLElement | null) => {
+    const setRefs = React.useCallback((node: HTMLButtonElement | null) => {
       // Set forwarded ref
       if (typeof ref === 'function') {
         ref(node);
       } else if (ref) {
-        (ref as React.MutableRefObject<HTMLElement | null>).current = node;
+        (ref as React.MutableRefObject<HTMLButtonElement | null>).current = node;
       }
-      // Set context ref
+      // Set context ref (cast to HTMLElement since triggerRef accepts HTMLElement)
       if (context.triggerRef) {
-        (context.triggerRef as React.MutableRefObject<HTMLElement | null>).current = node;
+        (context.triggerRef as React.MutableRefObject<HTMLElement | null>).current = node as HTMLElement | null;
       }
     }, [ref, context.triggerRef]);
 
