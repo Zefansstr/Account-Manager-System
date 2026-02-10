@@ -72,12 +72,13 @@ export async function PUT(
       return NextResponse.json({ error: "Assignment log not found" }, { status: 404 });
     }
 
-    // Update user_use and status in asset_accounts if asset_id exists
+    // Update user_use, department_team, and status in asset_accounts if asset_id exists
     if (resolvedAssetId) {
       const { data: updatedAsset, error: updateError } = await supabase
         .from("asset_accounts")
         .update({
           user_use: assignedTo,
+          department_team: department || null, // Update department from assignment log
           status: "active", // Set status to active when assigned
           updated_at: new Date().toISOString(),
           updated_by: userId || null,
@@ -101,6 +102,7 @@ export async function PUT(
       console.log("Successfully updated asset_accounts:", {
         assetId: resolvedAssetId,
         user_use: assignedTo,
+        department_team: department || null,
         status: "active",
         updated_at: updatedAsset?.updated_at
       });
@@ -155,24 +157,25 @@ export async function DELETE(
       return NextResponse.json({ error: "Assignment log not found" }, { status: 404 });
     }
 
-    // Update user_use in asset_accounts based on the latest assignment log for this asset
+    // Update user_use and department_team in asset_accounts based on the latest assignment log for this asset
     if (logData?.asset_id) {
       // Get the latest assignment log for this asset (by date, then by created_at)
       // Note: We query after delete, so the deleted log won't be included
       const { data: latestLogData, error: latestLogError } = await supabase
         .from("assignment_log")
-        .select("assigned_to")
+        .select("assigned_to, department")
         .eq("asset_id", logData.asset_id)
         .order("date", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle(); // Use maybeSingle() instead of single() to handle no results
 
-      // Update asset_accounts with the latest assigned_to, or null if no more logs
+      // Update asset_accounts with the latest assigned_to and department, or null if no more logs
       const { data: updatedAsset, error: updateError } = await supabase
         .from("asset_accounts")
         .update({
           user_use: latestLogData?.assigned_to || null,
+          department_team: latestLogData?.department || null, // Update department from latest log
           updated_at: new Date().toISOString(),
           updated_by: userId || null,
         })
@@ -187,6 +190,7 @@ export async function DELETE(
         console.log("Successfully updated asset_accounts after delete:", {
           assetId: logData.asset_id,
           user_use: latestLogData?.assigned_to || null,
+          department_team: latestLogData?.department || null,
           updated_at: updatedAsset?.updated_at
         });
       }

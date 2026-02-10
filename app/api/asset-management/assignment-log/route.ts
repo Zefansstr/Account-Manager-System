@@ -134,12 +134,13 @@ export async function POST(request: Request) {
 
     if (error) throw error;
 
-    // Update user_use and status in asset_accounts if asset_id exists
+    // Update user_use, department_team, and status in asset_accounts if asset_id exists
     if (resolvedAssetId) {
       const { data: updatedAsset, error: updateError } = await supabase
         .from("asset_accounts")
         .update({
           user_use: assignedTo,
+          department_team: department || null, // Update department from assignment log
           status: "active", // Set status to active when assigned
           updated_at: new Date().toISOString(),
           updated_by: userId || null,
@@ -163,6 +164,7 @@ export async function POST(request: Request) {
       console.log("Successfully updated asset_accounts:", {
         assetId: resolvedAssetId,
         user_use: assignedTo,
+        department_team: department || null,
         status: "active",
         updated_at: updatedAsset?.updated_at
       });
