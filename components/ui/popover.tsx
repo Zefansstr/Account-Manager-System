@@ -51,12 +51,13 @@ const PopoverTrigger = React.forwardRef<HTMLButtonElement, PopoverTriggerProps>(
     };
 
     if (asChild && React.isValidElement(children)) {
-      return React.cloneElement(children as React.ReactElement<any>, {
+      const childElement = children as React.ReactElement<{ onClick?: (e: React.MouseEvent) => void }>;
+      return React.cloneElement(childElement, {
         ref,
         onClick: (e: React.MouseEvent) => {
           handleClick();
-          if (children.props.onClick) {
-            children.props.onClick(e);
+          if (childElement.props.onClick) {
+            childElement.props.onClick(e);
           }
         },
         "data-popover-trigger": true,
