@@ -190,7 +190,7 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
               content.style.position = "fixed";
               content.style.top = `${top}px`;
               content.style.left = `${left}px`;
-              content.style.zIndex = "100";
+              content.style.zIndex = "9999";
               content.style.pointerEvents = "auto";
             });
           });
@@ -224,12 +224,12 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
         }}
         data-popover-content
         className={cn(
-          "z-[100] w-72 rounded-lg border border-border bg-popover p-0 text-popover-foreground shadow-xl",
+          "w-72 rounded-lg border border-border bg-popover p-0 text-popover-foreground shadow-xl",
           className
         )}
         style={{ 
           pointerEvents: 'auto',
-          zIndex: 100
+          zIndex: 9999
         }}
         {...props}
       >
