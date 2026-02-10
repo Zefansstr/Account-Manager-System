@@ -96,8 +96,15 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
 
     React.useEffect(() => {
       if (context?.open) {
-        const trigger = document.querySelector('[data-popover-trigger]') as HTMLElement;
-        if (trigger) triggerRef.current = trigger;
+        // Use requestAnimationFrame to ensure DOM is ready
+        requestAnimationFrame(() => {
+          const trigger = document.querySelector('[data-popover-trigger]') as HTMLElement;
+          if (trigger) {
+            triggerRef.current = trigger;
+          }
+        });
+      } else {
+        triggerRef.current = null;
       }
     }, [context?.open]);
 
@@ -134,49 +141,72 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
     }, [context?.open, context?.setOpen]);
 
     React.useEffect(() => {
-      if (context?.open && triggerRef.current && contentRef.current) {
+      if (context?.open) {
+        // Use requestAnimationFrame with double frame to ensure DOM is fully rendered
         const updatePosition = () => {
-          if (!triggerRef.current || !contentRef.current) return;
-          
-          const triggerRect = triggerRef.current.getBoundingClientRect();
-          const content = contentRef.current;
-          
-          let top = triggerRect.bottom + sideOffset;
-          let left = triggerRect.left;
-          
-          if (align === "center") {
-            left = triggerRect.left + (triggerRect.width / 2) - (content.offsetWidth / 2);
-          } else if (align === "end") {
-            left = triggerRect.right - content.offsetWidth;
-          }
+          // First frame: ensure trigger is found
+          requestAnimationFrame(() => {
+            // Second frame: calculate position after DOM is stable
+            requestAnimationFrame(() => {
+              if (!context?.open) return;
+              
+              const trigger = document.querySelector('[data-popover-trigger]') as HTMLElement;
+              if (!trigger || !contentRef.current) return;
+              
+              triggerRef.current = trigger;
+              
+              const triggerRect = trigger.getBoundingClientRect();
+              const content = contentRef.current;
+              
+              // Wait for content to be rendered
+              if (content.offsetWidth === 0 || content.offsetHeight === 0) {
+                // If content not yet rendered, try again after a short delay
+                setTimeout(updatePosition, 10);
+                return;
+              }
+              
+              let top = triggerRect.bottom + sideOffset;
+              let left = triggerRect.left;
+              
+              if (align === "center") {
+                left = triggerRect.left + (triggerRect.width / 2) - (content.offsetWidth / 2);
+              } else if (align === "end") {
+                left = triggerRect.right - content.offsetWidth;
+              }
 
-          // Check if content goes off screen horizontally
-          if (left + content.offsetWidth > window.innerWidth - 10) {
-            left = window.innerWidth - content.offsetWidth - 10;
-          }
-          if (left < 10) left = 10;
+              // Check if content goes off screen horizontally
+              if (left + content.offsetWidth > window.innerWidth - 10) {
+                left = window.innerWidth - content.offsetWidth - 10;
+              }
+              if (left < 10) left = 10;
 
-          // Check if content goes off screen vertically (below)
-          if (top + content.offsetHeight > window.innerHeight - 10) {
-            // Show above trigger instead
-            top = triggerRect.top - content.offsetHeight - sideOffset;
-          }
-          if (top < 10) top = 10;
+              // Check if content goes off screen vertically (below)
+              if (top + content.offsetHeight > window.innerHeight - 10) {
+                // Show above trigger instead
+                top = triggerRect.top - content.offsetHeight - sideOffset;
+              }
+              if (top < 10) top = 10;
 
-          content.style.position = "fixed";
-          content.style.top = `${top}px`;
-          content.style.left = `${left}px`;
-          content.style.zIndex = "100";
-          content.style.pointerEvents = "auto";
+              content.style.position = "fixed";
+              content.style.top = `${top}px`;
+              content.style.left = `${left}px`;
+              content.style.zIndex = "100";
+              content.style.pointerEvents = "auto";
+            });
+          });
         };
 
         updatePosition();
-        window.addEventListener("resize", updatePosition);
-        window.addEventListener("scroll", updatePosition, true);
+        
+        const handleResize = () => updatePosition();
+        const handleScroll = () => updatePosition();
+        
+        window.addEventListener("resize", handleResize);
+        window.addEventListener("scroll", handleScroll, true);
         
         return () => {
-          window.removeEventListener("resize", updatePosition);
-          window.removeEventListener("scroll", updatePosition, true);
+          window.removeEventListener("resize", handleResize);
+          window.removeEventListener("scroll", handleScroll, true);
         };
       }
     }, [context?.open, align, sideOffset]);
