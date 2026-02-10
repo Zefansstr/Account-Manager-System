@@ -41,6 +41,7 @@ export default function AssetManagementAccountsPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isInactiveOpen, setIsInactiveOpen] = useState(false);
   const [selected, setSelected] = useState<Device | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -80,6 +81,8 @@ export default function AssetManagementAccountsPage() {
       return <Badge className="bg-red-500 text-white">Maintenance</Badge>;
     } else if (statusLower === "not_used") {
       return <Badge variant="secondary" className="bg-gray-500 text-white">Not Used</Badge>;
+    } else if (statusLower === "inactive") {
+      return <Badge variant="secondary" className="bg-gray-600 text-white">Inactive</Badge>;
     } else {
       return <Badge variant="secondary" className="bg-muted text-muted-foreground">{status}</Badge>;
     }
@@ -252,6 +255,49 @@ export default function AssetManagementAccountsPage() {
     } catch (error: any) {
       console.error("Error creating device:", error);
       toast.error(error.message || "Failed to create asset. Please try again.");
+    }
+  };
+
+  // Handle inactive device
+  const handleInactive = async () => {
+    if (!selected) return;
+
+    try {
+      const operatorStr = localStorage.getItem("operator");
+      const userId = operatorStr ? JSON.parse(operatorStr).id : null;
+
+      const res = await fetch(`/api/asset-management/accounts/${selected.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: selected.code,
+          typeId: selected.typeId || null,
+          brand: selected.brand || null,
+          item: selected.item,
+          userUse: null, // Clear user_use
+          note: selected.note || null,
+          departmentTeam: null, // Clear department_team
+          storageLocation: selected.storageLocation || null,
+          purchaseAmount: selected.purchaseAmount || null,
+          currency: selected.currency || null,
+          status: "inactive", // Set status to inactive
+          userId,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (res.ok) {
+        toast.success(`Asset "${selected.code}" has been deactivated`);
+        setIsInactiveOpen(false);
+        setSelected(null);
+        fetchDevices();
+      } else {
+        toast.error(json.error || "Failed to deactivate asset");
+      }
+    } catch (error: any) {
+      console.error("Error deactivating asset:", error);
+      toast.error(error.message || "Failed to deactivate asset. Please try again.");
     }
   };
 
@@ -458,7 +504,16 @@ export default function AssetManagementAccountsPage() {
                     <td className="px-4 py-3 text-sm text-muted-foreground">{device.note || "-"}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-2">
-                        <Button variant="ghost" size="sm" className="hover:bg-primary/10 hover:text-primary">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="hover:bg-primary/10 hover:text-primary"
+                          onClick={() => {
+                            setSelected(device);
+                            setIsInactiveOpen(true);
+                          }}
+                          disabled={device.status === "inactive"}
+                        >
                           <Power className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="sm" className="hover:bg-primary/10 hover:text-primary" onClick={() => {
@@ -641,6 +696,30 @@ export default function AssetManagementAccountsPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
             <Button variant="destructive" onClick={() => setIsDeleteOpen(false)}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Inactive Dialog */}
+      <Dialog open={isInactiveOpen} onOpenChange={setIsInactiveOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Deactivate Asset</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to deactivate asset <strong>{selected?.code}</strong>? 
+              <br />
+              <br />
+              This will:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Set status to "Inactive"</li>
+                <li>Remove user assignment</li>
+                <li>Remove department assignment</li>
+              </ul>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsInactiveOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleInactive}>Deactivate</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

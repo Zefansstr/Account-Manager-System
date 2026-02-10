@@ -10,7 +10,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { code, typeId, brand, item, userUse, note, departmentTeam, storageLocation, purchaseAmount, currency, userId } = body;
+    const { code, typeId, brand, item, userUse, note, departmentTeam, storageLocation, purchaseAmount, currency, status, userId } = body;
 
     if (!code || !item) {
       return NextResponse.json(
@@ -26,22 +26,29 @@ export async function PUT(
       .eq("id", id)
       .single();
 
+    const updateData: any = {
+      code,
+      type_id: typeId || null,
+      brand: brand || null,
+      item,
+      user_use: userUse !== undefined ? userUse : null,
+      note: note || null,
+      department_team: departmentTeam !== undefined ? departmentTeam : null,
+      storage_location: storageLocation || null,
+      purchase_amount: purchaseAmount || null,
+      currency: currency || null,
+      updated_at: new Date().toISOString(),
+      updated_by: userId || null,
+    };
+
+    // Update status if provided
+    if (status) {
+      updateData.status = status;
+    }
+
     const { data, error } = await supabase
       .from("asset_accounts")
-      .update({
-        code,
-        type_id: typeId || null,
-        brand: brand || null,
-        item,
-        user_use: userUse || null,
-        note: note || null,
-        department_team: departmentTeam || null,
-        storage_location: storageLocation || null,
-        purchase_amount: purchaseAmount || null,
-        currency: currency || null,
-        updated_at: new Date().toISOString(),
-        updated_by: userId || null,
-      })
+      .update(updateData)
       .eq("id", id)
       .select()
       .single();
