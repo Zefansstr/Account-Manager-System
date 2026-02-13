@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
-import { Plus, Edit, Trash2, Power, CheckSquare, Square, Search, Laptop } from "lucide-react";
+import { Plus, Edit, Trash2, Power, CheckSquare, Square, Search, Laptop, ChevronDown, ChevronUp } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PermissionGuard } from "@/components/auth/permission-guard";
 import toast from "react-hot-toast";
 
@@ -42,6 +43,7 @@ export default function AssetManagementAccountsPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isInactiveOpen, setIsInactiveOpen] = useState(false);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selected, setSelected] = useState<Device | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -51,6 +53,8 @@ export default function AssetManagementAccountsPage() {
   const [page, setPage] = useState(1);
   const [limit] = useState(20);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
+  const [showDetailForm, setShowDetailForm] = useState(false);
+  const [assetDetail, setAssetDetail] = useState<any>(null);
   
   const [formData, setFormData] = useState({
     code: "",
@@ -63,6 +67,17 @@ export default function AssetManagementAccountsPage() {
     storageLocation: "",
     purchaseAmount: "",
     currency: "",
+  });
+
+  const [detailData, setDetailData] = useState({
+    condition: "",
+    yearOfPurchase: "",
+    yearOfProduction: "",
+    cpu: "",
+    gpu: "",
+    ram: "",
+    memory: "",
+    item: "",
   });
 
   const menuName = "Accounts";
@@ -101,6 +116,17 @@ export default function AssetManagementAccountsPage() {
       purchaseAmount: "",
       currency: "",
     });
+    setDetailData({
+      condition: "",
+      yearOfPurchase: "",
+      yearOfProduction: "",
+      cpu: "",
+      gpu: "",
+      ram: "",
+      memory: "",
+      item: "",
+    });
+    setShowDetailForm(false);
   };
 
   const toggleSelectAll = () => {
@@ -213,11 +239,79 @@ export default function AssetManagementAccountsPage() {
     return () => clearTimeout(timeoutId);
   }, [page, searchQuery, filterDevice, filterBrand, filterLocation]);
 
+  // Fetch asset detail
+  const fetchAssetDetail = async (assetId: string) => {
+    try {
+      const res = await fetch(`/api/asset-management/accounts/${assetId}/details`);
+      const json = await res.json();
+      if (res.ok && json.data) {
+        setAssetDetail(json.data);
+        // Set detail data if exists
+        setDetailData({
+          condition: json.data.condition || "",
+          yearOfPurchase: json.data.year_of_purchase?.toString() || "",
+          yearOfProduction: json.data.year_of_production?.toString() || "",
+          cpu: json.data.cpu || "",
+          gpu: json.data.gpu || "",
+          ram: json.data.ram || "",
+          memory: json.data.memory || "",
+          item: json.data.item || "",
+        });
+        setShowDetailForm(true);
+      } else {
+        setAssetDetail(null);
+        setDetailData({
+          condition: "",
+          yearOfPurchase: "",
+          yearOfProduction: "",
+          cpu: "",
+          gpu: "",
+          ram: "",
+          memory: "",
+          item: "",
+        });
+        setShowDetailForm(false);
+      }
+    } catch (error) {
+      console.error("Error fetching asset detail:", error);
+      setAssetDetail(null);
+      setDetailData({
+        condition: "",
+        yearOfPurchase: "",
+        yearOfProduction: "",
+        cpu: "",
+        gpu: "",
+        ram: "",
+        memory: "",
+        item: "",
+      });
+      setShowDetailForm(false);
+    }
+  };
+
   // Handle add device
   const handleAdd = async () => {
-    if (!formData.code || !formData.item) {
-      toast.error("Code and Device are required");
+    // Validate required fields
+    if (!formData.code || !formData.brand || !formData.item || !formData.purchaseAmount || !formData.currency) {
+      toast.error("Code, Brand, Device, Purchase Amount, and Currency are required");
       return;
+    }
+
+    // Validate detail form based on device type
+    const isLaptopOrComputer = formData.item.toLowerCase().includes("laptop") || formData.item.toLowerCase().includes("computer");
+    
+    if (isLaptopOrComputer) {
+      // For Laptop/Computer: Condition, Year of Production, CPU, GPU, RAM, Memory are required
+      if (!detailData.condition || !detailData.yearOfProduction || !detailData.cpu || !detailData.gpu || !detailData.ram || !detailData.memory) {
+        toast.error("For Laptop/Computer, Condition, Year of Production, CPU, GPU, RAM, and Memory are required in Asset Detail");
+        return;
+      }
+    } else {
+      // For other devices: Condition is required
+      if (!detailData.condition) {
+        toast.error("Condition is required in Asset Detail");
+        return;
+      }
     }
 
     try {
@@ -245,6 +339,30 @@ export default function AssetManagementAccountsPage() {
       const json = await res.json();
 
       if (res.ok) {
+        // Save detail for all devices
+        if (showDetailForm) {
+          const detailRes = await fetch(`/api/asset-management/accounts/${json.data.id}/details`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              condition: detailData.condition || null,
+              yearOfPurchase: detailData.yearOfPurchase || null,
+              yearOfProduction: detailData.yearOfProduction || null,
+              cpu: detailData.cpu || null,
+              gpu: detailData.gpu || null,
+              ram: detailData.ram || null,
+              memory: detailData.memory || null,
+              item: detailData.item || null,
+              userId,
+            }),
+          });
+
+          if (!detailRes.ok) {
+            const detailJson = await detailRes.json();
+            console.error("Error saving detail:", detailJson.error);
+          }
+        }
+
         toast.success(`Asset "${formData.code}" created successfully!`);
         setIsAddOpen(false);
         resetForm();
@@ -303,8 +421,8 @@ export default function AssetManagementAccountsPage() {
 
   // Handle edit device
   const handleEdit = async () => {
-    if (!selected || !formData.code || !formData.item) {
-      toast.error("Code and Item are required");
+    if (!selected) {
+      toast.error("No asset selected");
       return;
     }
 
@@ -312,20 +430,21 @@ export default function AssetManagementAccountsPage() {
       const operatorStr = localStorage.getItem("operator");
       const userId = operatorStr ? JSON.parse(operatorStr).id : null;
 
+      // Only update Storage Location and Remarks
       const res = await fetch(`/api/asset-management/accounts/${selected.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          code: formData.code,
-          typeId: formData.typeId || null,
-          brand: formData.brand || null,
-          item: formData.item,
-          userUse: formData.userUse || null,
-          note: formData.note || null,
-          departmentTeam: formData.departmentTeam || null,
-          storageLocation: formData.storageLocation || null,
-          purchaseAmount: formData.purchaseAmount ? parseFloat(formData.purchaseAmount) : null,
-          currency: formData.currency || null,
+          code: selected.code, // Keep original code
+          typeId: selected.typeId || null,
+          brand: selected.brand || null,
+          item: selected.item, // Keep original item
+          userUse: selected.userUse || null,
+          note: formData.note || null, // Only update note
+          departmentTeam: selected.departmentTeam || null,
+          storageLocation: formData.storageLocation || null, // Only update storageLocation
+          purchaseAmount: selected.purchaseAmount || null,
+          currency: selected.currency || null,
           userId,
         }),
       });
@@ -333,7 +452,31 @@ export default function AssetManagementAccountsPage() {
       const json = await res.json();
 
       if (res.ok) {
-        toast.success(`Asset "${formData.code}" updated successfully!`);
+        // Update asset details if form is shown
+        if (showDetailForm) {
+          const detailRes = await fetch(`/api/asset-management/accounts/${selected.id}/details`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              condition: detailData.condition || null,
+              yearOfPurchase: detailData.yearOfPurchase || null,
+              yearOfProduction: detailData.yearOfProduction || null,
+              cpu: detailData.cpu || null,
+              gpu: detailData.gpu || null,
+              ram: detailData.ram || null,
+              memory: detailData.memory || null,
+              item: detailData.item || null,
+              userId,
+            }),
+          });
+
+          if (!detailRes.ok) {
+            const detailJson = await detailRes.json();
+            console.error("Error updating detail:", detailJson.error);
+          }
+        }
+
+        toast.success(`Asset "${selected.code}" updated successfully!`);
         setIsEditOpen(false);
         resetForm();
         setSelected(null);
@@ -464,7 +607,16 @@ export default function AssetManagementAccountsPage() {
                       </button>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="font-mono text-sm font-medium text-primary">{device.code || "-"}</span>
+                      <button
+                        onClick={() => {
+                          setSelected(device);
+                          fetchAssetDetail(device.id);
+                          setIsDetailOpen(true);
+                        }}
+                        className="font-mono text-sm font-medium text-primary hover:underline cursor-pointer"
+                      >
+                        {device.code || "-"}
+                      </button>
                     </td>
                     <td className="px-4 py-3 text-sm text-foreground">{device.item || "-"}</td>
                     <td className="px-4 py-3">
@@ -516,7 +668,7 @@ export default function AssetManagementAccountsPage() {
                         >
                           <Power className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="hover:bg-primary/10 hover:text-primary" onClick={() => {
+                        <Button variant="ghost" size="sm" className="hover:bg-primary/10 hover:text-primary" onClick={async () => {
                           setSelected(device);
                           setFormData({
                             code: device.code || "",
@@ -530,6 +682,8 @@ export default function AssetManagementAccountsPage() {
                             purchaseAmount: device.purchaseAmount ? device.purchaseAmount.toString() : "",
                             currency: device.currency || "",
                           });
+                          // Fetch asset detail
+                          await fetchAssetDetail(device.id);
                           setIsEditOpen(true);
                         }}>
                           <Edit className="h-4 w-4" />
@@ -562,7 +716,7 @@ export default function AssetManagementAccountsPage() {
 
       {/* Add Dialog */}
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Asset</DialogTitle>
             <DialogDescription>Create a new asset entry</DialogDescription>
@@ -580,7 +734,15 @@ export default function AssetManagementAccountsPage() {
               <Label>Device *</Label>
               <select
                 value={formData.item}
-                onChange={(e) => setFormData({ ...formData, item: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, item: e.target.value });
+                  // Auto-show detail form when device is selected
+                  if (e.target.value) {
+                    setShowDetailForm(true);
+                  } else {
+                    setShowDetailForm(false);
+                  }
+                }}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="">Select Device</option>
@@ -596,11 +758,11 @@ export default function AssetManagementAccountsPage() {
               <Input value={formData.storageLocation} onChange={(e) => setFormData({ ...formData, storageLocation: e.target.value })} placeholder="e.g. Warehouse A, Room 101" />
             </div>
             <div className="grid gap-2">
-              <Label>Purchase Amount</Label>
+              <Label>Purchase Amount *</Label>
               <Input type="number" step="0.01" value={formData.purchaseAmount} onChange={(e) => setFormData({ ...formData, purchaseAmount: e.target.value })} placeholder="e.g. 5000000" />
             </div>
             <div className="grid gap-2">
-              <Label>Currency</Label>
+              <Label>Currency *</Label>
               <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={formData.currency} onChange={(e) => setFormData({ ...formData, currency: e.target.value })}>
                 <option value="">Select Currency</option>
                 <option value="IDR">IDR</option>
@@ -614,72 +776,362 @@ export default function AssetManagementAccountsPage() {
               <Label>Remarks</Label>
               <Textarea value={formData.note} onChange={(e) => setFormData({ ...formData, note: e.target.value })} placeholder="Optional remarks" />
             </div>
+            {formData.item && (
+              <div className="col-span-2 mt-2">
+                <Card className="border-border bg-card shadow-sm">
+                  <CardHeader className="pb-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowDetailForm(!showDetailForm)}
+                      className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity"
+                    >
+                      <CardTitle className="text-base font-semibold text-primary">Asset Detail</CardTitle>
+                      {showDetailForm ? (
+                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </button>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formData.item.toLowerCase().includes("laptop") || formData.item.toLowerCase().includes("computer")
+                        ? "Add detailed specifications (for Laptop/Computer)"
+                        : "Add basic details (Condition & Year of Purchase)"}
+                    </p>
+                  </CardHeader>
+                  {showDetailForm && (
+                    <CardContent className="pt-0">
+                      {formData.item.toLowerCase().includes("laptop") || formData.item.toLowerCase().includes("computer") ? (
+                        // Full detail form for Laptop/Computer
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">Condition *</Label>
+                            <select
+                              value={detailData.condition}
+                              onChange={(e) => setDetailData({ ...detailData, condition: e.target.value })}
+                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            >
+                              <option value="">Select Condition</option>
+                              <option value="New">New</option>
+                              <option value="Good">Good</option>
+                              <option value="Fair">Fair</option>
+                              <option value="Poor">Poor</option>
+                            </select>
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">Year of Purchase</Label>
+                            <Input
+                              type="number"
+                              value={detailData.yearOfPurchase}
+                              onChange={(e) => setDetailData({ ...detailData, yearOfPurchase: e.target.value })}
+                              placeholder="e.g. 2024"
+                              min="1900"
+                              max={new Date().getFullYear()}
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">Year of Production *</Label>
+                            <Input
+                              type="number"
+                              value={detailData.yearOfProduction}
+                              onChange={(e) => setDetailData({ ...detailData, yearOfProduction: e.target.value })}
+                              placeholder="e.g. 2024"
+                              min="1900"
+                              max={new Date().getFullYear()}
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">CPU *</Label>
+                            <Input
+                              value={detailData.cpu}
+                              onChange={(e) => setDetailData({ ...detailData, cpu: e.target.value })}
+                              placeholder="e.g. Intel Core i7-12700H"
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">GPU *</Label>
+                            <Input
+                              value={detailData.gpu}
+                              onChange={(e) => setDetailData({ ...detailData, gpu: e.target.value })}
+                              placeholder="e.g. NVIDIA RTX 3060"
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">RAM *</Label>
+                            <Input
+                              value={detailData.ram}
+                              onChange={(e) => setDetailData({ ...detailData, ram: e.target.value })}
+                              placeholder="e.g. 16GB DDR4"
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">Memory *</Label>
+                            <Input
+                              value={detailData.memory}
+                              onChange={(e) => setDetailData({ ...detailData, memory: e.target.value })}
+                              placeholder="e.g. 512GB SSD"
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">Item</Label>
+                            <Input
+                              value={detailData.item}
+                              onChange={(e) => setDetailData({ ...detailData, item: e.target.value })}
+                              placeholder="e.g. Laptop Model XYZ"
+                              className="h-10"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        // Limited detail form for other devices (only Condition & Year of Purchase)
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">Condition *</Label>
+                            <select
+                              value={detailData.condition}
+                              onChange={(e) => setDetailData({ ...detailData, condition: e.target.value })}
+                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            >
+                              <option value="">Select Condition</option>
+                              <option value="New">New</option>
+                              <option value="Good">Good</option>
+                              <option value="Fair">Fair</option>
+                              <option value="Poor">Poor</option>
+                            </select>
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">Year of Purchase</Label>
+                            <Input
+                              type="number"
+                              value={detailData.yearOfPurchase}
+                              onChange={(e) => setDetailData({ ...detailData, yearOfPurchase: e.target.value })}
+                              placeholder="e.g. 2024"
+                              min="1900"
+                              max={new Date().getFullYear()}
+                              className="h-10"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  )}
+                </Card>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddOpen(false); resetForm(); }}>Cancel</Button>
-            <Button onClick={handleAdd} disabled={!formData.code || !formData.item}>Add Asset</Button>
+            <Button 
+              onClick={handleAdd} 
+              disabled={
+                !formData.code || 
+                !formData.brand || 
+                !formData.item || 
+                !formData.purchaseAmount || 
+                !formData.currency ||
+                (formData.item.toLowerCase().includes("laptop") || formData.item.toLowerCase().includes("computer")
+                  ? (!detailData.condition || !detailData.yearOfProduction || !detailData.cpu || !detailData.gpu || !detailData.ram || !detailData.memory)
+                  : !detailData.condition)
+              }
+            >
+              Add Asset
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Asset</DialogTitle>
-            <DialogDescription>Update asset information</DialogDescription>
+            <DialogDescription>Update asset information (only Storage Location and Remarks can be edited)</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
             <div className="grid gap-2">
-              <Label>Code *</Label>
-              <Input value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} />
+              <Label>Code</Label>
+              <Input value={formData.code} disabled className="bg-muted cursor-not-allowed" />
             </div>
             <div className="grid gap-2">
               <Label>Brand</Label>
-              <Input value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value })} placeholder="e.g. Apple, Dell, HP" />
+              <Input value={formData.brand || "-"} disabled className="bg-muted cursor-not-allowed" />
             </div>
             <div className="grid gap-2">
-              <Label>Device *</Label>
-              <select
-                value={formData.item}
-                onChange={(e) => setFormData({ ...formData, item: e.target.value })}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="">Select Device</option>
-                {deviceList.map((device) => (
-                  <option key={device.id} value={device.name}>
-                    {device.name}
-                  </option>
-                ))}
-              </select>
+              <Label>Device</Label>
+              <Input value={formData.item || "-"} disabled className="bg-muted cursor-not-allowed" />
+            </div>
+            <div className="grid gap-2">
+              <Label>Purchase Amount</Label>
+              <Input value={formData.purchaseAmount ? new Intl.NumberFormat('id-ID').format(parseFloat(formData.purchaseAmount)) : "-"} disabled className="bg-muted cursor-not-allowed" />
+            </div>
+            <div className="grid gap-2">
+              <Label>Currency</Label>
+              <Input value={formData.currency || "-"} disabled className="bg-muted cursor-not-allowed" />
             </div>
             <div className="grid gap-2">
               <Label>Storage Location</Label>
               <Input value={formData.storageLocation} onChange={(e) => setFormData({ ...formData, storageLocation: e.target.value })} placeholder="e.g. Warehouse A, Room 101" />
             </div>
-            <div className="grid gap-2">
-              <Label>Purchase Amount</Label>
-              <Input type="number" step="0.01" value={formData.purchaseAmount} onChange={(e) => setFormData({ ...formData, purchaseAmount: e.target.value })} placeholder="e.g. 5000000" />
-            </div>
-            <div className="grid gap-2">
-              <Label>Currency</Label>
-              <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={formData.currency} onChange={(e) => setFormData({ ...formData, currency: e.target.value })}>
-                <option value="">Select Currency</option>
-                <option value="IDR">IDR</option>
-                <option value="USD">USD</option>
-                <option value="SGD">SGD</option>
-                <option value="MYR">MYR</option>
-                <option value="EUR">EUR</option>
-              </select>
-            </div>
             <div className="col-span-2 grid gap-2">
               <Label>Remarks</Label>
               <Textarea value={formData.note} onChange={(e) => setFormData({ ...formData, note: e.target.value })} placeholder="Optional remarks" />
             </div>
+            {selected && (
+              <div className="col-span-2 mt-2">
+                <Card className="border-border bg-card shadow-sm">
+                  <CardHeader className="pb-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowDetailForm(!showDetailForm)}
+                      className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity"
+                    >
+                      <CardTitle className="text-base font-semibold text-primary">Asset Detail</CardTitle>
+                      {showDetailForm ? (
+                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </button>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formData.item.toLowerCase().includes("laptop") || formData.item.toLowerCase().includes("computer")
+                        ? "Edit detailed specifications (for Laptop/Computer)"
+                        : "Edit basic details (Condition & Year of Purchase)"}
+                    </p>
+                  </CardHeader>
+                  {showDetailForm && (
+                    <CardContent className="pt-0">
+                      {formData.item.toLowerCase().includes("laptop") || formData.item.toLowerCase().includes("computer") ? (
+                        // Full detail form for Laptop/Computer
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">Condition</Label>
+                            <select
+                              value={detailData.condition}
+                              onChange={(e) => setDetailData({ ...detailData, condition: e.target.value })}
+                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            >
+                              <option value="">Select Condition</option>
+                              <option value="New">New</option>
+                              <option value="Good">Good</option>
+                              <option value="Fair">Fair</option>
+                              <option value="Poor">Poor</option>
+                            </select>
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">Year of Purchase</Label>
+                            <Input
+                              type="number"
+                              value={detailData.yearOfPurchase}
+                              onChange={(e) => setDetailData({ ...detailData, yearOfPurchase: e.target.value })}
+                              placeholder="e.g. 2024"
+                              min="1900"
+                              max={new Date().getFullYear()}
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">Year of Production</Label>
+                            <Input
+                              type="number"
+                              value={detailData.yearOfProduction}
+                              onChange={(e) => setDetailData({ ...detailData, yearOfProduction: e.target.value })}
+                              placeholder="e.g. 2024"
+                              min="1900"
+                              max={new Date().getFullYear()}
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">CPU</Label>
+                            <Input
+                              value={detailData.cpu}
+                              onChange={(e) => setDetailData({ ...detailData, cpu: e.target.value })}
+                              placeholder="e.g. Intel Core i7-12700H"
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">GPU</Label>
+                            <Input
+                              value={detailData.gpu}
+                              onChange={(e) => setDetailData({ ...detailData, gpu: e.target.value })}
+                              placeholder="e.g. NVIDIA RTX 3060"
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">RAM</Label>
+                            <Input
+                              value={detailData.ram}
+                              onChange={(e) => setDetailData({ ...detailData, ram: e.target.value })}
+                              placeholder="e.g. 16GB DDR4"
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">Memory</Label>
+                            <Input
+                              value={detailData.memory}
+                              onChange={(e) => setDetailData({ ...detailData, memory: e.target.value })}
+                              placeholder="e.g. 512GB SSD"
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">Item</Label>
+                            <Input
+                              value={detailData.item}
+                              onChange={(e) => setDetailData({ ...detailData, item: e.target.value })}
+                              placeholder="e.g. Laptop Model XYZ"
+                              className="h-10"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        // Limited detail form for other devices (only Condition & Year of Purchase)
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">Condition</Label>
+                            <select
+                              value={detailData.condition}
+                              onChange={(e) => setDetailData({ ...detailData, condition: e.target.value })}
+                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            >
+                              <option value="">Select Condition</option>
+                              <option value="New">New</option>
+                              <option value="Good">Good</option>
+                              <option value="Fair">Fair</option>
+                              <option value="Poor">Poor</option>
+                            </select>
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">Year of Purchase</Label>
+                            <Input
+                              type="number"
+                              value={detailData.yearOfPurchase}
+                              onChange={(e) => setDetailData({ ...detailData, yearOfPurchase: e.target.value })}
+                              placeholder="e.g. 2024"
+                              min="1900"
+                              max={new Date().getFullYear()}
+                              className="h-10"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  )}
+                </Card>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsEditOpen(false); resetForm(); }}>Cancel</Button>
-            <Button onClick={handleEdit} disabled={!formData.code || !formData.item}>Update Asset</Button>
+            <Button onClick={handleEdit}>Update Asset</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -720,6 +1172,65 @@ export default function AssetManagementAccountsPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsInactiveOpen(false)}>Cancel</Button>
             <Button variant="destructive" onClick={handleInactive}>Deactivate</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Detail Dialog */}
+      <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Asset Detail - {selected?.code}</DialogTitle>
+            <DialogDescription>Detailed specifications for this asset</DialogDescription>
+          </DialogHeader>
+          {assetDetail ? (
+            <div className="py-4">
+              <div className="rounded-lg border border-border">
+                <table className="w-full">
+                  <tbody>
+                    <tr className="border-b border-border">
+                      <td className="px-4 py-3 font-semibold bg-secondary/50 w-1/3">Condition</td>
+                      <td className="px-4 py-3">{assetDetail.condition || "-"}</td>
+                    </tr>
+                    <tr className="border-b border-border">
+                      <td className="px-4 py-3 font-semibold bg-secondary/50">Year of Purchase</td>
+                      <td className="px-4 py-3">{assetDetail.year_of_purchase || "-"}</td>
+                    </tr>
+                    <tr className="border-b border-border">
+                      <td className="px-4 py-3 font-semibold bg-secondary/50">Year of Production</td>
+                      <td className="px-4 py-3">{assetDetail.year_of_production || "-"}</td>
+                    </tr>
+                    <tr className="border-b border-border">
+                      <td className="px-4 py-3 font-semibold bg-secondary/50">CPU</td>
+                      <td className="px-4 py-3">{assetDetail.cpu || "-"}</td>
+                    </tr>
+                    <tr className="border-b border-border">
+                      <td className="px-4 py-3 font-semibold bg-secondary/50">GPU</td>
+                      <td className="px-4 py-3">{assetDetail.gpu || "-"}</td>
+                    </tr>
+                    <tr className="border-b border-border">
+                      <td className="px-4 py-3 font-semibold bg-secondary/50">RAM</td>
+                      <td className="px-4 py-3">{assetDetail.ram || "-"}</td>
+                    </tr>
+                    <tr className="border-b border-border">
+                      <td className="px-4 py-3 font-semibold bg-secondary/50">Memory</td>
+                      <td className="px-4 py-3">{assetDetail.memory || "-"}</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-3 font-semibold bg-secondary/50">Item</td>
+                      <td className="px-4 py-3">{assetDetail.item || "-"}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <div className="py-8 text-center text-muted-foreground">
+              No detail information available for this asset.
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDetailOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
