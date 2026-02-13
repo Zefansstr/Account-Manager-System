@@ -17,6 +17,7 @@ import {
   Wrench,
   DollarSign,
   Monitor,
+  Tag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { canViewMenu, isSuperAdmin } from "@/lib/permissions";
@@ -56,6 +57,12 @@ const settingsSubmenus = [
     menuName: "Devices",
   },
   {
+    title: "Brand",
+    href: "/asset-management/brands",
+    icon: Tag,
+    menuName: "Brands",
+  },
+  {
     title: "Department",
     href: "/asset-management/departments",
     icon: Building2,
@@ -79,7 +86,7 @@ export function AssetManagementSidebar() {
         // Super Admin can see everything
         setVisibleMenus([
           "Dashboard", "Accounts", "AssignmentLog", "MaintenanceLog",
-          "Devices", "Departments"
+          "Devices", "Brands", "Departments"
         ]);
       } else {
         // Filter menus based on permissions

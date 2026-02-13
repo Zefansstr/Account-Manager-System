@@ -37,7 +37,8 @@ export default function AssetManagementAccountsPage() {
   const [loading, setLoading] = useState(false);
   const [departments, setDepartments] = useState<LookupData>([]);
   const [deviceList, setDeviceList] = useState<LookupData>([]);
-  const [brandList, setBrandList] = useState<string[]>([]);
+  const [brandList, setBrandList] = useState<LookupData>([]);
+  const [brandFilterList, setBrandFilterList] = useState<string[]>([]);
   const [locationList, setLocationList] = useState<string[]>([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -195,7 +196,7 @@ export default function AssetManagementAccountsPage() {
       const json = await res.json();
       
       if (res.ok && json.data) {
-        // Get unique brands
+        // Get unique brands for filter (from existing assets)
         const brands = new Set<string>();
         const locations = new Set<string>();
         
@@ -204,7 +205,7 @@ export default function AssetManagementAccountsPage() {
           if (asset.storageLocation) locations.add(asset.storageLocation);
         });
         
-        setBrandList(Array.from(brands).sort());
+        setBrandFilterList(Array.from(brands).sort());
         setLocationList(Array.from(locations).sort());
       }
     } catch (error) {
@@ -225,9 +226,23 @@ export default function AssetManagementAccountsPage() {
     }
   };
 
+  // Fetch brand list for dropdown
+  const fetchBrandList = async () => {
+    try {
+      const res = await fetch("/api/asset-management/brands");
+      const json = await res.json();
+      if (res.ok) {
+        setBrandList(json.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching brand list:", error);
+    }
+  };
+
   useEffect(() => {
     fetchLookups();
     fetchDeviceList();
+    fetchBrandList();
     fetchFilterOptions();
   }, []);
 
@@ -530,7 +545,7 @@ export default function AssetManagementAccountsPage() {
             className="rounded-md border border-border bg-background px-3 py-2 text-sm"
           >
             <option value="">All Brands</option>
-            {brandList.map((brand) => (
+            {brandFilterList.map((brand) => (
               <option key={brand} value={brand}>{brand}</option>
             ))}
           </select>
@@ -727,8 +742,19 @@ export default function AssetManagementAccountsPage() {
               <Input value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} placeholder="e.g. DEV001" />
             </div>
             <div className="grid gap-2">
-              <Label>Brand</Label>
-              <Input value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value })} placeholder="e.g. Apple, Dell, HP" />
+              <Label>Brand *</Label>
+              <select
+                value={formData.brand}
+                onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">Select Brand</option>
+                {brandList.map((brand) => (
+                  <option key={brand.id} value={brand.name}>
+                    {brand.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="grid gap-2">
               <Label>Device *</Label>

@@ -247,6 +247,22 @@ const MENU_CONFIG: Record<string, {
       { key: "action", label: "Action" },
     ],
   },
+  Brands: {
+    label: "Brands",
+    actions: [
+      { key: "view", label: "View" },
+      { key: "create", label: "Create" },
+      { key: "edit", label: "Edit" },
+      { key: "delete", label: "Delete" },
+    ],
+    columns: [
+      { key: "code", label: "Code" },
+      { key: "name", label: "Brand Name" },
+      { key: "description", label: "Description" },
+      { key: "status", label: "Status" },
+      { key: "action", label: "Action" },
+    ],
+  },
 };
 
 export default function OperatorRolesPage() {
@@ -1015,8 +1031,8 @@ export default function OperatorRolesPage() {
                   return null;
                 }
               } else if (selectedModule === "asset-management") {
-                // Asset Management: show dashboard, accounts, AssignmentLog, MaintenanceLog, devices, departments
-                if (!["dashboard", "accounts", "AssignmentLog", "MaintenanceLog", "devices", "departments"].includes(menuName)) {
+                // Asset Management: show dashboard, accounts, AssignmentLog, MaintenanceLog, devices, Brands, departments
+                if (!["dashboard", "accounts", "AssignmentLog", "MaintenanceLog", "devices", "Brands", "departments"].includes(menuName)) {
                   return null;
                 }
               } else if (selectedModule === "operator-setting") {
@@ -1054,6 +1070,19 @@ export default function OperatorRolesPage() {
                       columns: [
                         { key: "code", label: "Code" },
                         { key: "name", label: "Device Name" },
+                        { key: "description", label: "Description" },
+                        { key: "status", label: "Status" },
+                        { key: "action", label: "Action" },
+                      ],
+                    };
+                  }
+                  if (menuName === "Brands") {
+                    return {
+                      ...config,
+                      label: "Brands",
+                      columns: [
+                        { key: "code", label: "Code" },
+                        { key: "name", label: "Brand Name" },
                         { key: "description", label: "Description" },
                         { key: "status", label: "Status" },
                         { key: "action", label: "Action" },
