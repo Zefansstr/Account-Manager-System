@@ -16,7 +16,6 @@ import {
   ShieldCheck,
   ChevronDown,
   ChevronRight,
-  LogOut,
   Cog,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -211,9 +210,23 @@ export function Sidebar() {
   const showOperatorsMenu = isOperatorSetting || (visibleOperatorSubmenus.length > 0 && !shouldHideOperatorsMenu);
   const showSettingsMenu = visibleSettingsSubmenus.length > 0;
 
+  const navItemClass = "flex items-center gap-3 rounded py-2 px-3 text-sm font-medium transition-colors";
+  const navItemActive = "bg-[#7f5539] text-white";
+  const navItemInactive = "text-[#1e1e1e] dark:text-gray-200 hover:bg-[rgba(127,85,57,0.08)] dark:hover:bg-white/10";
+  const submenuItemClass = "flex items-center gap-3 rounded py-2 px-3 text-sm font-medium transition-colors";
+
   return (
-    <aside className="sticky top-16 z-40 h-[calc(100vh-4rem)] w-64 flex-shrink-0 border-r border-border bg-card overflow-y-auto">
-      <nav className="flex h-full flex-col gap-1 p-4">
+    <aside className={cn(
+      "sticky z-40 h-[calc(100vh-3.5rem)] flex-shrink-0 overflow-y-auto translate-z-0 will-change-[transform] backface-hidden",
+      isAccountManagement 
+        ? "top-14 w-[242px] bg-white dark:bg-[#000000]"
+        : "top-16 w-64 border-r border-border bg-card"
+    )}>
+      <nav className="flex h-full flex-col p-4">
+        {isAccountManagement && (
+          <p className="text-xs font-medium text-[rgba(127,85,57,0.62)] dark:text-gray-400 mb-3 px-1 mt-1">General</p>
+        )}
+        <div className="flex flex-col gap-1">
         {/* Regular Menu Items - Hide when in Operator Setting */}
         {!shouldShowOnlyOperators && menuItems.map((item) => {
           // Check if menu is visible
@@ -230,13 +243,13 @@ export function Sidebar() {
               href={item.href}
               prefetch={true}
               className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-primary text-primary-foreground shadow-lg"
-                  : "text-foreground hover:bg-secondary hover:text-primary"
+                isAccountManagement ? navItemClass : "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+                isAccountManagement 
+                  ? (isActive ? navItemActive : navItemInactive)
+                  : (isActive ? "bg-primary text-primary-foreground shadow-lg" : "text-foreground hover:bg-secondary hover:text-primary")
               )}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className={cn("flex-shrink-0", isAccountManagement ? "h-4 w-4" : "h-5 w-5")} />
               <span className="flex-1">{item.title}</span>
             </Link>
           );
@@ -270,28 +283,25 @@ export function Sidebar() {
               })
             ) : (
               // Expandable submenu when not in Operator Setting
-              <div>
+              <div className="space-y-1">
                 <button
                   onClick={handleOperatorsToggle}
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-                    isOperatorsActive
-                      ? "bg-primary text-primary-foreground shadow-lg"
-                      : "text-foreground hover:bg-secondary hover:text-primary"
+                    isAccountManagement ? navItemClass : "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+                    isAccountManagement
+                      ? (isOperatorsActive ? navItemActive : navItemInactive)
+                      : (isOperatorsActive ? "bg-primary text-primary-foreground shadow-lg" : "text-foreground hover:bg-secondary hover:text-primary"),
+                    "w-full text-left"
                   )}
                 >
-                  <Cog className="h-5 w-5" />
-                  <span className="flex-1 text-left">Operators</span>
-                  {isOperatorsOpen ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
+                  <Cog className={cn("flex-shrink-0", isAccountManagement ? "h-4 w-4" : "h-5 w-5")} />
+                  <span className="flex-1">Operators</span>
+                  {isOperatorsOpen ? <ChevronDown className={cn("flex-shrink-0", isAccountManagement ? "h-4 w-4" : "h-4 w-4")} /> : <ChevronRight className={cn("flex-shrink-0", isAccountManagement ? "h-4 w-4" : "h-4 w-4")} />}
                 </button>
 
                 {/* Submenu */}
                 {isOperatorsOpen && (
-                  <div className="mt-1 ml-4 space-y-1">
+                  <div className="mt-1 ml-3 space-y-1">
                     {visibleOperatorSubmenus.map((item) => {
                       const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
                       const Icon = item.icon;
@@ -302,13 +312,13 @@ export function Sidebar() {
                           href={item.href}
                           prefetch={true}
                           className={cn(
-                            "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-                            isActive
-                              ? "bg-primary/20 text-primary border-l-2 border-primary"
-                              : "text-muted-foreground hover:bg-secondary hover:text-primary"
+                            isAccountManagement ? submenuItemClass : "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+                            isAccountManagement
+                              ? (isActive ? "bg-[#7f5539]/12 dark:bg-[#7f5539]/25 text-[#7f5539] dark:text-[#a06540]" : "text-[rgba(127,85,57,0.62)] dark:text-gray-400 hover:bg-[rgba(127,85,57,0.08)] dark:hover:bg-white/10")
+                              : (isActive ? "bg-primary/20 text-primary border-l-2 border-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary")
                           )}
                         >
-                          <Icon className="h-4 w-4" />
+                          <Icon className={cn("flex-shrink-0", isAccountManagement ? "h-4 w-4" : "h-4 w-4")} />
                           <span>{item.title}</span>
                         </Link>
                       );
@@ -320,47 +330,40 @@ export function Sidebar() {
           </>
         )}
 
-        {/* Settings with Submenu - Hide when in Operator Setting */}
         {showSettingsMenu && !shouldShowOnlyOperators && (
-          <div>
+          <div className="space-y-1">
             <button
               onClick={handleSettingsToggle}
               className={cn(
-                "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-                isSettingsActive
-                  ? "bg-primary text-primary-foreground shadow-lg"
-                  : "text-foreground hover:bg-secondary hover:text-primary"
+                isAccountManagement ? navItemClass : "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+                isAccountManagement
+                  ? (isSettingsActive ? navItemActive : navItemInactive)
+                  : (isSettingsActive ? "bg-primary text-primary-foreground shadow-lg" : "text-foreground hover:bg-secondary hover:text-primary"),
+                "w-full text-left"
               )}
             >
-              <Settings className="h-5 w-5" />
-              <span className="flex-1 text-left">Settings</span>
-              {isSettingsOpen ? (
-                <ChevronDown className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
-              )}
+              <Settings className={cn("flex-shrink-0", isAccountManagement ? "h-4 w-4" : "h-5 w-5")} />
+              <span className="flex-1">Settings</span>
+              {isSettingsOpen ? <ChevronDown className={cn("flex-shrink-0", isAccountManagement ? "h-4 w-4" : "h-4 w-4")} /> : <ChevronRight className={cn("flex-shrink-0", isAccountManagement ? "h-4 w-4" : "h-4 w-4")} />}
             </button>
-
-            {/* Submenu */}
             {isSettingsOpen && (
-              <div className="mt-1 ml-4 space-y-1">
+              <div className="mt-1 ml-3 space-y-1">
                 {visibleSettingsSubmenus.map((item) => {
                   const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
                   const Icon = item.icon;
-
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
                       prefetch={true}
                       className={cn(
-                        "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-                        isActive
-                          ? "bg-primary/20 text-primary border-l-2 border-primary"
-                          : "text-muted-foreground hover:bg-secondary hover:text-primary"
+                        isAccountManagement ? submenuItemClass : "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+                        isAccountManagement
+                          ? (isActive ? "bg-[#7f5539]/12 dark:bg-[#7f5539]/25 text-[#7f5539] dark:text-[#a06540]" : "text-[rgba(127,85,57,0.62)] dark:text-gray-400 hover:bg-[rgba(127,85,57,0.08)] dark:hover:bg-white/10")
+                          : (isActive ? "bg-primary/20 text-primary border-l-2 border-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary")
                       )}
                     >
-                      <Icon className="h-4 w-4" />
+                      <Icon className={cn("flex-shrink-0", isAccountManagement ? "h-4 w-4" : "h-4 w-4")} />
                       <span>{item.title}</span>
                     </Link>
                   );
@@ -369,19 +372,6 @@ export function Sidebar() {
             )}
           </div>
         )}
-
-        {/* Logout Button - At the bottom */}
-        <div className="mt-auto pt-4 border-t border-border">
-          <button
-            onClick={handleLogout}
-            className={cn(
-              "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-              "text-foreground hover:bg-destructive/10 hover:text-destructive"
-            )}
-          >
-            <LogOut className="h-5 w-5" />
-            <span className="flex-1 text-left">Logout</span>
-          </button>
         </div>
       </nav>
     </aside>

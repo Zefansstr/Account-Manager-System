@@ -93,14 +93,14 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-white dark:bg-[#000000]">
       {/* Toast Notifications */}
       <Toaster 
         position="top-right"
         toastOptions={{
           duration: 3000,
           style: {
-            background: '#22c55e',
+            background: '#7f5539',
             color: '#fff',
             fontWeight: '500',
             borderRadius: '8px',
@@ -108,7 +108,7 @@ export default function DashboardLayout({
           success: {
             iconTheme: {
               primary: '#fff',
-              secondary: '#22c55e',
+              secondary: '#7f5539',
             },
           },
           error: {
@@ -126,7 +126,7 @@ export default function DashboardLayout({
       <Topbar />
       <div className="flex">
         <Sidebar />
-        <main className="flex-1 p-4">
+        <main className="flex-1 p-6 flex flex-col min-h-0">
           {children}
         </main>
       </div>

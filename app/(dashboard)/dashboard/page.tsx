@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useMemo } from "react";
 import { Users, UserCheck, AppWindow, Layers, Building2, Shield } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, PieChart, Pie, Cell } from "recharts";
@@ -8,10 +8,25 @@ import { PermissionGuard } from "@/components/auth/permission-guard";
 import { getDepartmentDisplayName, getRoleDisplayName } from "@/lib/display-names";
 import { useDashboard } from "@/hooks/use-dashboard";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
+import { useOperatorId } from "@/lib/operator-store";
+import { useTheme } from "@/components/providers/theme-provider";
 
 const STATUS_COLORS = {
-  Active: "#22c55e",
-  Inactive: "#6b7280"
+  Active: "#7f5539",
+  Inactive: "#9ca3af"
+};
+
+const CHART_THEME = {
+  brown: "#7f5539",
+  brownLight: "#a06540",
+  beige: "#e8e0d5",
+  beigePanel: "#ece2d9",
+  brownMuted: "rgba(127, 85, 57, 0.6)",
+  gridStroke: "rgba(232, 224, 213, 0.8)",
+  axisStroke: "#5d5d5d",
+  tooltipBg: "#ece2d9",
+  tooltipBorder: "#7f5539",
+  tooltipText: "#1e1e1e",
 };
 
 const RADIAN = Math.PI / 180;
@@ -37,7 +52,7 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, nam
       <text 
         x={x} 
         y={y + 8} 
-        fill="hsl(var(--primary))"
+        fill="#7f5539"
         textAnchor={x > cx ? 'start' : 'end'} 
         dominantBaseline="central" 
         fontSize="12" 
@@ -51,21 +66,10 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, nam
 };
 
 export default function DashboardPage() {
-  // Get operator ID from localStorage
-  const [operatorId, setOperatorId] = useState<string>();
-  
-  useEffect(() => {
-    // Use requestAnimationFrame for smoother initial load
-    requestAnimationFrame(() => {
-      const operatorStr = localStorage.getItem("operator");
-      if (operatorStr) {
-        const operator = JSON.parse(operatorStr);
-        setOperatorId(operator.id);
-      }
-    });
-  }, []);
+  const { theme } = useTheme();
+  const operatorId = useOperatorId();
 
-  // Use React Query hook for automatic caching & refetching
+  // Use React Query hook for automatic caching & refetching (no waterfall: operatorId ready on first render)
   const { data: rawData, isLoading: loading, error } = useDashboard(operatorId);
 
   // Transform data with display names (memoized for performance)
@@ -107,60 +111,48 @@ export default function DashboardPage() {
 
   const kpiCards = [
     {
-      title: "Total Accounts",
+      title: "Total Account",
       value: data.kpis.totalAccounts,
       icon: Users,
-      color: "text-primary",
+      color: "text-[#7f5539]",
     },
     {
-      title: "Active Accounts",
+      title: "Active Account",
       value: data.kpis.activeAccounts,
       icon: UserCheck,
-      color: "text-primary",
+      color: "text-[#7f5539]",
     },
     {
       title: "Total Applications",
       value: data.kpis.totalApplications,
       icon: AppWindow,
-      color: "text-primary",
-    },
-    {
-      title: "Total Lines",
-      value: data.kpis.totalLines,
-      icon: Layers,
-      color: "text-primary",
+      color: "text-[#7f5539]",
     },
     {
       title: "Total Departments",
       value: data.kpis.totalDepartments,
       icon: Building2,
-      color: "text-primary",
-    },
-    {
-      title: "Total Roles",
-      value: data.kpis.totalRoles,
-      icon: Shield,
-      color: "text-primary",
+      color: "text-[#7f5539]",
     },
   ];
 
   return (
     <PermissionGuard menuName="dashboard">
-      <div className="space-y-4">
+      <div className="space-y-4 rounded-2xl bg-[#e8e0d5]/30 dark:bg-[#101211] border border-[#e8e0d5] dark:border-[#1f1f1f] p-6">
       {/* KPI Cards - Single Row */}
-      <div className="grid grid-cols-6 gap-3">
+      <div className="grid grid-cols-4 gap-3">
         {kpiCards.map((kpi, index) => {
           const Icon = kpi.icon;
           return (
-            <Card key={index} className="border-border bg-card">
+            <Card key={index} className="border-[#e8e0d5]/80 dark:border-[#1f1f1f] bg-white dark:bg-[#101211]">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs font-medium text-foreground">
+                <CardTitle className="text-xs font-medium text-[#1e1e1e] dark:text-gray-200">
                   {kpi.title}
                 </CardTitle>
                 <Icon className={`h-4 w-4 ${kpi.color}`} />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-foreground">{kpi.value}</div>
+                <div className="text-2xl font-bold text-[#1e1e1e] dark:text-white">{kpi.value}</div>
               </CardContent>
             </Card>
           );
@@ -170,10 +162,10 @@ export default function DashboardPage() {
       {/* Charts Row 1 */}
       <div className="grid gap-4 md:grid-cols-2">
         {/* Active vs Inactive Accounts - Donut Chart */}
-        <Card className="border-border bg-card shadow-lg">
-          <CardHeader className="border-b border-border">
-            <CardTitle className="text-foreground flex items-center gap-2">
-              <UserCheck className="h-5 w-5 text-primary" />
+        <Card className="border-[#e8e0d5]/80 dark:border-[#1f1f1f] bg-white dark:bg-[#101211] shadow-sm">
+          <CardHeader className="border-b border-[#e8e0d5] dark:border-[#1f1f1f]">
+            <CardTitle className="text-[#1e1e1e] dark:text-gray-200 flex items-center gap-2">
+              <UserCheck className="h-5 w-5 text-[#7f5539]" />
               Active vs Inactive Accounts
             </CardTitle>
           </CardHeader>
@@ -186,7 +178,7 @@ export default function DashboardPage() {
                       data={data.charts.accountsStatus}
                       cx="50%"
                       cy="50%"
-                      labelLine={{ stroke: 'hsl(var(--foreground))', strokeWidth: 2 }}
+                      labelLine={{ stroke: "#5d5d5d", strokeWidth: 2 }}
                       label={renderCustomizedLabel}
                       outerRadius={95}
                       innerRadius={60}
@@ -198,39 +190,39 @@ export default function DashboardPage() {
                         <Cell 
                           key={`cell-${index}`} 
                           fill={STATUS_COLORS[entry.name as keyof typeof STATUS_COLORS]}
-                          strokeWidth={2}
-                          stroke="hsl(var(--card))"
+                          strokeWidth={theme === "dark" ? 0 : 2}
+                          stroke={theme === "dark" ? "none" : "#ece2d9"}
                         />
                       ))}
                     </Pie>
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#2D333B",
-                        border: "1px solid #22c55e",
+                        backgroundColor: CHART_THEME.tooltipBg,
+                        border: `1px solid ${CHART_THEME.tooltipBorder}`,
                         borderRadius: "8px",
                         padding: "12px",
-                        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.3)",
+                        boxShadow: "0 4px 12px rgba(127, 85, 57, 0.12)",
                       }}
-                      itemStyle={{ color: "#FFFFFF", fontWeight: "bold" }}
+                      itemStyle={{ color: CHART_THEME.tooltipText, fontWeight: "600" }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
                 {/* Legend - Raised Position */}
                 <div className="grid grid-cols-2 gap-2 -mt-2">
                   {data.charts.accountsStatus.map((entry, index) => (
-                    <div key={index} className="flex items-center gap-2 bg-secondary/50 rounded-md px-3 py-2">
+                    <div key={index} className="flex items-center gap-2 bg-[#e8e0d5]/60 dark:bg-[#1a1a1a] rounded px-3 py-2">
                       <div 
                         className="w-3 h-3 rounded-full" 
                         style={{ backgroundColor: STATUS_COLORS[entry.name as keyof typeof STATUS_COLORS] }}
                       />
-                      <span className="text-sm text-foreground font-medium">{entry.name}</span>
-                      <span className="ml-auto text-sm font-bold text-primary">{entry.count}</span>
+                      <span className="text-sm text-[#1e1e1e] dark:text-gray-300 font-medium">{entry.name}</span>
+                      <span className="ml-auto text-sm font-bold text-[#7f5539]">{entry.count}</span>
                     </div>
                   ))}
                 </div>
               </div>
             ) : (
-              <div className="flex items-center justify-center h-[320px] text-muted-foreground">
+              <div className="flex items-center justify-center h-[320px] text-[#5d5d5d]">
                 No data available
               </div>
             )}
@@ -238,10 +230,10 @@ export default function DashboardPage() {
         </Card>
 
         {/* Accounts by Department - Bar Chart */}
-        <Card className="border-border bg-card shadow-lg">
-          <CardHeader className="border-b border-border">
-            <CardTitle className="text-foreground flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-primary" />
+        <Card className="border-[#e8e0d5]/80 dark:border-[#1f1f1f] bg-white dark:bg-[#101211] shadow-sm">
+          <CardHeader className="border-b border-[#e8e0d5] dark:border-[#1f1f1f]">
+            <CardTitle className="text-[#1e1e1e] dark:text-gray-200 flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-[#7f5539]" />
               Total Accounts by Departments
             </CardTitle>
           </CardHeader>
@@ -251,42 +243,42 @@ export default function DashboardPage() {
                 <BarChart data={data.charts.accountsByDepartment} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                   <defs>
                     <linearGradient id="colorDept" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#22c55e" stopOpacity={0.9}/>
-                      <stop offset="95%" stopColor="#22c55e" stopOpacity={0.6}/>
+                      <stop offset="5%" stopColor="#7f5539" stopOpacity={0.95}/>
+                      <stop offset="95%" stopColor="#e8e0d5" stopOpacity={0.9}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#444C56" opacity={0.3} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART_THEME.gridStroke} opacity={0.6} />
                   <XAxis
                     dataKey="name"
-                    stroke="#ADBAC7"
-                    tick={{ fill: "#ADBAC7", fontSize: 12 }}
+                    stroke={CHART_THEME.axisStroke}
+                    tick={{ fill: CHART_THEME.axisStroke, fontSize: 12 }}
                     tickLine={false}
                   />
                   <YAxis 
-                    stroke="#ADBAC7" 
-                    tick={{ fill: "#ADBAC7", fontSize: 12 }} 
+                    stroke={CHART_THEME.axisStroke} 
+                    tick={{ fill: CHART_THEME.axisStroke, fontSize: 12 }} 
                     tickLine={false}
                     axisLine={false}
                   />
                   <Tooltip
-                    cursor={{ fill: 'rgba(34, 197, 94, 0.1)' }}
+                    cursor={{ fill: "rgba(232, 224, 213, 0.5)" }}
                     contentStyle={{
-                      backgroundColor: "#2D333B",
-                      border: "2px solid #22c55e",
+                      backgroundColor: CHART_THEME.tooltipBg,
+                      border: `1px solid ${CHART_THEME.tooltipBorder}`,
                       borderRadius: "8px",
                       padding: "12px",
-                      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.3)",
+                      boxShadow: "0 4px 12px rgba(127, 85, 57, 0.12)",
                     }}
-                    itemStyle={{ color: "#22c55e", fontWeight: "bold", fontSize: "14px" }}
-                    labelStyle={{ color: "#FFFFFF", fontWeight: "bold" }}
+                    itemStyle={{ color: CHART_THEME.tooltipBorder, fontWeight: "600", fontSize: "14px" }}
+                    labelStyle={{ color: CHART_THEME.tooltipText, fontWeight: "600" }}
                   />
                   <Bar dataKey="count" fill="url(#colorDept)" radius={[8, 8, 0, 0]} maxBarSize={60}>
-                    <LabelList dataKey="count" position="top" fill="#22c55e" fontWeight="bold" />
+                    <LabelList dataKey="count" position="top" fill="#7f5539" fontWeight="600" />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-[320px] text-muted-foreground">
+              <div className="flex items-center justify-center h-[320px] text-[#5d5d5d]">
                 No data available
               </div>
             )}
@@ -297,10 +289,10 @@ export default function DashboardPage() {
       {/* Charts Row 2 */}
       <div className="grid gap-4 md:grid-cols-2">
         {/* Accounts by Application - Bar Chart */}
-        <Card className="border-border bg-card shadow-lg">
-          <CardHeader className="border-b border-border">
-            <CardTitle className="text-foreground flex items-center gap-2">
-              <AppWindow className="h-5 w-5 text-primary" />
+        <Card className="border-[#e8e0d5]/80 dark:border-[#1f1f1f] bg-white dark:bg-[#101211] shadow-sm">
+          <CardHeader className="border-b border-[#e8e0d5] dark:border-[#1f1f1f]">
+            <CardTitle className="text-[#1e1e1e] dark:text-gray-200 flex items-center gap-2">
+              <AppWindow className="h-5 w-5 text-[#7f5539]" />
               Total Accounts by Applications
             </CardTitle>
           </CardHeader>
@@ -310,42 +302,42 @@ export default function DashboardPage() {
                 <BarChart data={data.charts.accountsByApplication} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                   <defs>
                     <linearGradient id="colorApp" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#22c55e" stopOpacity={0.9}/>
-                      <stop offset="95%" stopColor="#22c55e" stopOpacity={0.6}/>
+                      <stop offset="5%" stopColor="#7f5539" stopOpacity={0.95}/>
+                      <stop offset="95%" stopColor="#e8e0d5" stopOpacity={0.9}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#444C56" opacity={0.3} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART_THEME.gridStroke} opacity={0.6} />
                   <XAxis
                     dataKey="name"
-                    stroke="#ADBAC7"
-                    tick={{ fill: "#ADBAC7", fontSize: 12 }}
+                    stroke={CHART_THEME.axisStroke}
+                    tick={{ fill: CHART_THEME.axisStroke, fontSize: 12 }}
                     tickLine={false}
                   />
                   <YAxis 
-                    stroke="#ADBAC7" 
-                    tick={{ fill: "#ADBAC7", fontSize: 12 }} 
+                    stroke={CHART_THEME.axisStroke} 
+                    tick={{ fill: CHART_THEME.axisStroke, fontSize: 12 }} 
                     tickLine={false}
                     axisLine={false}
                   />
                   <Tooltip
-                    cursor={{ fill: 'rgba(34, 197, 94, 0.1)' }}
+                    cursor={{ fill: "rgba(232, 224, 213, 0.5)" }}
                     contentStyle={{
-                      backgroundColor: "#2D333B",
-                      border: "2px solid #22c55e",
+                      backgroundColor: CHART_THEME.tooltipBg,
+                      border: `1px solid ${CHART_THEME.tooltipBorder}`,
                       borderRadius: "8px",
                       padding: "12px",
-                      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.3)",
+                      boxShadow: "0 4px 12px rgba(127, 85, 57, 0.12)",
                     }}
-                    itemStyle={{ color: "#22c55e", fontWeight: "bold", fontSize: "14px" }}
-                    labelStyle={{ color: "#FFFFFF", fontWeight: "bold" }}
+                    itemStyle={{ color: CHART_THEME.tooltipBorder, fontWeight: "600", fontSize: "14px" }}
+                    labelStyle={{ color: CHART_THEME.tooltipText, fontWeight: "600" }}
                   />
                   <Bar dataKey="count" fill="url(#colorApp)" radius={[8, 8, 0, 0]} maxBarSize={60}>
-                    <LabelList dataKey="count" position="top" fill="#22c55e" fontWeight="bold" />
+                    <LabelList dataKey="count" position="top" fill="#7f5539" fontWeight="600" />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-[320px] text-muted-foreground">
+              <div className="flex items-center justify-center h-[320px] text-[#5d5d5d]">
                 No data available
               </div>
             )}
@@ -353,10 +345,10 @@ export default function DashboardPage() {
         </Card>
 
         {/* Accounts by Role - Bar Chart */}
-        <Card className="border-border bg-card shadow-lg">
-          <CardHeader className="border-b border-border">
-            <CardTitle className="text-foreground flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary" />
+        <Card className="border-[#e8e0d5]/80 dark:border-[#1f1f1f] bg-white dark:bg-[#101211] shadow-sm">
+          <CardHeader className="border-b border-[#e8e0d5] dark:border-[#1f1f1f]">
+            <CardTitle className="text-[#1e1e1e] dark:text-gray-200 flex items-center gap-2">
+              <Shield className="h-5 w-5 text-[#7f5539]" />
               Total Accounts by Roles
             </CardTitle>
           </CardHeader>
@@ -366,42 +358,42 @@ export default function DashboardPage() {
                 <BarChart data={data.charts.accountsByRole} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                   <defs>
                     <linearGradient id="colorRole" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#22c55e" stopOpacity={0.9}/>
-                      <stop offset="95%" stopColor="#22c55e" stopOpacity={0.6}/>
+                      <stop offset="5%" stopColor="#7f5539" stopOpacity={0.95}/>
+                      <stop offset="95%" stopColor="#e8e0d5" stopOpacity={0.9}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#444C56" opacity={0.3} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART_THEME.gridStroke} opacity={0.6} />
                   <XAxis
                     dataKey="name"
-                    stroke="#ADBAC7"
-                    tick={{ fill: "#ADBAC7", fontSize: 12 }}
+                    stroke={CHART_THEME.axisStroke}
+                    tick={{ fill: CHART_THEME.axisStroke, fontSize: 12 }}
                     tickLine={false}
                   />
                   <YAxis 
-                    stroke="#ADBAC7" 
-                    tick={{ fill: "#ADBAC7", fontSize: 12 }} 
+                    stroke={CHART_THEME.axisStroke} 
+                    tick={{ fill: CHART_THEME.axisStroke, fontSize: 12 }} 
                     tickLine={false}
                     axisLine={false}
                   />
                   <Tooltip
-                    cursor={{ fill: 'rgba(34, 197, 94, 0.1)' }}
+                    cursor={{ fill: "rgba(232, 224, 213, 0.5)" }}
                     contentStyle={{
-                      backgroundColor: "#2D333B",
-                      border: "2px solid #22c55e",
+                      backgroundColor: CHART_THEME.tooltipBg,
+                      border: `1px solid ${CHART_THEME.tooltipBorder}`,
                       borderRadius: "8px",
                       padding: "12px",
-                      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.3)",
+                      boxShadow: "0 4px 12px rgba(127, 85, 57, 0.12)",
                     }}
-                    itemStyle={{ color: "#22c55e", fontWeight: "bold", fontSize: "14px" }}
-                    labelStyle={{ color: "#FFFFFF", fontWeight: "bold" }}
+                    itemStyle={{ color: CHART_THEME.tooltipBorder, fontWeight: "600", fontSize: "14px" }}
+                    labelStyle={{ color: CHART_THEME.tooltipText, fontWeight: "600" }}
                   />
                   <Bar dataKey="count" fill="url(#colorRole)" radius={[8, 8, 0, 0]} maxBarSize={60}>
-                    <LabelList dataKey="count" position="top" fill="#22c55e" fontWeight="bold" />
+                    <LabelList dataKey="count" position="top" fill="#7f5539" fontWeight="600" />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-[320px] text-muted-foreground">
+              <div className="flex items-center justify-center h-[320px] text-[#5d5d5d]">
                 No data available
               </div>
             )}
