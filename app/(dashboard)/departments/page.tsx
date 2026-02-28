@@ -79,7 +79,7 @@ export default function DepartmentsPage() {
               ) : departments.length === 0 ? (
                 <tr className="bg-white dark:bg-[#101211]"><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground dark:text-gray-400">No departments found</td></tr>
               ) : (
-                departments.map((dept: Department, index) => (
+                departments.map((dept: Department, index: number) => (
                   <tr key={dept.id} className="border-t border-[#7F5539]/15 dark:border-[#7F5539]/30 bg-white dark:bg-[#101211] hover:bg-[#f5f0eb] dark:hover:bg-[#1a1a1a] transition-colors">
                     <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle"><Badge variant={CODE_BADGE_VARIANTS[index % 4]}>{dept.code}</Badge></td>
                     <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle">{dept.name}</td>
