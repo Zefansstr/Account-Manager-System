@@ -742,7 +742,7 @@ export default function OperatorRolesPage() {
                   <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle"><span className="text-[#7f5539] dark:text-[#a06540] font-medium">{role.role_code}</span></td>
                   <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle">
                     <div className="flex items-center gap-2">
-                      {role.is_system_role && <Lock className="h-3 w-3 text-destructive shrink-0" title="System Role - Cannot be deleted" />}
+                      {role.is_system_role && <span title="System Role - Cannot be deleted"><Lock className="h-3 w-3 text-destructive shrink-0" /></span>}
                       <span>{role.role_name}</span>
                     </div>
                   </td>
