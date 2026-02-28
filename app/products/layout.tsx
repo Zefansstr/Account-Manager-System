@@ -51,7 +51,7 @@ export default function ProductsLayout({
 
   if (hasAccess === false) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-white dark:bg-[#000000]">
         <Topbar />
         <NoAccess moduleName="product-management" />
       </div>
@@ -59,14 +59,14 @@ export default function ProductsLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-white dark:bg-[#000000]">
       {/* Toast Notifications */}
       <Toaster 
         position="top-right"
         toastOptions={{
           duration: 3000,
           style: {
-            background: '#22c55e',
+            background: '#7f5539',
             color: '#fff',
             fontWeight: '500',
             borderRadius: '8px',
@@ -74,7 +74,7 @@ export default function ProductsLayout({
           success: {
             iconTheme: {
               primary: '#fff',
-              secondary: '#22c55e',
+              secondary: '#7f5539',
             },
           },
           error: {
@@ -92,7 +92,7 @@ export default function ProductsLayout({
       <Topbar />
       <div className="flex">
         <ProductsSidebar />
-        <main className="flex-1 p-4">
+        <main className="flex-1 p-6 flex flex-col min-h-0">
           {children}
         </main>
       </div>

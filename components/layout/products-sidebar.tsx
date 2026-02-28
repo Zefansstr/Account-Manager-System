@@ -127,65 +127,51 @@ export function ProductsSidebar() {
   // Check if parent menus should be visible (at least one submenu is visible)
   const showSettingsMenu = visibleSettingsSubmenus.length > 0;
 
+  const navItemClass = "flex items-center gap-3 rounded py-2 px-3 text-sm font-medium transition-colors";
+  const navItemActive = "bg-[#7f5539] text-white";
+  const navItemInactive = "text-[#1e1e1e] dark:text-gray-200 hover:bg-[rgba(127,85,57,0.08)] dark:hover:bg-white/10";
+  const submenuItemClass = "flex items-center gap-3 rounded py-2 px-3 text-sm font-medium transition-colors";
+
   return (
-    <aside className="sticky top-16 z-40 h-[calc(100vh-4rem)] w-64 flex-shrink-0 border-r border-border bg-card overflow-y-auto">
-      <nav className="flex h-full flex-col gap-1 p-4">
-        {/* Regular Menu Items */}
+    <aside className="sticky top-14 z-40 h-[calc(100vh-3.5rem)] w-[242px] flex-shrink-0 bg-white dark:bg-[#000000] overflow-y-auto">
+      <nav className="flex h-full flex-col p-4">
+        <p className="text-xs font-medium text-[rgba(127,85,57,0.62)] dark:text-gray-400 mb-3 px-1 mt-1">Product Management</p>
+        <div className="flex flex-col gap-1">
         {menuItems.map((item) => {
-          // Check if menu is visible
-          if (!visibleMenus.includes(item.menuName)) {
-            return null;
-          }
-          
-          // For Dashboard, only match exact path or if it's the base path
-          // For other items, match exact path or paths starting with the href
+          if (!visibleMenus.includes(item.menuName)) return null;
           const isActive = item.href === "/products" 
             ? pathname === item.href || pathname === "/products/"
             : pathname === item.href || pathname.startsWith(item.href + "/");
           const Icon = item.icon;
-
           return (
             <Link
               key={item.href}
               href={item.href}
               prefetch={true}
-              className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-primary text-primary-foreground shadow-lg"
-                  : "text-foreground hover:bg-secondary hover:text-primary"
-              )}
+              className={cn(navItemClass, isActive ? navItemActive : navItemInactive)}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className="h-4 w-4 flex-shrink-0" />
               <span className="flex-1">{item.title}</span>
             </Link>
           );
         })}
 
-        {/* Settings with Submenu */}
         {showSettingsMenu && (
-          <div>
+          <div className="space-y-1">
             <button
               onClick={() => setIsSettingsOpen(!isSettingsOpen)}
               className={cn(
-                "flex w-full items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-                visibleSettingsSubmenus.some(item => pathname === item.href || pathname.startsWith(item.href + "/"))
-                  ? "bg-primary text-primary-foreground"
-                  : "text-foreground hover:bg-secondary hover:text-primary"
+                "w-full text-left",
+                navItemClass,
+                visibleSettingsSubmenus.some(item => pathname === item.href || pathname.startsWith(item.href + "/")) ? navItemActive : navItemInactive
               )}
             >
-              <div className="flex items-center gap-3">
-                <Settings className="h-5 w-5" />
-                <span>Settings</span>
-              </div>
-              {isSettingsOpen ? (
-                <ChevronDown className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
-              )}
+              <Settings className="h-4 w-4 flex-shrink-0" />
+              <span className="flex-1">Settings</span>
+              {isSettingsOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
             </button>
             {isSettingsOpen && (
-              <div className="ml-4 mt-1 space-y-1">
+              <div className="mt-1 ml-3 space-y-1">
                 {visibleSettingsSubmenus.map((item) => {
                   const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
                   const Icon = item.icon;
@@ -195,13 +181,11 @@ export function ProductsSidebar() {
                       href={item.href}
                       prefetch={true}
                       className={cn(
-                        "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                        isActive
-                          ? "bg-primary/20 text-primary font-medium"
-                          : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                        submenuItemClass,
+                        isActive ? "bg-[#7f5539]/10 text-[#7f5539] dark:bg-[#7f5539]/20 dark:text-[#a06540]" : "text-gray-600 dark:text-gray-400 hover:bg-[rgba(127,85,57,0.08)] dark:hover:bg-white/10"
                       )}
                     >
-                      <Icon className="h-4 w-4" />
+                      <Icon className="h-4 w-4 flex-shrink-0" />
                       <span>{item.title}</span>
                     </Link>
                   );
@@ -210,6 +194,7 @@ export function ProductsSidebar() {
             )}
           </div>
         )}
+        </div>
       </nav>
     </aside>
   );

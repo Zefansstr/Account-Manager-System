@@ -206,183 +206,118 @@ export default function OperatorsPage() {
 
   if (loading && operators.length === 0) {
     return (
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Operators</h2>
-            <p className="text-sm text-muted-foreground">
-              Manage system operators and assign roles
-            </p>
+      <div className="flex flex-col w-full bg-[rgba(127,85,57,0.04)] dark:bg-[#101211] border border-[#7F5539]/20 dark:border-[#7F5539]/40 rounded-2xl p-6">
+        <div className="pb-5 border-b border-[#7F5539]/20 dark:border-[#7F5539]/40">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-medium text-[#1e1e1e] dark:text-white tracking-tight" style={{ fontFamily: "Inter, sans-serif" }}>Operators</h1>
+            <span className="inline-flex items-center justify-center bg-[#3a2314] dark:bg-[#7f5539] text-white text-xs font-medium rounded min-w-[20px] h-5 px-1.5">0</span>
           </div>
+          <p className="text-sm text-[rgba(127,85,57,0.62)] dark:text-gray-400 mt-1">Manage system operators and assign roles</p>
         </div>
-        <TableSkeleton rows={10} columns={5} />
+        <div className="mt-6">
+          <TableSkeleton rows={10} columns={5} />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Operators</h2>
-          <p className="text-sm text-muted-foreground">
-            Manage system operators and assign roles
-          </p>
+    <div className="flex flex-col w-full bg-[rgba(127,85,57,0.04)] dark:bg-[#101211] border border-[#7F5539]/20 dark:border-[#7F5539]/40 rounded-2xl p-6">
+      <div className="pb-5 border-b border-[#7F5539]/20 dark:border-[#7F5539]/40 flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-medium text-[#1e1e1e] dark:text-white tracking-tight" style={{ fontFamily: "Inter, sans-serif" }}>Operators</h1>
+            <span className="inline-flex items-center justify-center bg-[#3a2314] dark:bg-[#7f5539] text-white text-xs font-medium rounded min-w-[20px] h-5 px-1.5">{pagination.total}</span>
+          </div>
+          <p className="text-sm text-[rgba(127,85,57,0.62)] dark:text-gray-400 mt-1">Manage system operators and assign roles</p>
         </div>
-        <Button onClick={() => {
-          resetForm();
-          setErrorMessage("");
-          setSuccessMessage("");
-          setIsAddOpen(true);
-        }}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Operator
-        </Button>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 w-80 h-9 border border-[#7F5539]/25 dark:border-[#7F5539]/50 rounded-md px-3.5 bg-[#faf8f6] dark:bg-[#1a1a1a] flex-shrink-0 shadow-[0_2px_6px_rgba(127,85,57,0.1)]">
+            <Search className="h-4 w-4 flex-shrink-0 text-[rgba(127,85,57,0.35)] dark:text-gray-500" />
+            <input
+              type="text"
+              placeholder="Search operators..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 bg-transparent border-0 outline-none text-sm font-medium text-[#1e1e1e] dark:text-gray-200 min-w-0 placeholder:text-[rgba(127,85,57,0.4)] dark:placeholder:text-gray-500"
+            />
+          </div>
+          <div className="h-8 w-px flex-shrink-0 bg-[rgba(127,85,57,0.2)]" aria-hidden />
+          <Button onClick={() => { resetForm(); setErrorMessage(""); setSuccessMessage(""); setIsAddOpen(true); }} className="h-8 px-4 bg-[#3a2314] dark:bg-transparent dark:border dark:border-[#2a2a2a] dark:text-white text-white text-sm font-medium rounded border-0 cursor-pointer hover:opacity-90 dark:hover:bg-white/10 transition-colors shadow-[0_2px_6px_rgba(127,85,57,0.12)]">
+            <Plus className="mr-2 h-4 w-4" />Add Operator
+          </Button>
+        </div>
       </div>
 
-      {/* Success Message */}
       {successMessage && (
-        <div className="rounded-lg border border-green-500 bg-green-50 dark:bg-green-950/20 px-4 py-3">
+        <div className="mt-4 rounded-lg border border-green-500/50 bg-green-50 dark:bg-green-950/20 px-4 py-3">
           <p className="text-sm text-green-700 dark:text-green-400">{successMessage}</p>
         </div>
       )}
 
-      {/* Search Bar */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Search operators..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <div className="text-sm text-muted-foreground">
-          {pagination.total} total operator{pagination.total !== 1 ? 's' : ''}
-        </div>
-      </div>
-
-      <div className="rounded-lg border border-border bg-card shadow-lg">
-        <div className="overflow-x-auto">
-          <table className="w-full" style={{ tableLayout: "fixed" }}>
-            <thead>
-              <tr className="border-b border-border bg-secondary/50">
-                <th className="w-[20%] px-4 py-3 text-left text-sm font-semibold text-foreground">Full Name</th>
-                <th className="w-[20%] px-4 py-3 text-left text-sm font-semibold text-foreground">Username</th>
-                <th className="w-[20%] px-4 py-3 text-left text-sm font-semibold text-foreground">Role</th>
-                <th className="w-[15%] px-4 py-3 text-left text-sm font-semibold text-foreground">Status</th>
-                <th className="w-[25%] px-4 py-3 text-center text-sm font-semibold text-foreground">Actions</th>
+      <div className="min-h-[280px] max-h-[calc(100vh-320px)] overflow-auto border border-[#7F5539]/20 dark:border-[#7F5539]/40 rounded-lg scrollbar-invisible bg-white dark:bg-[#101211]">
+        <table className="w-full table-fixed border-collapse">
+          <thead className="sticky top-0 z-10 bg-[#f0eae4] dark:bg-[#101211] shadow-[0_1px_0_0_rgba(127,85,57,0.2)] dark:shadow-[0_1px_0_0_rgba(127,85,57,0.4)]">
+            <tr>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-[#1e1e1e] dark:text-white w-[20%] bg-[#f0eae4] dark:bg-[#101211]">Full Name</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-[#1e1e1e] dark:text-white w-[20%] bg-[#f0eae4] dark:bg-[#101211]">Username</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-[#1e1e1e] dark:text-white w-[20%] bg-[#f0eae4] dark:bg-[#101211]">Role</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-[#1e1e1e] dark:text-white w-[15%] bg-[#f0eae4] dark:bg-[#101211]">Status</th>
+              <th className="px-4 py-3 text-center text-sm font-semibold text-[#1e1e1e] dark:text-white w-[25%] bg-[#f0eae4] dark:bg-[#101211]">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white dark:bg-[#101211]">
+            {operators.length === 0 ? (
+              <tr className="bg-white dark:bg-[#101211]">
+                <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground dark:text-gray-400">
+                  <div className="flex flex-col items-center gap-2">
+                    <p>{searchTerm ? "No operators found matching your search" : "No operators yet"}</p>
+                    {searchTerm && <Button variant="outline" size="sm" onClick={() => setSearchTerm("")} className="min-w-[88px]">Clear search</Button>}
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {operators.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center">
-                    <div className="flex flex-col items-center gap-2">
-                      <p className="text-muted-foreground">
-                        {searchTerm ? "No operators found matching your search" : "No operators yet"}
-                      </p>
-                      {searchTerm && (
-                        <Button variant="outline" size="sm" onClick={() => setSearchTerm("")}>
-                          Clear search
-                        </Button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                operators.map((operator, index) => (
-                <tr
-                  key={operator.id}
-                  className={`border-b border-border transition-colors hover:bg-secondary/30 ${
-                    index % 2 === 0 ? "bg-card" : "bg-secondary/10"
-                  }`}
-                >
-                  <td className="px-4 py-3 text-sm text-foreground font-medium">{operator.full_name}</td>
-                  <td className="px-4 py-3 text-sm">
-                    <span className="font-medium text-primary">{operator.username}</span>
-                  </td>
-                  <td className="px-4 py-3 text-sm">
-                    <Badge variant="secondary" className="bg-primary/20 text-primary">
-                      {operator.role_name}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3 text-sm">
-                    <Badge
-                      variant={operator.status === "active" ? "default" : "secondary"}
-                      className={
-                        operator.status === "active"
-                          ? "bg-primary/20 text-primary border border-primary"
-                          : "bg-secondary text-muted-foreground"
-                      }
-                    >
+            ) : (
+              operators.map((operator) => (
+                <tr key={operator.id} className="border-t border-[#7F5539]/15 dark:border-[#7F5539]/30 bg-white dark:bg-[#101211] hover:bg-[#f5f0eb] dark:hover:bg-[#1a1a1a] transition-colors">
+                  <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle">{operator.full_name}</td>
+                  <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle"><span className="text-[#7f5539] dark:text-[#a06540] font-medium">{operator.username}</span></td>
+                  <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle"><Badge variant="secondary" className="bg-[#7f5539]/15 text-[#7f5539] dark:bg-[#7f5539]/25 dark:text-[#a06540] border-[#7f5539]/30">{operator.role_name}</Badge></td>
+                  <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle">
+                    <Badge variant={operator.status === "active" ? "success" : "secondary"} className={operator.status === "active" ? "bg-emerald-50 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 border-emerald-200" : "bg-secondary text-muted-foreground"}>
                       {operator.status}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle">
                     <div className="flex items-center justify-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleOperatorStatus(operator)}
-                        className={
-                          operator.status === "active"
-                            ? "hover:bg-destructive/10 hover:text-destructive"
-                            : "hover:bg-primary/10 hover:text-primary"
-                        }
-                        title={operator.status === "active" ? "Disable" : "Enable"}
-                      >
-                        <Power className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openEditDialog(operator)}
-                        className="hover:bg-primary/10 hover:text-primary"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedOperator(operator);
-                          setIsDeleteOpen(true);
-                        }}
-                        className="hover:bg-destructive/10 hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => toggleOperatorStatus(operator)} className={operator.status === "active" ? "hover:bg-destructive/10 hover:text-destructive" : "hover:bg-primary/10 hover:text-primary"} title={operator.status === "active" ? "Disable" : "Enable"}><Power className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => openEditDialog(operator)} className="hover:bg-primary/10 hover:text-primary"><Edit className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => { setSelectedOperator(operator); setIsDeleteOpen(true); }} className="hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   </td>
                 </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
-        {/* Pagination */}
-        <div className="border-t border-border p-4">
-          <Pagination
-            currentPage={pagination.page}
-            totalPages={pagination.totalPages}
-            onPageChange={setPage}
-            isLoading={operatorsLoading}
-            pageSize={limit}
-            onPageSizeChange={handlePageSizeChange}
-            totalRecords={pagination.total}
-          />
-        </div>
+      <div className="mt-6 pt-4 border-t border-[#7F5539]/20 dark:border-[#7F5539]/40">
+        <Pagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={setPage}
+          isLoading={operatorsLoading}
+          pageSize={limit}
+          onPageSizeChange={handlePageSizeChange}
+          totalRecords={pagination.total}
+        />
       </div>
 
       {/* Add Operator Dialog */}
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-[500px]">
+        <DialogContent className="bg-white dark:bg-[#101211] border border-[rgba(127,85,57,0.2)] dark:border-[#1f1f1f] sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Add New Operator</DialogTitle>
+            <DialogTitle className="text-[#1e1e1e] dark:text-white">Add New Operator</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             {/* Error Message */}
@@ -457,26 +392,18 @@ export default function OperatorsPage() {
               </select>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddOpen(false)} disabled={createOperator.isPending}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleAdd} 
-              className="bg-primary hover:bg-primary/90"
-              disabled={createOperator.isPending}
-            >
-              {createOperator.isPending ? "Menambahkan..." : "Add Operator"}
-            </Button>
+          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)]">
+            <Button variant="outline" className="min-w-[88px]" onClick={() => setIsAddOpen(false)} disabled={createOperator.isPending}>Cancel</Button>
+            <Button onClick={handleAdd} className="min-w-[120px] bg-[#7f5539] hover:bg-[#7f5539]/90 text-white" disabled={createOperator.isPending}>{createOperator.isPending ? "Menambahkan..." : "Add Operator"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Edit Operator Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-[500px]">
+        <DialogContent className="bg-white dark:bg-[#101211] border border-[rgba(127,85,57,0.2)] dark:border-[#1f1f1f] sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Edit Operator</DialogTitle>
+            <DialogTitle className="text-[#1e1e1e] dark:text-white">Edit Operator</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -538,35 +465,27 @@ export default function OperatorsPage() {
               </select>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleEdit} className="bg-primary hover:bg-primary/90">
-              Save Changes
-            </Button>
+          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)]">
+            <Button variant="outline" className="min-w-[88px]" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+            <Button onClick={handleEdit} className="min-w-[120px] bg-[#7f5539] hover:bg-[#7f5539]/90 text-white">Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-[400px]">
+        <DialogContent className="bg-white dark:bg-[#101211] border border-[rgba(127,85,57,0.2)] dark:border-[#1f1f1f] sm:max-w-[400px]">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Confirm Delete</DialogTitle>
+            <DialogTitle className="text-[#1e1e1e] dark:text-white">Confirm Delete</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p className="text-sm text-muted-foreground">
-              Are you sure you want to delete operator <strong className="text-foreground">{selectedOperator?.username}</strong>? This action cannot be undone.
+            <p className="text-sm text-muted-foreground dark:text-gray-400">
+              Are you sure you want to delete operator <strong className="text-[#1e1e1e] dark:text-white">{selectedOperator?.username}</strong>? This action cannot be undone.
             </p>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Delete
-            </Button>
+          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)]">
+            <Button variant="outline" className="min-w-[88px]" onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
+            <Button variant="destructive" className="min-w-[88px]" onClick={handleDelete}>Delete</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

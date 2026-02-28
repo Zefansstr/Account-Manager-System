@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge, CODE_BADGE_VARIANTS } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -52,17 +52,20 @@ export default function DepartmentsPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-[rgba(127,85,57,0.04)] dark:bg-[#101211] border border-[rgba(127,85,57,0.08)] dark:border-[#1f1f1f] rounded-2xl p-6">
-      <div className="pb-5 border-b border-[rgba(30,30,30,0.12)] dark:border-[#1f1f1f] flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-medium text-[#1e1e1e] dark:text-white tracking-tight" style={{ fontFamily: "Inter, sans-serif" }}>Departments</h1>
+    <div className="flex flex-col w-full bg-[rgba(127,85,57,0.04)] dark:bg-[#101211] border border-[#7F5539]/20 dark:border-[#7F5539]/40 rounded-2xl p-6">
+      <div className="pb-5 border-b border-[#7F5539]/20 dark:border-[#7F5539]/40 flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-medium text-[#1e1e1e] dark:text-white tracking-tight" style={{ fontFamily: "Inter, sans-serif" }}>Departments</h1>
+            <span className="inline-flex items-center justify-center bg-[#3a2314] dark:bg-[#7f5539] text-white text-xs font-medium rounded min-w-[20px] h-5 px-1.5">{departments.length}</span>
+          </div>
           <p className="text-sm text-[rgba(127,85,57,0.62)] dark:text-gray-400 mt-1">Manage department entries and their account counts</p>
         </div>
         <Button onClick={() => setIsAddOpen(true)} className="bg-[#7f5539] hover:bg-[#7f5539]/90 text-white dark:bg-[#7f5539] dark:hover:bg-[#a06540]"><Plus className="mr-2 h-4 w-4" />Add Department</Button>
       </div>
-      <div className="mt-6 min-h-[280px] max-h-[calc(100vh-320px)] overflow-auto rounded-lg border border-[rgba(127,85,57,0.08)] dark:border-[#1f1f1f] bg-white dark:bg-[#101211] shadow-lg">
+      <div className="mt-6 overflow-auto max-h-[calc(100vh-320px)] rounded-lg border border-[#7F5539]/20 dark:border-[#7F5539]/40 bg-white dark:bg-[#101211] scrollbar-invisible">
         <table className="w-full table-fixed border-collapse">
-            <thead className="sticky top-0 z-10 bg-[#f0eae4] dark:bg-[#101211] shadow-[0_1px_0_0_rgba(30,30,30,0.08)] dark:shadow-[0_1px_0_0_#1f1f1f]">
+            <thead className="sticky top-0 z-10 bg-[#f0eae4] dark:bg-[#101211] shadow-[0_1px_0_0_rgba(127,85,57,0.2)] dark:shadow-[0_1px_0_0_rgba(127,85,57,0.4)]">
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-[#1e1e1e] dark:text-white w-[15%] bg-[#f0eae4] dark:bg-[#101211]">Code</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-[#1e1e1e] dark:text-white w-[40%] bg-[#f0eae4] dark:bg-[#101211]">Department Name</th>
@@ -72,18 +75,18 @@ export default function DepartmentsPage() {
             </thead>
             <tbody className="bg-white dark:bg-[#101211]">
               {loading ? (
-                <tr><td colSpan={4} className="px-4 py-8 text-center text-[rgba(127,85,57,0.62)] dark:text-gray-400">Loading...</td></tr>
+                <tr className="bg-white dark:bg-[#101211]"><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground dark:text-gray-400">Loading...</td></tr>
               ) : departments.length === 0 ? (
-                <tr><td colSpan={4} className="px-4 py-8 text-center text-[rgba(127,85,57,0.62)] dark:text-gray-400">No departments found</td></tr>
+                <tr className="bg-white dark:bg-[#101211]"><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground dark:text-gray-400">No departments found</td></tr>
               ) : (
-                departments.map((dept: Department) => (
-                  <tr key={dept.id} className="border-b border-[rgba(127,85,57,0.08)] dark:border-[#1f1f1f] hover:bg-[rgba(245,237,230,0.5)] dark:hover:bg-[#1a1a1a] transition-colors">
-                    <td className="px-4 py-3"><Badge variant="secondary" className="dark:bg-white/10 dark:text-gray-200">{dept.code}</Badge></td>
-                    <td className="px-4 py-3 text-sm font-medium text-[#1e1e1e] dark:text-gray-200">{dept.name}</td>
-                    <td className="px-4 py-3"><span className="inline-flex items-center rounded-full bg-[#7f5539] dark:bg-[#7f5539] px-3 py-1 text-sm font-semibold text-white">{dept.accountCount}</span></td>
-                    <td className="px-4 py-3">
+                departments.map((dept: Department, index) => (
+                  <tr key={dept.id} className="border-t border-[#7F5539]/15 dark:border-[#7F5539]/30 bg-white dark:bg-[#101211] hover:bg-[#f5f0eb] dark:hover:bg-[#1a1a1a] transition-colors">
+                    <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle"><Badge variant={CODE_BADGE_VARIANTS[index % 4]}>{dept.code}</Badge></td>
+                    <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle">{dept.name}</td>
+                    <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle"><Badge variant="count">{dept.accountCount}</Badge></td>
+                    <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle">
                       <div className="flex items-center justify-center gap-2">
-                        <Button variant="ghost" size="sm" className="hover:bg-[rgba(127,85,57,0.1)] hover:text-[#7f5539] dark:hover:bg-[rgba(127,85,57,0.2)] dark:hover:text-[#a06540]" onClick={() => { setSelected(dept); setFormData({ code: dept.code, name: dept.name, description: dept.description || "" }); setIsEditOpen(true); }}><Edit className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="sm" className="hover:bg-primary/10 hover:text-primary" onClick={() => { setSelected(dept); setFormData({ code: dept.code, name: dept.name, description: dept.description || "" }); setIsEditOpen(true); }}><Edit className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="sm" className="hover:bg-destructive/10" onClick={() => { setSelected(dept); setIsDeleteOpen(true); }}><Trash2 className="h-4 w-4 text-red-500" /></Button>
                       </div>
                     </td>

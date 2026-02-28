@@ -1,23 +1,56 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { Smartphone, CheckCircle, Building2, Tag, TrendingUp, ArrowUpRight, Warehouse } from "lucide-react";
+import { Smartphone, CheckCircle, Building2, Tag, Warehouse } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, Legend, Cell } from "recharts";
 import { PermissionGuard } from "@/components/auth/permission-guard";
 import { useAssetDashboard } from "@/hooks/use-asset-dashboard";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
+import { useTheme } from "@/components/providers/theme-provider";
 
-const CHART_COLORS = {
-  active: "#22c55e",      // Green for active status
-  inactive: "#ef4444",     // Red for inactive status
-  primary: "#22c55e",      // Primary green color (same as active for consistency)
-  secondary: "#3b82f6",    // Blue for secondary data
-  accent: "#8b5cf6",      // Purple for accent
+const STATUS_COLORS = {
+  active: "#34d399",
+  inactive: "#f87171",
+};
+
+/** Tooltip light — sama dengan background main layout (beige #e8e0d5). */
+const TOOLTIP_STYLE_LIGHT = {
+  contentStyle: {
+    backgroundColor: "#e8e0d5",
+    border: "1px solid rgba(127, 85, 57, 0.2)",
+    borderRadius: "10px",
+    padding: "14px 16px",
+    boxShadow: "0 8px 24px rgba(127, 85, 57, 0.1)",
+  },
+  itemStyle: { color: "#1e1e1e", fontWeight: "600", fontSize: "13px" },
+  labelStyle: { color: "#1e1e1e", fontWeight: "600", fontSize: "13px" },
+};
+
+const TOOLTIP_STYLE_DARK = {
+  contentStyle: {
+    backgroundColor: "#1a1a1a",
+    border: "1px solid #2d2d2d",
+    borderRadius: "10px",
+    padding: "14px 16px",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+  },
+  itemStyle: { color: "#e5e5e5", fontWeight: "600", fontSize: "13px" },
+  labelStyle: { color: "#d4d4d4", fontWeight: "600", fontSize: "13px" },
+};
+
+const CHART_PALETTE = [
+  "#7f5539", "#0d9488", "#a06540", "#64748b", "#c4a77d", "#0891b2", "#6b4730", "#6366f1",
+] as const;
+
+const CHART_THEME = {
+  gridStroke: "rgba(232, 224, 213, 0.8)",
+  axisStroke: "#5d5d5d",
 };
 
 export default function AssetManagementDashboardPage() {
-  // Get operator ID from localStorage
+  const { theme } = useTheme();
+  const tooltipStyle = theme === "dark" ? TOOLTIP_STYLE_DARK : TOOLTIP_STYLE_LIGHT;
   const [operatorId, setOperatorId] = useState<string>();
   
   useEffect(() => {
@@ -55,47 +88,15 @@ export default function AssetManagementDashboardPage() {
     return rawData;
   }, [rawData]);
 
-  // Memoize KPI cards to prevent unnecessary re-renders
   const kpiCards = useMemo<Array<{
     title: string;
     value: number;
     icon: React.ComponentType<{ className?: string }>;
-    color: string;
-    bgColor: string;
-    trend: { value: number } | null;
   }>>(() => [
-    {
-      title: "Total Devices",
-      value: data.kpis.totalDevices,
-      icon: Smartphone,
-      color: "text-primary",
-      bgColor: "bg-primary/5",
-      trend: null,
-    },
-    {
-      title: "Total Brands",
-      value: data.kpis.totalBrands,
-      icon: Tag,
-      color: "text-primary",
-      bgColor: "bg-primary/5",
-      trend: null,
-    },
-    {
-      title: "Total Active Status",
-      value: data.kpis.totalActiveStatus,
-      icon: CheckCircle,
-      color: "text-primary",
-      bgColor: "bg-primary/5",
-      trend: null,
-    },
-    {
-      title: "Total Department",
-      value: data.kpis.totalDepartments,
-      icon: Building2,
-      color: "text-primary",
-      bgColor: "bg-primary/5",
-      trend: null,
-    },
+    { title: "Total Devices", value: data.kpis.totalDevices, icon: Smartphone },
+    { title: "Total Brands", value: data.kpis.totalBrands, icon: Tag },
+    { title: "Total Active Status", value: data.kpis.totalActiveStatus, icon: CheckCircle },
+    { title: "Total Department", value: data.kpis.totalDepartments, icon: Building2 },
   ], [data.kpis]);
 
   if (loading) {
@@ -109,12 +110,8 @@ export default function AssetManagementDashboardPage() {
   if (error || !data) {
     return (
       <PermissionGuard menuName="Dashboard">
-        <div className="space-y-6 p-1">
-          <div className="flex items-center justify-center h-[400px]">
-            <div className="text-center">
-              <p className="text-muted-foreground">Failed to load dashboard data</p>
-            </div>
-          </div>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-destructive">Failed to load dashboard data</div>
         </div>
       </PermissionGuard>
     );
@@ -122,290 +119,142 @@ export default function AssetManagementDashboardPage() {
 
   return (
     <PermissionGuard menuName="Dashboard">
-      <div className="space-y-6 p-1">
-        {/* KPI Cards - Modern Grid Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="space-y-4 rounded-2xl bg-[#e8e0d5]/30 dark:bg-[#101211] border border-[#e8e0d5] dark:border-[#1f1f1f] p-6">
+        <div className="grid grid-cols-4 gap-3">
           {kpiCards.map((kpi, index) => {
             const Icon = kpi.icon;
             return (
-              <Card 
-                key={index} 
-                className="border-border bg-card shadow-sm hover:shadow-md transition-all duration-300 rounded-xl overflow-hidden group"
-                style={{ 
-                  animation: `fadeInUp 0.5s ease-out ${index * 0.1}s both`,
-                }}
-              >
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className={`${kpi.bgColor} p-2.5 rounded-lg group-hover:scale-110 transition-transform duration-300`}>
-                      <Icon className={`h-5 w-5 ${kpi.color}`} />
-                    </div>
-                    {kpi.trend && (
-                      <div className="flex items-center gap-1 text-xs text-primary font-medium">
-                        <ArrowUpRight className="h-3 w-3" />
-                        <span>{kpi.trend.value}%</span>
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1" style={{ fontFamily: 'Inter, sans-serif' }}>
-                      {kpi.title}
-                    </p>
-                    <p className="text-2xl font-bold text-foreground" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                      {kpi.value.toLocaleString()}
-                    </p>
-                  </div>
+              <Card key={index} className="border-[#e8e0d5]/80 dark:border-[#1f1f1f] bg-white dark:bg-[#101211]">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs font-medium text-[#1e1e1e] dark:text-gray-200">
+                    {kpi.title}
+                  </CardTitle>
+                  <Icon className="h-4 w-4 text-[#7f5539]" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-[#1e1e1e] dark:text-white">{kpi.value}</div>
                 </CardContent>
               </Card>
             );
           })}
         </div>
 
-        {/* Charts Row 1 */}
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Active/Inactive Device per Device - Grouped Bar Chart */}
-          <Card className="border-border bg-card shadow-sm hover:shadow-md transition-all duration-300 rounded-xl overflow-hidden">
-            <CardHeader className="border-b border-border bg-gradient-to-r from-primary/5 to-card px-6 py-4">
-              <CardTitle className="text-foreground flex items-center gap-2 text-lg font-semibold" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                <div className="p-2 bg-primary/5 rounded-lg">
-                  <CheckCircle className="h-5 w-5 text-primary" />
-                </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card className="border-[#e8e0d5]/80 dark:border-[#1f1f1f] bg-white dark:bg-[#101211] shadow-sm">
+            <CardHeader className="border-b border-[#e8e0d5] dark:border-[#1f1f1f]">
+              <CardTitle className="text-[#1e1e1e] dark:text-gray-200 flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-[#7f5539]" />
                 Active/Inactive Device per Device
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-6 px-6 pb-6">
+            <CardContent className="pt-6">
               {data.charts.activeInactiveByDevice.length > 0 ? (
                 <ResponsiveContainer width="100%" height={320}>
-                  <BarChart data={data.charts.activeInactiveByDevice}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis 
-                      dataKey="name" 
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontFamily: 'Inter, sans-serif' }}
-                      stroke="hsl(var(--border))"
-                      angle={-45}
-                      textAnchor="end"
-                      height={80}
-                    />
-                    <YAxis 
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
-                      stroke="hsl(var(--border))"
-                    />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        fontFamily: 'Inter, sans-serif'
-                      }}
-                      cursor={{ fill: 'hsl(var(--primary) / 0.05)' }}
-                    />
+                  <BarChart data={data.charts.activeInactiveByDevice} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={CHART_THEME.gridStroke} opacity={0.6} />
+                    <XAxis dataKey="name" stroke={CHART_THEME.axisStroke} tick={{ fill: CHART_THEME.axisStroke, fontSize: 12 }} tickLine={false} />
+                    <YAxis stroke={CHART_THEME.axisStroke} tick={{ fill: CHART_THEME.axisStroke, fontSize: 12 }} tickLine={false} axisLine={false} />
+                    <Tooltip cursor={{ fill: "rgba(232, 224, 213, 0.5)" }} contentStyle={tooltipStyle.contentStyle} itemStyle={tooltipStyle.itemStyle} labelStyle={tooltipStyle.labelStyle} />
                     <Legend />
-                    <Bar dataKey="active" fill={CHART_COLORS.active} radius={[8, 8, 0, 0]} name="Active">
-                      <LabelList 
-                        dataKey="active" 
-                        position="top" 
-                        style={{ fill: 'hsl(var(--foreground))', fontSize: '11px', fontFamily: 'Inter, sans-serif', fontWeight: '600' }}
-                      />
+                    <Bar dataKey="active" fill={STATUS_COLORS.active} radius={[8, 8, 0, 0]} name="Active">
+                      <LabelList dataKey="active" position="top" fill={CHART_THEME.axisStroke} fontWeight="600" />
                     </Bar>
-                    <Bar dataKey="inactive" fill={CHART_COLORS.inactive} radius={[8, 8, 0, 0]} name="Inactive">
-                      <LabelList 
-                        dataKey="inactive" 
-                        position="top" 
-                        style={{ fill: 'hsl(var(--foreground))', fontSize: '11px', fontFamily: 'Inter, sans-serif', fontWeight: '600' }}
-                      />
+                    <Bar dataKey="inactive" fill={STATUS_COLORS.inactive} radius={[8, 8, 0, 0]} name="Inactive">
+                      <LabelList dataKey="inactive" position="top" fill={CHART_THEME.axisStroke} fontWeight="600" />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-[320px] text-muted-foreground">
-                  <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-primary/5 dark:bg-primary/10 flex items-center justify-center">
-                      <CheckCircle className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <p className="text-sm font-medium text-foreground" style={{ fontFamily: 'Inter, sans-serif' }}>No data available</p>
-                    <p className="text-xs text-muted-foreground mt-1">Data will appear here once available</p>
-                  </div>
-                </div>
+                <div className="flex items-center justify-center h-[320px] text-[#5d5d5d]">No data available</div>
               )}
             </CardContent>
           </Card>
 
-          {/* Used Device Per Department - Bar Chart */}
-          <Card className="border-border bg-card shadow-sm hover:shadow-md transition-all duration-300 rounded-xl overflow-hidden">
-            <CardHeader className="border-b border-border bg-gradient-to-r from-primary/5 to-card px-6 py-4">
-              <CardTitle className="text-foreground flex items-center gap-2 text-lg font-semibold" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                <div className="p-2 bg-primary/5 rounded-lg">
-                  <Building2 className="h-5 w-5 text-primary" />
-                </div>
+          <Card className="border-[#e8e0d5]/80 dark:border-[#1f1f1f] bg-white dark:bg-[#101211] shadow-sm">
+            <CardHeader className="border-b border-[#e8e0d5] dark:border-[#1f1f1f]">
+              <CardTitle className="text-[#1e1e1e] dark:text-gray-200 flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-[#7f5539]" />
                 Used Device Per Department
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-6 px-6 pb-6">
+            <CardContent className="pt-6">
               {data.charts.usedByDepartment.length > 0 ? (
                 <ResponsiveContainer width="100%" height={320}>
-                  <BarChart data={data.charts.usedByDepartment}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis 
-                      dataKey="name" 
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
-                      stroke="hsl(var(--border))"
-                      angle={-45}
-                      textAnchor="end"
-                      height={80}
-                    />
-                    <YAxis 
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
-                      stroke="hsl(var(--border))"
-                    />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        fontFamily: 'Inter, sans-serif'
-                      }}
-                      cursor={{ fill: 'hsl(var(--primary) / 0.05)' }}
-                    />
-                    <Bar dataKey="count" fill={CHART_COLORS.primary} radius={[8, 8, 0, 0]}>
-                      <LabelList 
-                        dataKey="count" 
-                        position="top" 
-                        style={{ fill: 'hsl(var(--foreground))', fontSize: '12px', fontFamily: 'Inter, sans-serif', fontWeight: '600' }}
-                      />
+                  <BarChart data={data.charts.usedByDepartment} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={CHART_THEME.gridStroke} opacity={0.6} />
+                    <XAxis dataKey="name" stroke={CHART_THEME.axisStroke} tick={{ fill: CHART_THEME.axisStroke, fontSize: 12 }} tickLine={false} />
+                    <YAxis stroke={CHART_THEME.axisStroke} tick={{ fill: CHART_THEME.axisStroke, fontSize: 12 }} tickLine={false} axisLine={false} />
+                    <Tooltip cursor={{ fill: "rgba(232, 224, 213, 0.5)" }} contentStyle={tooltipStyle.contentStyle} itemStyle={tooltipStyle.itemStyle} labelStyle={tooltipStyle.labelStyle} />
+                    <Bar dataKey="count" radius={[8, 8, 0, 0]} maxBarSize={60}>
+                      {data.charts.usedByDepartment.map((_, index) => (
+                        <Cell key={index} fill={CHART_PALETTE[index % CHART_PALETTE.length]} />
+                      ))}
+                      <LabelList dataKey="count" position="top" fill={CHART_THEME.axisStroke} fontWeight="600" />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-[320px] text-muted-foreground">
-                  <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-primary/5 dark:bg-primary/10 flex items-center justify-center">
-                      <Building2 className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <p className="text-sm font-medium text-foreground" style={{ fontFamily: 'Inter, sans-serif' }}>No data available</p>
-                    <p className="text-xs text-muted-foreground mt-1">Data will appear here once available</p>
-                  </div>
-                </div>
+                <div className="flex items-center justify-center h-[320px] text-[#5d5d5d]">No data available</div>
               )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Charts Row 2 */}
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Total Active Per Brand - Bar Chart */}
-          <Card className="border-border bg-card shadow-sm hover:shadow-md transition-all duration-300 rounded-xl overflow-hidden">
-            <CardHeader className="border-b border-border bg-gradient-to-r from-primary/5 to-card px-6 py-4">
-              <CardTitle className="text-foreground flex items-center gap-2 text-lg font-semibold" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                <div className="p-2 bg-primary/5 rounded-lg">
-                  <Tag className="h-5 w-5 text-primary" />
-                </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card className="border-[#e8e0d5]/80 dark:border-[#1f1f1f] bg-white dark:bg-[#101211] shadow-sm">
+            <CardHeader className="border-b border-[#e8e0d5] dark:border-[#1f1f1f]">
+              <CardTitle className="text-[#1e1e1e] dark:text-gray-200 flex items-center gap-2">
+                <Tag className="h-5 w-5 text-[#7f5539]" />
                 Total Active Per Brand
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-6 px-6 pb-6">
+            <CardContent className="pt-6">
               {data.charts.totalActiveByBrand.length > 0 ? (
                 <ResponsiveContainer width="100%" height={320}>
-                  <BarChart data={data.charts.totalActiveByBrand}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis 
-                      dataKey="name" 
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
-                      stroke="hsl(var(--border))"
-                      angle={-45}
-                      textAnchor="end"
-                      height={80}
-                    />
-                    <YAxis 
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
-                      stroke="hsl(var(--border))"
-                    />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        fontFamily: 'Inter, sans-serif'
-                      }}
-                      cursor={{ fill: 'hsl(var(--primary) / 0.05)' }}
-                    />
-                    <Bar dataKey="count" fill={CHART_COLORS.primary} radius={[8, 8, 0, 0]}>
-                      <LabelList 
-                        dataKey="count" 
-                        position="top" 
-                        style={{ fill: 'hsl(var(--foreground))', fontSize: '12px', fontFamily: 'Inter, sans-serif', fontWeight: '600' }}
-                      />
+                  <BarChart data={data.charts.totalActiveByBrand} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={CHART_THEME.gridStroke} opacity={0.6} />
+                    <XAxis dataKey="name" stroke={CHART_THEME.axisStroke} tick={{ fill: CHART_THEME.axisStroke, fontSize: 12 }} tickLine={false} />
+                    <YAxis stroke={CHART_THEME.axisStroke} tick={{ fill: CHART_THEME.axisStroke, fontSize: 12 }} tickLine={false} axisLine={false} />
+                    <Tooltip cursor={{ fill: "rgba(232, 224, 213, 0.5)" }} contentStyle={tooltipStyle.contentStyle} itemStyle={tooltipStyle.itemStyle} labelStyle={tooltipStyle.labelStyle} />
+                    <Bar dataKey="count" radius={[8, 8, 0, 0]} maxBarSize={60}>
+                      {data.charts.totalActiveByBrand.map((_, index) => (
+                        <Cell key={index} fill={CHART_PALETTE[index % CHART_PALETTE.length]} />
+                      ))}
+                      <LabelList dataKey="count" position="top" fill={CHART_THEME.axisStroke} fontWeight="600" />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-[320px] text-muted-foreground">
-                  <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-primary/5 dark:bg-primary/10 flex items-center justify-center">
-                      <Tag className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <p className="text-sm font-medium text-foreground" style={{ fontFamily: 'Inter, sans-serif' }}>No data available</p>
-                    <p className="text-xs text-muted-foreground mt-1">Data will appear here once available</p>
-                  </div>
-                </div>
+                <div className="flex items-center justify-center h-[320px] text-[#5d5d5d]">No data available</div>
               )}
             </CardContent>
           </Card>
 
-          {/* Total Device Used On Storage Area - Bar Chart */}
-          <Card className="border-border bg-card shadow-sm hover:shadow-md transition-all duration-300 rounded-xl overflow-hidden">
-            <CardHeader className="border-b border-border bg-gradient-to-r from-primary/5 to-card px-6 py-4">
-              <CardTitle className="text-foreground flex items-center gap-2 text-lg font-semibold" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                <div className="p-2 bg-primary/5 rounded-lg">
-                  <Warehouse className="h-5 w-5 text-primary" />
-                </div>
+          <Card className="border-[#e8e0d5]/80 dark:border-[#1f1f1f] bg-white dark:bg-[#101211] shadow-sm">
+            <CardHeader className="border-b border-[#e8e0d5] dark:border-[#1f1f1f]">
+              <CardTitle className="text-[#1e1e1e] dark:text-gray-200 flex items-center gap-2">
+                <Warehouse className="h-5 w-5 text-[#7f5539]" />
                 Total Device Used On Storage Area
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-6 px-6 pb-6">
+            <CardContent className="pt-6">
               {data.charts.totalByStorageArea.length > 0 ? (
                 <ResponsiveContainer width="100%" height={320}>
-                  <BarChart data={data.charts.totalByStorageArea}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis 
-                      dataKey="name" 
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
-                      stroke="hsl(var(--border))"
-                      angle={-45}
-                      textAnchor="end"
-                      height={80}
-                    />
-                    <YAxis 
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
-                      stroke="hsl(var(--border))"
-                    />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        fontFamily: 'Inter, sans-serif'
-                      }}
-                      cursor={{ fill: 'hsl(var(--primary) / 0.05)' }}
-                    />
-                    <Bar dataKey="count" fill={CHART_COLORS.primary} radius={[8, 8, 0, 0]}>
-                      <LabelList 
-                        dataKey="count" 
-                        position="top" 
-                        style={{ fill: 'hsl(var(--foreground))', fontSize: '12px', fontFamily: 'Inter, sans-serif', fontWeight: '600' }}
-                      />
+                  <BarChart data={data.charts.totalByStorageArea} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={CHART_THEME.gridStroke} opacity={0.6} />
+                    <XAxis dataKey="name" stroke={CHART_THEME.axisStroke} tick={{ fill: CHART_THEME.axisStroke, fontSize: 12 }} tickLine={false} />
+                    <YAxis stroke={CHART_THEME.axisStroke} tick={{ fill: CHART_THEME.axisStroke, fontSize: 12 }} tickLine={false} axisLine={false} />
+                    <Tooltip cursor={{ fill: "rgba(232, 224, 213, 0.5)" }} contentStyle={tooltipStyle.contentStyle} itemStyle={tooltipStyle.itemStyle} labelStyle={tooltipStyle.labelStyle} />
+                    <Bar dataKey="count" radius={[8, 8, 0, 0]} maxBarSize={60}>
+                      {data.charts.totalByStorageArea.map((_, index) => (
+                        <Cell key={index} fill={CHART_PALETTE[index % CHART_PALETTE.length]} />
+                      ))}
+                      <LabelList dataKey="count" position="top" fill={CHART_THEME.axisStroke} fontWeight="600" />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-[320px] text-muted-foreground">
-                  <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-primary/5 dark:bg-primary/10 flex items-center justify-center">
-                      <Warehouse className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <p className="text-sm font-medium text-foreground" style={{ fontFamily: 'Inter, sans-serif' }}>No data available</p>
-                    <p className="text-xs text-muted-foreground mt-1">Data will appear here once available</p>
-                  </div>
-                </div>
+                <div className="flex items-center justify-center h-[320px] text-[#5d5d5d]">No data available</div>
               )}
             </CardContent>
           </Card>

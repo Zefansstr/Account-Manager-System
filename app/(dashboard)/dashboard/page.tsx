@@ -12,9 +12,47 @@ import { useOperatorId } from "@/lib/operator-store";
 import { useTheme } from "@/components/providers/theme-provider";
 
 const STATUS_COLORS = {
-  Active: "#7f5539",
-  Inactive: "#9ca3af"
+  Active: "#34d399",   // hijau halus
+  Inactive: "#f87171", // merah halus
 };
+
+/** Tooltip light — sama dengan background main layout (beige #e8e0d5). */
+const TOOLTIP_STYLE_LIGHT = {
+  contentStyle: {
+    backgroundColor: "#e8e0d5",
+    border: "1px solid rgba(127, 85, 57, 0.2)",
+    borderRadius: "10px",
+    padding: "14px 16px",
+    boxShadow: "0 8px 24px rgba(127, 85, 57, 0.1)",
+  },
+  itemStyle: { color: "#1e1e1e", fontWeight: "600", fontSize: "13px" },
+  labelStyle: { color: "#1e1e1e", fontWeight: "600", fontSize: "13px" },
+};
+
+/** Tooltip dark — sama dengan frame content abu-abu halus. */
+const TOOLTIP_STYLE_DARK = {
+  contentStyle: {
+    backgroundColor: "#1a1a1a",
+    border: "1px solid #2d2d2d",
+    borderRadius: "10px",
+    padding: "14px 16px",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+  },
+  itemStyle: { color: "#e5e5e5", fontWeight: "600", fontSize: "13px" },
+  labelStyle: { color: "#d4d4d4", fontWeight: "600", fontSize: "13px" },
+};
+
+/** Palet warna chart — variasi agar tidak full coklat; tetap selaras tema. */
+const CHART_PALETTE = [
+  "#7f5539",   // primary brown
+  "#0d9488",   // teal
+  "#a06540",   // brown light
+  "#64748b",   // slate
+  "#c4a77d",   // tan
+  "#0891b2",   // cyan
+  "#6b4730",   // brown dark
+  "#6366f1",   // indigo
+] as const;
 
 const CHART_THEME = {
   brown: "#7f5539",
@@ -24,38 +62,43 @@ const CHART_THEME = {
   brownMuted: "rgba(127, 85, 57, 0.6)",
   gridStroke: "rgba(232, 224, 213, 0.8)",
   axisStroke: "#5d5d5d",
-  tooltipBg: "#ece2d9",
-  tooltipBorder: "#7f5539",
-  tooltipText: "#1e1e1e",
+  tooltipBg: "#1a1a1a",
+  tooltipBorder: "#404040",
+  tooltipText: "#f5f5f5",
+  /** Gradient & fill untuk single-series (tetap satu warna tema). */
+  barGradient: { start: "#7f5539", end: "#e8e0d5" },
+  /** Warna per-seri untuk chart multi-series (mix & match dengan tema). */
+  palette: CHART_PALETTE,
 };
 
 const RADIAN = Math.PI / 180;
 const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, count }: any) => {
-  const radius = outerRadius + 25; // Position label outside the donut
+  const radius = outerRadius + 25;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  const segmentColor = STATUS_COLORS[name as keyof typeof STATUS_COLORS] ?? "#5d5d5d";
 
   return (
     <g>
-      <text 
-        x={x} 
-        y={y - 8} 
+      <text
+        x={x}
+        y={y - 8}
         fill="hsl(var(--foreground))"
-        textAnchor={x > cx ? 'start' : 'end'} 
-        dominantBaseline="central" 
-        fontSize="14" 
+        textAnchor={x > cx ? "start" : "end"}
+        dominantBaseline="central"
+        fontSize="14"
         fontWeight="600"
         fontFamily="Inter, sans-serif"
       >
         {name}
       </text>
-      <text 
-        x={x} 
-        y={y + 8} 
-        fill="#7f5539"
-        textAnchor={x > cx ? 'start' : 'end'} 
-        dominantBaseline="central" 
-        fontSize="12" 
+      <text
+        x={x}
+        y={y + 8}
+        fill={segmentColor}
+        textAnchor={x > cx ? "start" : "end"}
+        dominantBaseline="central"
+        fontSize="12"
         fontWeight="500"
         fontFamily="Inter, sans-serif"
       >
@@ -68,6 +111,7 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, nam
 export default function DashboardPage() {
   const { theme } = useTheme();
   const operatorId = useOperatorId();
+  const tooltipStyle = theme === "dark" ? TOOLTIP_STYLE_DARK : TOOLTIP_STYLE_LIGHT;
 
   // Use React Query hook for automatic caching & refetching (no waterfall: operatorId ready on first render)
   const { data: rawData, isLoading: loading, error } = useDashboard(operatorId);
@@ -196,29 +240,24 @@ export default function DashboardPage() {
                       ))}
                     </Pie>
                     <Tooltip
-                      contentStyle={{
-                        backgroundColor: CHART_THEME.tooltipBg,
-                        border: `1px solid ${CHART_THEME.tooltipBorder}`,
-                        borderRadius: "8px",
-                        padding: "12px",
-                        boxShadow: "0 4px 12px rgba(127, 85, 57, 0.12)",
-                      }}
-                      itemStyle={{ color: CHART_THEME.tooltipText, fontWeight: "600" }}
+                      contentStyle={tooltipStyle.contentStyle}
+                      itemStyle={tooltipStyle.itemStyle}
+                      labelStyle={tooltipStyle.labelStyle}
                     />
                   </PieChart>
                 </ResponsiveContainer>
                 {/* Legend - Raised Position */}
                 <div className="grid grid-cols-2 gap-2 -mt-2">
-                  {data.charts.accountsStatus.map((entry, index) => (
-                    <div key={index} className="flex items-center gap-2 bg-[#e8e0d5]/60 dark:bg-[#1a1a1a] rounded px-3 py-2">
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: STATUS_COLORS[entry.name as keyof typeof STATUS_COLORS] }}
-                      />
-                      <span className="text-sm text-[#1e1e1e] dark:text-gray-300 font-medium">{entry.name}</span>
-                      <span className="ml-auto text-sm font-bold text-[#7f5539]">{entry.count}</span>
-                    </div>
-                  ))}
+                  {data.charts.accountsStatus.map((entry, index) => {
+                    const color = STATUS_COLORS[entry.name as keyof typeof STATUS_COLORS];
+                    return (
+                      <div key={index} className="flex items-center gap-2 bg-[#e8e0d5]/60 dark:bg-[#1a1a1a] rounded px-3 py-2">
+                        <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                        <span className="text-sm text-[#1e1e1e] dark:text-gray-300 font-medium">{entry.name}</span>
+                        <span className="ml-auto text-sm font-bold" style={{ color }}>{entry.count}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ) : (
@@ -241,12 +280,6 @@ export default function DashboardPage() {
             {data.charts.accountsByDepartment.length > 0 ? (
               <ResponsiveContainer width="100%" height={320}>
                 <BarChart data={data.charts.accountsByDepartment} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <defs>
-                    <linearGradient id="colorDept" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#7f5539" stopOpacity={0.95}/>
-                      <stop offset="95%" stopColor="#e8e0d5" stopOpacity={0.9}/>
-                    </linearGradient>
-                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke={CHART_THEME.gridStroke} opacity={0.6} />
                   <XAxis
                     dataKey="name"
@@ -262,18 +295,15 @@ export default function DashboardPage() {
                   />
                   <Tooltip
                     cursor={{ fill: "rgba(232, 224, 213, 0.5)" }}
-                    contentStyle={{
-                      backgroundColor: CHART_THEME.tooltipBg,
-                      border: `1px solid ${CHART_THEME.tooltipBorder}`,
-                      borderRadius: "8px",
-                      padding: "12px",
-                      boxShadow: "0 4px 12px rgba(127, 85, 57, 0.12)",
-                    }}
-                    itemStyle={{ color: CHART_THEME.tooltipBorder, fontWeight: "600", fontSize: "14px" }}
-                    labelStyle={{ color: CHART_THEME.tooltipText, fontWeight: "600" }}
+                    contentStyle={tooltipStyle.contentStyle}
+                    itemStyle={tooltipStyle.itemStyle}
+                    labelStyle={tooltipStyle.labelStyle}
                   />
-                  <Bar dataKey="count" fill="url(#colorDept)" radius={[8, 8, 0, 0]} maxBarSize={60}>
-                    <LabelList dataKey="count" position="top" fill="#7f5539" fontWeight="600" />
+                  <Bar dataKey="count" radius={[8, 8, 0, 0]} maxBarSize={60}>
+                    {data.charts.accountsByDepartment.map((_, index) => (
+                      <Cell key={index} fill={CHART_PALETTE[index % CHART_PALETTE.length]} />
+                    ))}
+                    <LabelList dataKey="count" position="top" fill={CHART_THEME.axisStroke} fontWeight="600" />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -300,12 +330,6 @@ export default function DashboardPage() {
             {data.charts.accountsByApplication.length > 0 ? (
               <ResponsiveContainer width="100%" height={320}>
                 <BarChart data={data.charts.accountsByApplication} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <defs>
-                    <linearGradient id="colorApp" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#7f5539" stopOpacity={0.95}/>
-                      <stop offset="95%" stopColor="#e8e0d5" stopOpacity={0.9}/>
-                    </linearGradient>
-                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke={CHART_THEME.gridStroke} opacity={0.6} />
                   <XAxis
                     dataKey="name"
@@ -321,18 +345,15 @@ export default function DashboardPage() {
                   />
                   <Tooltip
                     cursor={{ fill: "rgba(232, 224, 213, 0.5)" }}
-                    contentStyle={{
-                      backgroundColor: CHART_THEME.tooltipBg,
-                      border: `1px solid ${CHART_THEME.tooltipBorder}`,
-                      borderRadius: "8px",
-                      padding: "12px",
-                      boxShadow: "0 4px 12px rgba(127, 85, 57, 0.12)",
-                    }}
-                    itemStyle={{ color: CHART_THEME.tooltipBorder, fontWeight: "600", fontSize: "14px" }}
-                    labelStyle={{ color: CHART_THEME.tooltipText, fontWeight: "600" }}
+                    contentStyle={tooltipStyle.contentStyle}
+                    itemStyle={tooltipStyle.itemStyle}
+                    labelStyle={tooltipStyle.labelStyle}
                   />
-                  <Bar dataKey="count" fill="url(#colorApp)" radius={[8, 8, 0, 0]} maxBarSize={60}>
-                    <LabelList dataKey="count" position="top" fill="#7f5539" fontWeight="600" />
+                  <Bar dataKey="count" radius={[8, 8, 0, 0]} maxBarSize={60}>
+                    {data.charts.accountsByApplication.map((_, index) => (
+                      <Cell key={index} fill={CHART_PALETTE[index % CHART_PALETTE.length]} />
+                    ))}
+                    <LabelList dataKey="count" position="top" fill={CHART_THEME.axisStroke} fontWeight="600" />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -356,12 +377,6 @@ export default function DashboardPage() {
             {data.charts.accountsByRole.length > 0 ? (
               <ResponsiveContainer width="100%" height={320}>
                 <BarChart data={data.charts.accountsByRole} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <defs>
-                    <linearGradient id="colorRole" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#7f5539" stopOpacity={0.95}/>
-                      <stop offset="95%" stopColor="#e8e0d5" stopOpacity={0.9}/>
-                    </linearGradient>
-                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke={CHART_THEME.gridStroke} opacity={0.6} />
                   <XAxis
                     dataKey="name"
@@ -377,18 +392,15 @@ export default function DashboardPage() {
                   />
                   <Tooltip
                     cursor={{ fill: "rgba(232, 224, 213, 0.5)" }}
-                    contentStyle={{
-                      backgroundColor: CHART_THEME.tooltipBg,
-                      border: `1px solid ${CHART_THEME.tooltipBorder}`,
-                      borderRadius: "8px",
-                      padding: "12px",
-                      boxShadow: "0 4px 12px rgba(127, 85, 57, 0.12)",
-                    }}
-                    itemStyle={{ color: CHART_THEME.tooltipBorder, fontWeight: "600", fontSize: "14px" }}
-                    labelStyle={{ color: CHART_THEME.tooltipText, fontWeight: "600" }}
+                    contentStyle={tooltipStyle.contentStyle}
+                    itemStyle={tooltipStyle.itemStyle}
+                    labelStyle={tooltipStyle.labelStyle}
                   />
-                  <Bar dataKey="count" fill="url(#colorRole)" radius={[8, 8, 0, 0]} maxBarSize={60}>
-                    <LabelList dataKey="count" position="top" fill="#7f5539" fontWeight="600" />
+                  <Bar dataKey="count" radius={[8, 8, 0, 0]} maxBarSize={60}>
+                    {data.charts.accountsByRole.map((_, index) => (
+                      <Cell key={index} fill={CHART_PALETTE[index % CHART_PALETTE.length]} />
+                    ))}
+                    <LabelList dataKey="count" position="top" fill={CHART_THEME.axisStroke} fontWeight="600" />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>

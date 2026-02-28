@@ -6,50 +6,50 @@
 
 @layer base {
   :root {
-    /* Light Green Theme - Modern & Fresh */
-    --background: 120 40% 98%;
+    /* Light Brown / Nexgate Theme */
+    --background: 30 25% 98%;
     --foreground: 0 0% 20%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 20%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 20%;
-    --primary: 120 60% 50%;
+    --primary: 25 45% 38%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 120 30% 95%;
+    --secondary: 25 25% 94%;
     --secondary-foreground: 0 0% 20%;
     --muted: 0 0% 96%;
     --muted-foreground: 0 0% 40%;
-    --accent: 120 80% 50%;
+    --accent: 25 45% 38%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 120 20% 90%;
-    --input: 120 20% 92%;
-    --ring: 120 60% 50%;
+    --border: 25 20% 90%;
+    --input: 25 15% 92%;
+    --ring: 25 45% 38%;
     --radius: 0.75rem;
   }
 
   .dark {
-    /* Dark Green Theme - Professional & Modern */
-    --background: 222 47% 11%;
+    /* Dark Brown / Nexgate Theme */
+    --background: 0 0% 4%;
     --foreground: 0 0% 100%;
-    --card: 220 13% 18%;
+    --card: 0 0% 6%;
     --card-foreground: 0 0% 100%;
-    --popover: 220 13% 18%;
+    --popover: 0 0% 6%;
     --popover-foreground: 0 0% 100%;
-    --primary: 142 76% 36%;
+    --primary: 25 45% 45%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 13% 25%;
+    --secondary: 0 0% 14%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 220 13% 25%;
+    --muted: 0 0% 14%;
     --muted-foreground: 0 0% 70%;
-    --accent: 142 76% 36%;
+    --accent: 25 40% 45%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 25%;
-    --input: 220 13% 25%;
-    --ring: 142 76% 36%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 25 45% 45%;
     --radius: 0.75rem;
   }
 }
@@ -70,36 +70,36 @@
   }
 }
 
-/* Custom scrollbar - Light Theme */
+/* Custom scrollbar - Light Theme (brown/nexgate) */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(120, 30%, 95%);
+  background: rgba(127, 85, 57, 0.08);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(120, 40%, 75%);
+  background: rgba(127, 85, 57, 0.35);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(120, 60%, 50%);
+  background: #7F5539;
 }
 
-/* Custom scrollbar - Dark Theme */
+/* Custom scrollbar - Dark Theme (brown/nexgate) */
 .dark ::-webkit-scrollbar-track {
   background: #2a2e37;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: #4a5568;
+  background: rgba(127, 85, 57, 0.5);
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: #22c55e;
+  background: #8f6342;
 }
 
 /* Select dropdown styling - Light Theme */
@@ -110,12 +110,12 @@ select option {
 
 select option:checked,
 select option:hover {
-  background-color: hsl(120, 60%, 50%);
+  background-color: #7F5539;
   color: #FFFFFF;
 }
 
 select:focus option:checked {
-  background: linear-gradient(hsl(120, 60%, 50%), hsl(120, 60%, 50%));
+  background: linear-gradient(#7F5539, #7F5539);
 }
 
 /* Select dropdown styling - Dark Theme */
@@ -126,7 +126,7 @@ select:focus option:checked {
 
 .dark select option:checked,
 .dark select option:hover {
-  background-color: #22c55e;
+  background-color: #8f6342;
   color: #FFFFFF;
 }
 

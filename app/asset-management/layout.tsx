@@ -5,25 +5,7 @@ import { useRouter } from "next/navigation";
 import { Topbar } from "@/components/layout/topbar";
 import { AssetManagementSidebar } from "@/components/layout/asset-management-sidebar";
 import { NoAccess } from "@/components/auth/no-access";
-import * as permissions from "@/lib/permissions";
-import { isSuperAdmin } from "@/lib/permissions";
-
-// Use hasModuleAccess with fallback
-const hasModuleAccess = (moduleName: string): boolean => {
-  try {
-    if (permissions.hasModuleAccess && typeof permissions.hasModuleAccess === 'function') {
-      return permissions.hasModuleAccess(moduleName);
-    }
-  } catch (error) {
-    console.error("Error checking module access:", error);
-  }
-  
-  // Fallback: check if user is super admin
-  if (isSuperAdmin()) return true;
-  
-  // Fallback: return false if function not available
-  return false;
-};
+import { hasModuleAccess } from "@/lib/permissions";
 import { Toaster } from "react-hot-toast";
 
 export default function AssetManagementLayout({
@@ -69,7 +51,7 @@ export default function AssetManagementLayout({
 
   if (hasAccess === false) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-white dark:bg-[#000000]">
         <Topbar />
         <NoAccess moduleName="asset-management" />
       </div>
@@ -77,14 +59,14 @@ export default function AssetManagementLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-white dark:bg-[#000000]">
       {/* Toast Notifications */}
       <Toaster 
         position="top-right"
         toastOptions={{
           duration: 3000,
           style: {
-            background: '#22c55e',
+            background: '#7f5539',
             color: '#fff',
             fontWeight: '500',
             borderRadius: '8px',
@@ -92,7 +74,7 @@ export default function AssetManagementLayout({
           success: {
             iconTheme: {
               primary: '#fff',
-              secondary: '#22c55e',
+              secondary: '#7f5539',
             },
           },
           error: {
@@ -110,7 +92,7 @@ export default function AssetManagementLayout({
       <Topbar />
       <div className="flex">
         <AssetManagementSidebar />
-        <main className="flex-1 p-4">
+        <main className="flex-1 p-6 flex flex-col min-h-0">
           {children}
         </main>
       </div>

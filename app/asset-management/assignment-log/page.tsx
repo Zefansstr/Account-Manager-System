@@ -277,38 +277,51 @@ export default function AssignmentLogPage() {
 
   return (
     <PermissionGuard menuName={menuName}>
-      <div className="space-y-3">
-      {/* Filter Row */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search assigned to, department, handled by..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-64 pl-9" 
-            />
-          </div>
-          <div className="text-sm text-muted-foreground ml-2">
-            {pagination.total} total log{pagination.total !== 1 ? 's' : ''}
+      <div className="flex flex-col w-full bg-[rgba(127,85,57,0.04)] dark:bg-[#101211] border border-[#7F5539]/20 dark:border-[#7F5539]/40 rounded-2xl p-6">
+        <div className="pb-5 border-b border-[#7F5539]/20 dark:border-[#7F5539]/40 flex items-start gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-2xl font-medium text-[#1e1e1e] dark:text-white tracking-tight" style={{ fontFamily: "Inter, sans-serif" }}>Assignment Log</h1>
+              <span className="inline-flex items-center justify-center bg-[#3a2314] dark:bg-[#7f5539] text-white text-xs font-medium rounded min-w-[20px] h-5 px-1.5">
+                {pagination.total}
+              </span>
+            </div>
+            <p className="text-sm text-[rgba(127,85,57,0.62)] dark:text-gray-400 mt-1">
+              View and manage asset assignment history.
+            </p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={() => setIsAddOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Log
-          </Button>
-        </div>
-      </div>
 
-      <div className="rounded-lg border border-border bg-card shadow-lg">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border bg-secondary">
-                <th className="px-4 py-3 text-center text-sm font-semibold text-foreground w-[50px]">
-                  <button onClick={toggleSelectAll} className="hover:text-primary">
+        <div className="flex items-center justify-between gap-4 mt-6 mb-6">
+          <div className="flex items-center gap-3 flex-wrap" />
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2 w-80 h-9 border border-[#7F5539]/25 dark:border-[#7F5539]/50 rounded-md px-3.5 bg-[#faf8f6] dark:bg-[#1a1a1a] flex-shrink-0 shadow-[0_2px_6px_rgba(127,85,57,0.1)]">
+              <Search className="h-4 w-4 flex-shrink-0 text-[rgba(127,85,57,0.35)] dark:text-gray-500" />
+              <input
+                type="text"
+                placeholder="Search assigned to, department, handled by..."
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+                className="flex-1 bg-transparent border-0 outline-none text-sm font-medium text-[#1e1e1e] dark:text-gray-200 min-w-0 placeholder:text-[rgba(127,85,57,0.4)] dark:placeholder:text-gray-500"
+              />
+            </div>
+            <div className="h-8 w-px flex-shrink-0 bg-[rgba(127,85,57,0.2)]" aria-hidden />
+            <button
+              type="button"
+              onClick={() => setIsAddOpen(true)}
+              className="h-8 px-4 bg-[#3a2314] dark:bg-transparent dark:border dark:border-[#2a2a2a] dark:text-white rounded border-0 cursor-pointer text-white text-sm font-medium whitespace-nowrap hover:opacity-90 dark:hover:bg-white/10 transition-colors shadow-[0_2px_6px_rgba(127,85,57,0.12)]"
+            >
+              <span className="dark:text-[#a06540]">+</span> Add Log
+            </button>
+          </div>
+        </div>
+
+        <div className="min-h-[280px] max-h-[calc(100vh-320px)] overflow-auto border border-[#7F5539]/20 dark:border-[#7F5539]/40 rounded-lg scrollbar-invisible bg-white dark:bg-[#101211]">
+          <table className="w-full border-collapse table-fixed">
+            <thead className="sticky top-0 z-10 bg-[#f0eae4] dark:bg-[#101211] shadow-[0_1px_0_0_rgba(127,85,57,0.2)] dark:shadow-[0_1px_0_0_rgba(127,85,57,0.4)]">
+              <tr>
+                <th className="text-center text-sm font-semibold text-[#1e1e1e] dark:text-white py-3 px-4 w-14 bg-[#f0eae4] dark:bg-[#101211]">
+                  <button onClick={toggleSelectAll} className="hover:text-[#7f5539]">
                     {selectedIds.length === logs.length && logs.length > 0 ? (
                       <CheckSquare className="h-4 w-4" />
                     ) : (
@@ -316,51 +329,51 @@ export default function AssignmentLogPage() {
                     )}
                   </button>
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Date</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Asset ID</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Assigned To</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Department</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Reason</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Handled By</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Remark</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-foreground">Actions</th>
+                <th className="text-left text-sm font-semibold text-[#1e1e1e] dark:text-white py-3 px-4 bg-[#f0eae4] dark:bg-[#101211]">Date</th>
+                <th className="text-left text-sm font-semibold text-[#1e1e1e] dark:text-white py-3 px-4 bg-[#f0eae4] dark:bg-[#101211]">Asset ID</th>
+                <th className="text-left text-sm font-semibold text-[#1e1e1e] dark:text-white py-3 px-4 bg-[#f0eae4] dark:bg-[#101211]">Assigned To</th>
+                <th className="text-left text-sm font-semibold text-[#1e1e1e] dark:text-white py-3 px-4 bg-[#f0eae4] dark:bg-[#101211]">Department</th>
+                <th className="text-left text-sm font-semibold text-[#1e1e1e] dark:text-white py-3 px-4 bg-[#f0eae4] dark:bg-[#101211]">Reason</th>
+                <th className="text-left text-sm font-semibold text-[#1e1e1e] dark:text-white py-3 px-4 bg-[#f0eae4] dark:bg-[#101211]">Handled By</th>
+                <th className="text-left text-sm font-semibold text-[#1e1e1e] dark:text-white py-3 px-4 bg-[#f0eae4] dark:bg-[#101211]">Remark</th>
+                <th className="text-left text-sm font-semibold text-[#1e1e1e] dark:text-white py-3 px-4 bg-[#f0eae4] dark:bg-[#101211]">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="bg-white dark:bg-[#101211]">
               {loading ? (
-                <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">Loading...</td>
+                <tr className="bg-white dark:bg-[#101211]">
+                  <td colSpan={9} className="p-4 bg-white dark:bg-[#101211] text-center text-muted-foreground dark:text-gray-400">Loading...</td>
                 </tr>
               ) : logs.length === 0 ? (
-                <tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">No assignment logs found</td></tr>
+                <tr className="bg-white dark:bg-[#101211]"><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground dark:text-gray-400 bg-white dark:bg-[#101211]">No assignment logs found</td></tr>
               ) : (
                 logs.map((log) => (
-                  <tr key={log.id} className="border-b border-border hover:bg-secondary/50 transition-colors">
-                    <td className="px-4 py-3 text-center">
-                      <button onClick={() => toggleSelect(log.id)} className="hover:text-primary">
+                  <tr key={log.id} className="border-t border-[#7F5539]/15 dark:border-[#7F5539]/30 bg-white dark:bg-[#101211] hover:bg-[#f5f0eb] dark:hover:bg-[#1a1a1a] transition-colors">
+                    <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle text-center">
+                      <button onClick={() => toggleSelect(log.id)} className="hover:text-[#7f5539]">
                         {selectedIds.includes(log.id) ? (
-                          <CheckSquare className="h-4 w-4 text-primary" />
+                          <CheckSquare className="h-4 w-4 text-[#7f5539]" />
                         ) : (
                           <Square className="h-4 w-4" />
                         )}
                       </button>
                     </td>
-                    <td className="px-4 py-3 text-sm text-foreground">
-                      {log.date ? new Date(log.date).toLocaleDateString('id-ID') : "-"}
+                    <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle">
+                      {log.date ? new Date(log.date).toLocaleDateString("id-ID") : "-"}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle">
                       {log.assetCode ? (
-                        <span className="font-mono text-sm font-medium text-primary">{log.assetCode}</span>
+                        <span className="font-mono text-sm font-medium text-[#7f5539] dark:text-[#a06540]">{log.assetCode}</span>
                       ) : (
-                        <span className="text-sm text-muted-foreground">-</span>
+                        <span className="text-muted-foreground">-</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm text-foreground">{log.assignedTo || "-"}</td>
-                    <td className="px-4 py-3 text-sm text-foreground">{log.department || "-"}</td>
-                    <td className="px-4 py-3 text-sm text-foreground">{log.reason || "-"}</td>
-                    <td className="px-4 py-3 text-sm text-foreground">{log.handledBy || "-"}</td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">{log.remark || "-"}</td>
-                    <td className="px-4 py-3">
+                    <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle">{log.assignedTo || "-"}</td>
+                    <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle">{log.department || "-"}</td>
+                    <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle">{log.reason || "-"}</td>
+                    <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle">{log.handledBy || "-"}</td>
+                    <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle">{log.remark || "-"}</td>
+                    <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle">
                       <div className="flex items-center justify-center gap-2">
                         <Button variant="ghost" size="sm" className="hover:bg-primary/10 hover:text-primary" onClick={() => openEditDialog(log)}>
                           <Edit className="h-4 w-4" />
@@ -377,8 +390,7 @@ export default function AssignmentLogPage() {
           </table>
         </div>
 
-        {/* Pagination */}
-        <div className="border-t border-border p-4">
+        <div className="mt-6 pt-4 border-t border-[#7F5539]/20 dark:border-[#7F5539]/40">
           <Pagination
             currentPage={pagination.page}
             totalPages={pagination.totalPages}
@@ -433,9 +445,9 @@ export default function AssignmentLogPage() {
               <Textarea value={formData.remark} onChange={(e) => setFormData({ ...formData, remark: e.target.value })} placeholder="Optional remark" />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setIsAddOpen(false); resetForm(); }}>Cancel</Button>
-            <Button onClick={handleAdd} disabled={!formData.date || !formData.assignedTo}>Add Log</Button>
+          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)]">
+            <Button variant="outline" className="min-w-[88px]" onClick={() => { setIsAddOpen(false); resetForm(); }}>Cancel</Button>
+            <Button className="min-w-[120px] bg-[#7f5539] hover:bg-[#7f5539]/90" onClick={handleAdd} disabled={!formData.date || !formData.assignedTo}>Add Log</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -482,9 +494,9 @@ export default function AssignmentLogPage() {
               <Textarea value={formData.remark} onChange={(e) => setFormData({ ...formData, remark: e.target.value })} />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setIsEditOpen(false); resetForm(); setSelected(null); }}>Cancel</Button>
-            <Button onClick={handleEdit} disabled={!formData.date || !formData.assignedTo}>Update Log</Button>
+          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)]">
+            <Button variant="outline" className="min-w-[88px]" onClick={() => { setIsEditOpen(false); resetForm(); setSelected(null); }}>Cancel</Button>
+            <Button className="min-w-[130px] bg-[#7f5539] hover:bg-[#7f5539]/90" onClick={handleEdit} disabled={!formData.date || !formData.assignedTo}>Update Log</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -499,12 +511,11 @@ export default function AssignmentLogPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+            <Button variant="outline" className="min-w-[88px]" onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
+            <Button variant="destructive" className="min-w-[88px]" onClick={handleDelete}>Delete</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      </div>
     </PermissionGuard>
   );
 }

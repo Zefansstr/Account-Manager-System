@@ -156,9 +156,8 @@ export default function ProductsRolesPage() {
       <div className="flex items-center justify-end">
         <Button onClick={() => setIsAddOpen(true)}><Plus className="mr-2 h-4 w-4" />Add Role</Button>
       </div>
-      <div className="rounded-lg border border-border bg-card shadow-lg">
-        <div className="overflow-x-auto">
-          <table className="w-full table-fixed">
+      <div className="min-h-[280px] max-h-[calc(100vh-320px)] overflow-auto border border-[#7F5539]/20 dark:border-[#7F5539]/40 rounded-lg scrollbar-invisible bg-white dark:bg-[#101211]">
+        <table className="w-full table-fixed border-collapse">
             <thead>
               <tr className="border-b border-border bg-secondary">
                 <th className="px-4 py-3 text-left text-sm font-semibold text-foreground w-[15%]">Code</th>
@@ -189,7 +188,6 @@ export default function ProductsRolesPage() {
               )}
             </tbody>
           </table>
-        </div>
       </div>
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
         <DialogContent>

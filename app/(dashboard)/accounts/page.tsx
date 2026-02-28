@@ -64,13 +64,34 @@ function getApplicationBadgeColor(applicationName: string) {
 export default function AccountsPage() {
   // Get operator ID for data filtering
   const [operatorId, setOperatorId] = useState<string>();
-  
+
+  // State untuk dropdown filter — diisi langsung dari API
+  const [filterAppOptions, setFilterAppOptions] = useState<{ id: string; code: string; name: string }[]>([]);
+  const [filterLineOptions, setFilterLineOptions] = useState<{ id: string; code: string; name: string }[]>([]);
+
   useEffect(() => {
     const operatorStr = localStorage.getItem("operator");
     if (operatorStr) {
       const operator = JSON.parse(operatorStr);
       setOperatorId(operator.id);
     }
+
+    // Fetch applications & lines untuk dropdown filter
+    fetch("/api/applications")
+      .then((r) => r.json())
+      .then((json) => {
+        const apps = (json.data || []).map((a: any) => ({ id: a.id, code: a.code, name: a.name }));
+        setFilterAppOptions(apps);
+      })
+      .catch(() => {});
+
+    fetch("/api/lines")
+      .then((r) => r.json())
+      .then((json) => {
+        const ls = (json.data || []).map((l: any) => ({ id: l.id, code: l.code, name: l.name }));
+        setFilterLineOptions(ls);
+      })
+      .catch(() => {});
   }, []);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -159,11 +180,10 @@ export default function AccountsPage() {
 
   const { data: lookupsData, isLoading: lookupsLoading } = useLookups('account-management');
 
-  // Extract data from React Query responses
   const accounts = accountsData?.data || [];
   const pagination = accountsData?.pagination || { page: 1, limit: 20, total: 0, totalPages: 1 };
-  const applications = lookupsData?.applications || [];
-  const lines = lookupsData?.lines || [];
+  const applications = filterAppOptions;
+  const lines = filterLineOptions;
   const departments = lookupsData?.departments || [];
   const roles = lookupsData?.roles || [];
 
@@ -464,9 +484,9 @@ export default function AccountsPage() {
       ))}
 
       {/* Content panel */}
-      <div className="flex-1 flex flex-col min-h-0 bg-[rgba(127,85,57,0.04)] dark:bg-[#101211] border border-[rgba(127,85,57,0.08)] dark:border-[#1f1f1f] rounded-2xl p-6">
+      <div className="flex-1 flex flex-col min-h-0 bg-[rgba(127,85,57,0.04)] dark:bg-[#101211] border border-[#7F5539]/20 dark:border-[#7F5539]/40 rounded-2xl p-6">
         {/* Header */}
-        <div className="pb-5 border-b border-[rgba(30,30,30,0.12)] dark:border-[#1f1f1f] flex items-start gap-4">
+        <div className="pb-5 border-b border-[#7F5539]/20 dark:border-[#7F5539]/40 flex items-start gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-2xl font-medium text-[#1e1e1e] dark:text-white tracking-tight" style={{ fontFamily: 'Inter, sans-serif' }}>Account Management</h1>
@@ -485,31 +505,21 @@ export default function AccountsPage() {
           <div className="flex items-center gap-3 flex-wrap">
             <FilterDropdown
               value={filterApplication}
-              onChange={setFilterApplication}
-              options={Array.isArray(applications) ? applications
-                .filter((app: { id: string; code: string; name: string }) => {
-                  if (allowedFilters.applications.length === 0) return true;
-                  return allowedFilters.applications.includes(app.id);
-                })
-                .map((app: { id: string; code: string; name: string }) => ({ value: app.id, label: app.name || app.code || app.id })) : []}
+              onChange={(v) => { setFilterApplication(v); setPage(1); }}
+              options={filterAppOptions.map((a) => ({ value: a.id, label: a.name || a.code }))}
               placeholder="All Application"
               minWidth="140px"
             />
             <FilterDropdown
               value={filterLine}
-              onChange={setFilterLine}
-              options={Array.isArray(lines) ? lines
-                .filter((line: { id: string; code: string; name: string }) => {
-                  if (allowedFilters.lines.length === 0) return true;
-                  return allowedFilters.lines.includes(line.id);
-                })
-                .map((line: { id: string; code: string; name: string }) => ({ value: line.id, label: line.name || line.code || line.id })) : []}
+              onChange={(v) => { setFilterLine(v); setPage(1); }}
+              options={filterLineOptions.map((l) => ({ value: l.id, label: l.name || l.code }))}
               placeholder="All Lines"
               minWidth="120px"
             />
             <FilterDropdown
               value={filterStatus}
-              onChange={setFilterStatus}
+              onChange={(v) => { setFilterStatus(v); setPage(1); }}
               options={[
                 { value: "active", label: "Active" },
                 { value: "inactive", label: "Inactive" },
@@ -519,7 +529,7 @@ export default function AccountsPage() {
             />
           </div>
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-2 w-80 h-9 border border-[rgba(127,85,57,0.12)] dark:border-[#2a2a2a] rounded-md px-3.5 bg-[#faf8f6] dark:bg-[#1a1a1a] flex-shrink-0 shadow-[0_2px_6px_rgba(127,85,57,0.1)]">
+            <div className="flex items-center gap-2 w-80 h-9 border border-[#7F5539]/25 dark:border-[#7F5539]/50 rounded-md px-3.5 bg-[#faf8f6] dark:bg-[#1a1a1a] flex-shrink-0 shadow-[0_2px_6px_rgba(127,85,57,0.1)]">
               <Search className="h-4 w-4 flex-shrink-0 text-[rgba(127,85,57,0.35)] dark:text-gray-500" />
               <input
                 type="text"
@@ -594,9 +604,9 @@ export default function AccountsPage() {
         </div>
       )}
 
-        <div className="min-h-[280px] max-h-[calc(100vh-320px)] overflow-auto border border-[rgba(127,85,57,0.08)] dark:border-[#1f1f1f] rounded-lg scrollbar-invisible bg-white dark:bg-[#101211]">
+        <div className="min-h-[280px] max-h-[calc(100vh-320px)] overflow-auto border border-[#7F5539]/20 dark:border-[#7F5539]/40 rounded-lg scrollbar-invisible bg-white dark:bg-[#101211]">
           <table className="w-full border-collapse table-fixed">
-            <thead className="sticky top-0 z-10 bg-[#f0eae4] dark:bg-[#101211] shadow-[0_1px_0_0_rgba(30,30,30,0.08)] dark:shadow-[0_1px_0_0_#1f1f1f]">
+            <thead className="sticky top-0 z-10 bg-[#f0eae4] dark:bg-[#101211] shadow-[0_1px_0_0_rgba(127,85,57,0.2)] dark:shadow-[0_1px_0_0_rgba(127,85,57,0.4)]">
               <tr>
                 <th className="text-center text-sm font-semibold text-[#1e1e1e] dark:text-white py-3 px-4 w-14 bg-[#f0eae4] dark:bg-[#101211]">
                   <button onClick={toggleSelectAll} className="hover:text-[#7f5539]">
@@ -631,7 +641,7 @@ export default function AccountsPage() {
                 filteredAccounts.map((acc: Account) => {
                   const { bg, text } = getApplicationBadgeColor(acc.application || "");
                   return (
-                  <tr key={acc.id} className="border-t border-[rgba(30,30,30,0.08)] dark:border-[#1f1f1f] bg-white dark:bg-[#101211] hover:bg-[#f5f0eb] dark:hover:bg-[#1a1a1a] transition-colors">
+                  <tr key={acc.id} className="border-t border-[#7F5539]/15 dark:border-[#7F5539]/30 bg-white dark:bg-[#101211] hover:bg-[#f5f0eb] dark:hover:bg-[#1a1a1a] transition-colors">
                     <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle text-center">
                       <button onClick={() => toggleSelect(acc.id)} className="hover:text-[#7f5539]">
                         {selectedIds.includes(acc.id) ? (
@@ -720,7 +730,7 @@ export default function AccountsPage() {
           </table>
         </div>
 
-        <div className="mt-6 pt-4 border-t border-[rgba(30,30,30,0.08)] dark:border-[#1f1f1f]">
+        <div className="mt-6 pt-4 border-t border-[#7F5539]/20 dark:border-[#7F5539]/40">
           <Pagination
               currentPage={pagination.page}
               totalPages={pagination.totalPages}

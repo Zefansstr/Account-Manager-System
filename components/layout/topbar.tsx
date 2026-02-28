@@ -6,6 +6,7 @@ import { User, LogOut, Sun, Moon, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/providers/theme-provider";
 import { useOperatorStore } from "@/lib/operator-store";
+import { hasModuleAccess } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
 const MODULES = [
@@ -74,11 +75,16 @@ export function Topbar() {
 
   const currentTitle = getModuleTitle();
   const isAccountManagement = pathname === "/dashboard" || pathname === "/accounts" || pathname.startsWith("/accounts/") || pathname.startsWith("/dashboard/");
+  const isSettingsArea = pathname === "/settings" || pathname?.startsWith("/applications") || pathname?.startsWith("/lines") || pathname?.startsWith("/departments") || pathname?.startsWith("/roles");
+  const isProductManagement = pathname?.startsWith("/products");
+  const isAssetManagement = pathname?.startsWith("/asset-management");
+  const isOperatorSetting = pathname === "/operators" || pathname === "/operator-roles" || pathname?.startsWith("/audit-logs");
+  const showModuleDropdown = isAccountManagement || isSettingsArea || isProductManagement || isAssetManagement || isOperatorSetting;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-[rgba(127,85,57,0.12)] dark:border-[#1f1f1f] bg-white dark:bg-[#000000]">
       <div className="flex h-14 items-center justify-between px-6 gap-4">
-        {isAccountManagement ? (
+        {showModuleDropdown ? (
           <div
             ref={dropdownRef}
             className="relative flex items-center gap-3 min-w-0 rounded bg-[rgba(240,232,223,0.8)] dark:bg-white/10 pl-2 pr-2 py-1.5 cursor-pointer"
@@ -101,6 +107,21 @@ export function Topbar() {
                     key={m.href}
                     type="button"
                     onClick={() => {
+                      if (m.title === "Operator Setting" && !hasModuleAccess("operator-setting")) {
+                        alert("You don't have permission to access this menu. Please contact administrator.");
+                        setDropdownOpen(false);
+                        return;
+                      }
+                      if (m.title === "Product Management" && !hasModuleAccess("product-management")) {
+                        alert("You don't have permission to access this menu. Please contact administrator.");
+                        setDropdownOpen(false);
+                        return;
+                      }
+                      if (m.title === "Asset Management" && !hasModuleAccess("asset-management")) {
+                        alert("You don't have permission to access this menu. Please contact administrator.");
+                        setDropdownOpen(false);
+                        return;
+                      }
                       router.push(m.href);
                       setDropdownOpen(false);
                     }}
@@ -131,7 +152,7 @@ export function Topbar() {
             onClick={toggleTheme}
             className={cn(
               "h-9 w-9 p-0",
-              isAccountManagement
+              showModuleDropdown
                 ? "hover:bg-[rgba(240,232,223,0.8)] dark:hover:bg-white/10 hover:text-[#1e1e1e] dark:hover:text-white"
                 : "hover:bg-secondary hover:text-foreground"
             )}
@@ -141,12 +162,12 @@ export function Topbar() {
           </Button>
           <div className={cn(
             "flex items-center gap-2 rounded-lg border px-3 py-2",
-            isAccountManagement
+            showModuleDropdown
               ? "border-[rgba(127,85,57,0.12)] dark:border-[#1f1f1f] bg-[rgba(240,232,223,0.5)] dark:bg-white/10"
               : "border-border bg-secondary"
           )}>
-            <User className={cn("h-4 w-4", isAccountManagement ? "text-[#7f5539]" : "text-primary")} />
-            <span className={cn("text-sm font-medium", isAccountManagement ? "text-[#1e1e1e] dark:text-white" : "text-foreground")}>{operatorName}</span>
+            <User className={cn("h-4 w-4", showModuleDropdown ? "text-[#7f5539]" : "text-primary")} />
+            <span className={cn("text-sm font-medium", showModuleDropdown ? "text-[#1e1e1e] dark:text-white" : "text-foreground")}>{operatorName}</span>
           </div>
           <Button
             variant="ghost"
@@ -154,7 +175,7 @@ export function Topbar() {
             onClick={handleLogout}
             className={cn(
               "h-9 px-3 text-sm font-medium",
-              isAccountManagement
+              showModuleDropdown
                 ? "hover:bg-[rgba(127,85,57,0.08)] dark:hover:bg-white/10 hover:text-[#1e1e1e] dark:text-gray-200 dark:hover:text-white"
                 : "hover:bg-secondary hover:text-foreground"
             )}

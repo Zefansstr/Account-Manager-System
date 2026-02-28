@@ -8,28 +8,28 @@ const settingsMenus = [
     description: "Manage applications (HWBO, SCRM, Office Gram)",
     href: "/applications",
     icon: AppWindow,
-    color: "text-blue-500",
+    color: "text-[#7f5539]",
   },
   {
     title: "Lines",
     description: "Manage lines (SBMY, LVMY, MYR, SGD)",
     href: "/lines",
     icon: Layers,
-    color: "text-green-500",
+    color: "text-[#7f5539]",
   },
   {
     title: "Departments",
     description: "Manage departments and teams",
     href: "/departments",
     icon: Building2,
-    color: "text-purple-500",
+    color: "text-[#7f5539]",
   },
   {
     title: "Roles",
     description: "Manage user roles and permissions",
     href: "/roles",
     icon: Shield,
-    color: "text-orange-500",
+    color: "text-[#7f5539]",
   },
 ];
 

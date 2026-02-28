@@ -5,26 +5,8 @@ import { useRouter, usePathname } from "next/navigation";
 import { Topbar } from "@/components/layout/topbar";
 import { Sidebar } from "@/components/layout/sidebar";
 import { NoAccess } from "@/components/auth/no-access";
-import * as permissions from "@/lib/permissions";
-import { isSuperAdmin } from "@/lib/permissions";
+import { hasModuleAccess } from "@/lib/permissions";
 import { Toaster } from "react-hot-toast";
-
-// Use hasModuleAccess with fallback
-const hasModuleAccess = (moduleName: string): boolean => {
-  try {
-    if (permissions.hasModuleAccess && typeof permissions.hasModuleAccess === 'function') {
-      return permissions.hasModuleAccess(moduleName);
-    }
-  } catch (error) {
-    console.error("Error checking module access:", error);
-  }
-  
-  // Fallback: check if user is super admin
-  if (isSuperAdmin()) return true;
-  
-  // Fallback: return false if function not available
-  return false;
-};
 
 export default function DashboardLayout({
   children,

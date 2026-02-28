@@ -1,17 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
-import { Plus, Edit, Trash2, Power, CheckSquare, Square, Search, Laptop, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Edit, Trash2, Power, CheckSquare, Square, Search, Upload, ChevronDown, ChevronUp } from "lucide-react";
+import { FilterDropdown } from "@/components/ui/filter-dropdown";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PermissionGuard } from "@/components/auth/permission-guard";
 import toast from "react-hot-toast";
+import * as XLSX from "xlsx";
 
 type Device = {
   id: string;
@@ -56,6 +58,10 @@ export default function AssetManagementAccountsPage() {
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
   const [showDetailForm, setShowDetailForm] = useState(false);
   const [assetDetail, setAssetDetail] = useState<any>(null);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [importResult, setImportResult] = useState<{ success: boolean; message: string; imported?: number; total?: number } | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
     code: "",
@@ -253,6 +259,34 @@ export default function AssetManagementAccountsPage() {
 
     return () => clearTimeout(timeoutId);
   }, [page, searchQuery, filterDevice, filterBrand, filterLocation]);
+
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsImporting(true);
+    setImportResult(null);
+    try {
+      const data = await file.arrayBuffer();
+      const wb = XLSX.read(data, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws);
+      const total = rows.length;
+      setImportResult({
+        success: true,
+        message: total > 0 ? `Parsed ${total} row(s) from Excel. Import to database is not yet configured for assets.` : "No data rows found in the file.",
+        total,
+        imported: 0,
+      });
+      setIsImportOpen(true);
+    } catch (err) {
+      console.error(err);
+      setImportResult({ success: false, message: "Failed to read Excel file." });
+      setIsImportOpen(true);
+    } finally {
+      setIsImporting(false);
+      e.target.value = "";
+    }
+  };
 
   // Fetch asset detail
   const fetchAssetDetail = async (assetId: string) => {
@@ -505,82 +539,55 @@ export default function AssetManagementAccountsPage() {
     }
   };
 
+  const deviceOptions = deviceList.map((d) => ({ value: d.name, label: d.name }));
+  const brandOptions = brandFilterList.map((b) => ({ value: b, label: b }));
+  const locationOptions = locationList.map((l) => ({ value: l, label: l }));
+
   return (
     <PermissionGuard menuName={menuName}>
-      <div className="space-y-3">
-      {/* Filter Row */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search all fields..." 
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setPage(1); // Reset to first page when search changes
-              }}
-              className="w-64 pl-9" 
-            />
-          </div>
-          <select 
-            value={filterDevice}
-            onChange={(e) => {
-              setFilterDevice(e.target.value);
-              setPage(1);
-            }}
-            className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-          >
-            <option value="">All Devices</option>
-            {deviceList.map((device) => (
-              <option key={device.id} value={device.name}>{device.name}</option>
-            ))}
-          </select>
-          <select 
-            value={filterBrand}
-            onChange={(e) => {
-              setFilterBrand(e.target.value);
-              setPage(1);
-            }}
-            className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-          >
-            <option value="">All Brands</option>
-            {brandFilterList.map((brand) => (
-              <option key={brand} value={brand}>{brand}</option>
-            ))}
-          </select>
-          <select 
-            value={filterLocation}
-            onChange={(e) => {
-              setFilterLocation(e.target.value);
-              setPage(1);
-            }}
-            className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-          >
-            <option value="">All Locations</option>
-            {locationList.map((location) => (
-              <option key={location} value={location}>{location}</option>
-            ))}
-          </select>
-          <div className="text-sm text-muted-foreground ml-2">
-            {pagination.total} total asset{pagination.total !== 1 ? 's' : ''}
+      <div className="flex-1 flex flex-col min-h-0 bg-[rgba(127,85,57,0.04)] dark:bg-[#101211] border border-[#7F5539]/20 dark:border-[#7F5539]/40 rounded-2xl p-6">
+        <div className="pb-5 border-b border-[#7F5539]/20 dark:border-[#7F5539]/40 flex items-start gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-2xl font-medium text-[#1e1e1e] dark:text-white tracking-tight" style={{ fontFamily: "Inter, sans-serif" }}>Asset Master</h1>
+              <span className="inline-flex items-center justify-center bg-[#3a2314] dark:bg-[#7f5539] text-white text-xs font-medium rounded min-w-[20px] h-5 px-1.5">
+                {pagination.total}
+              </span>
+            </div>
+            <p className="text-sm text-[rgba(127,85,57,0.62)] dark:text-gray-400 mt-1">
+              Manage assets, devices, and inventory here.
+            </p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={() => setIsAddOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Asset
-          </Button>
-        </div>
-      </div>
 
-      <div className="rounded-lg border border-border bg-card shadow-lg">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border bg-secondary">
-                <th className="px-4 py-3 text-center text-sm font-semibold text-foreground w-[50px]">
-                  <button onClick={toggleSelectAll} className="hover:text-primary">
+        <div className="flex items-center justify-between gap-4 mt-6 mb-6">
+          <div className="flex items-center gap-3 flex-wrap">
+            <FilterDropdown value={filterDevice} onChange={(v) => { setFilterDevice(v); setPage(1); }} options={deviceOptions} placeholder="All Devices" minWidth="140px" />
+            <FilterDropdown value={filterBrand} onChange={(v) => { setFilterBrand(v); setPage(1); }} options={brandOptions} placeholder="All Brands" minWidth="120px" />
+            <FilterDropdown value={filterLocation} onChange={(v) => { setFilterLocation(v); setPage(1); }} options={locationOptions} placeholder="All Locations" minWidth="120px" />
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2 w-80 h-9 border border-[#7F5539]/25 dark:border-[#7F5539]/50 rounded-md px-3.5 bg-[#faf8f6] dark:bg-[#1a1a1a] flex-shrink-0 shadow-[0_2px_6px_rgba(127,85,57,0.1)]">
+              <Search className="h-4 w-4 flex-shrink-0 text-[rgba(127,85,57,0.35)] dark:text-gray-500" />
+              <input type="text" placeholder="Search code, brand, device..." value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }} className="flex-1 bg-transparent border-0 outline-none text-sm font-medium text-[#1e1e1e] dark:text-gray-200 min-w-0 placeholder:text-[rgba(127,85,57,0.4)] dark:placeholder:text-gray-500" />
+            </div>
+            <div className="h-8 w-px flex-shrink-0 bg-[rgba(127,85,57,0.2)]" aria-hidden />
+            <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleImportExcel} className="hidden" />
+            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isImporting} className="flex items-center gap-2 h-8 px-4 bg-[#a06540] rounded border-0 cursor-pointer text-white text-sm font-medium whitespace-nowrap hover:opacity-90 transition-opacity shadow-[0_2px_6px_rgba(127,85,57,0.12)] disabled:opacity-60">
+              <Upload className="h-4 w-4" /> Import Excel
+            </button>
+            <button type="button" onClick={() => setIsAddOpen(true)} className="h-8 px-4 bg-[#3a2314] dark:bg-transparent dark:border dark:border-[#2a2a2a] dark:text-white rounded border-0 cursor-pointer text-white text-sm font-medium whitespace-nowrap hover:opacity-90 dark:hover:bg-white/10 transition-colors shadow-[0_2px_6px_rgba(127,85,57,0.12)]">
+              <span className="dark:text-[#a06540]">+</span> Add Asset
+            </button>
+          </div>
+        </div>
+
+        <div className="min-h-[280px] max-h-[calc(100vh-320px)] overflow-auto border border-[#7F5539]/20 dark:border-[#7F5539]/40 rounded-lg scrollbar-invisible bg-white dark:bg-[#101211]">
+          <table className="w-full border-collapse table-fixed">
+            <thead className="sticky top-0 z-10 bg-[#f0eae4] dark:bg-[#101211] shadow-[0_1px_0_0_rgba(127,85,57,0.2)] dark:shadow-[0_1px_0_0_rgba(127,85,57,0.4)]">
+              <tr>
+                <th className="text-center text-sm font-semibold text-[#1e1e1e] dark:text-white py-3 px-4 w-14 bg-[#f0eae4] dark:bg-[#101211]">
+                  <button onClick={toggleSelectAll} className="hover:text-[#7f5539]">
                     {selectedIds.length === devices.length && devices.length > 0 ? (
                       <CheckSquare className="h-4 w-4" />
                     ) : (
@@ -588,47 +595,47 @@ export default function AssetManagementAccountsPage() {
                     )}
                   </button>
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Asset ID</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Device</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Brand</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Status</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">User</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Department</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Location</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Purchase</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Currency</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Last Updated</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Remarks</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-foreground">Actions</th>
+                <th className="text-left text-sm font-semibold text-[#1e1e1e] dark:text-white py-3 px-4 bg-[#f0eae4] dark:bg-[#101211]">Asset ID</th>
+                <th className="text-left text-sm font-semibold text-[#1e1e1e] dark:text-white py-3 px-4 bg-[#f0eae4] dark:bg-[#101211]">Device</th>
+                <th className="text-left text-sm font-semibold text-[#1e1e1e] dark:text-white py-3 px-4 bg-[#f0eae4] dark:bg-[#101211]">Brand</th>
+                <th className="text-left text-sm font-semibold text-[#1e1e1e] dark:text-white py-3 px-4 bg-[#f0eae4] dark:bg-[#101211]">Status</th>
+                <th className="text-left text-sm font-semibold text-[#1e1e1e] dark:text-white py-3 px-4 bg-[#f0eae4] dark:bg-[#101211]">User</th>
+                <th className="text-left text-sm font-semibold text-[#1e1e1e] dark:text-white py-3 px-4 bg-[#f0eae4] dark:bg-[#101211]">Department</th>
+                <th className="text-left text-sm font-semibold text-[#1e1e1e] dark:text-white py-3 px-4 bg-[#f0eae4] dark:bg-[#101211]">Location</th>
+                <th className="text-left text-sm font-semibold text-[#1e1e1e] dark:text-white py-3 px-4 bg-[#f0eae4] dark:bg-[#101211]">Purchase</th>
+                <th className="text-left text-sm font-semibold text-[#1e1e1e] dark:text-white py-3 px-4 bg-[#f0eae4] dark:bg-[#101211]">Currency</th>
+                <th className="text-left text-sm font-semibold text-[#1e1e1e] dark:text-white py-3 px-4 bg-[#f0eae4] dark:bg-[#101211]">Last Updated</th>
+                <th className="text-left text-sm font-semibold text-[#1e1e1e] dark:text-white py-3 px-4 bg-[#f0eae4] dark:bg-[#101211]">Remarks</th>
+                <th className="text-left text-sm font-semibold text-[#1e1e1e] dark:text-white py-3 px-4 bg-[#f0eae4] dark:bg-[#101211]">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="bg-white dark:bg-[#101211]">
               {loading ? (
-                <tr>
-                  <td colSpan={13} className="px-4 py-8 text-center text-muted-foreground">Loading...</td>
+                <tr className="bg-white dark:bg-[#101211]">
+                  <td colSpan={13} className="p-4 bg-white dark:bg-[#101211] text-center text-muted-foreground dark:text-gray-400">Loading...</td>
                 </tr>
               ) : devices.length === 0 ? (
-                <tr><td colSpan={13} className="px-4 py-8 text-center text-muted-foreground">No devices found</td></tr>
+                <tr className="bg-white dark:bg-[#101211]"><td colSpan={13} className="px-4 py-8 text-center text-muted-foreground dark:text-gray-400 bg-white dark:bg-[#101211]">No assets found</td></tr>
               ) : (
                 devices.map((device) => (
-                  <tr key={device.id} className="border-b border-border hover:bg-secondary/50 transition-colors">
-                    <td className="px-4 py-3 text-center">
-                      <button onClick={() => toggleSelect(device.id)} className="hover:text-primary">
+                  <tr key={device.id} className="border-t border-[#7F5539]/15 dark:border-[#7F5539]/30 bg-white dark:bg-[#101211] hover:bg-[#f5f0eb] dark:hover:bg-[#1a1a1a] transition-colors">
+                    <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle text-center">
+                      <button onClick={() => toggleSelect(device.id)} className="hover:text-[#7f5539]">
                         {selectedIds.includes(device.id) ? (
-                          <CheckSquare className="h-4 w-4 text-primary" />
+                          <CheckSquare className="h-4 w-4 text-[#7f5539]" />
                         ) : (
                           <Square className="h-4 w-4" />
                         )}
                       </button>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle">
                       <button
                         onClick={() => {
                           setSelected(device);
                           fetchAssetDetail(device.id);
                           setIsDetailOpen(true);
                         }}
-                        className="font-mono text-sm font-medium text-primary hover:underline cursor-pointer"
+                        className="font-mono text-sm font-medium text-[#7f5539] dark:text-[#a06540] hover:underline cursor-pointer transition-colors"
                       >
                         {device.code || "-"}
                       </button>
@@ -674,7 +681,7 @@ export default function AssetManagementAccountsPage() {
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="hover:bg-primary/10 hover:text-primary"
+                          className={device.status === "inactive" ? "hover:bg-destructive/10 hover:text-destructive" : "hover:bg-primary/10 hover:text-primary"}
                           onClick={() => {
                             setSelected(device);
                             setIsInactiveOpen(true);
@@ -703,7 +710,9 @@ export default function AssetManagementAccountsPage() {
                         }}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="hover:bg-destructive/10">
+                        <Button variant="ghost" size="sm" className="hover:bg-destructive/10"
+                          onClick={() => { setSelected(device); setIsDeleteOpen(true); }}
+                        >
                           <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
                       </div>
@@ -715,8 +724,7 @@ export default function AssetManagementAccountsPage() {
           </table>
         </div>
 
-        {/* Pagination */}
-        <div className="border-t border-border p-4">
+        <div className="mt-6 pt-4 border-t border-[#7F5539]/20 dark:border-[#7F5539]/40">
           <Pagination
             currentPage={pagination.page}
             totalPages={pagination.totalPages}
@@ -811,7 +819,7 @@ export default function AssetManagementAccountsPage() {
                       onClick={() => setShowDetailForm(!showDetailForm)}
                       className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity"
                     >
-                      <CardTitle className="text-base font-semibold text-primary">Asset Detail</CardTitle>
+                      <CardTitle className="text-base font-semibold text-[#7f5539] dark:text-[#a06540]">Asset Detail</CardTitle>
                       {showDetailForm ? (
                         <ChevronUp className="h-4 w-4 text-muted-foreground" />
                       ) : (
@@ -950,9 +958,10 @@ export default function AssetManagementAccountsPage() {
               </div>
             )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setIsAddOpen(false); resetForm(); }}>Cancel</Button>
+          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)]">
+            <Button variant="outline" className="min-w-[88px]" onClick={() => { setIsAddOpen(false); resetForm(); }}>Cancel</Button>
             <Button 
+              className="min-w-[120px] bg-[#7f5539] hover:bg-[#7f5539]/90"
               onClick={handleAdd} 
               disabled={
                 !formData.code || 
@@ -1016,7 +1025,7 @@ export default function AssetManagementAccountsPage() {
                       onClick={() => setShowDetailForm(!showDetailForm)}
                       className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity"
                     >
-                      <CardTitle className="text-base font-semibold text-primary">Asset Detail</CardTitle>
+                      <CardTitle className="text-base font-semibold text-[#7f5539] dark:text-[#a06540]">Asset Detail</CardTitle>
                       {showDetailForm ? (
                         <ChevronUp className="h-4 w-4 text-muted-foreground" />
                       ) : (
@@ -1155,9 +1164,9 @@ export default function AssetManagementAccountsPage() {
               </div>
             )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setIsEditOpen(false); resetForm(); }}>Cancel</Button>
-            <Button onClick={handleEdit}>Update Asset</Button>
+          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)]">
+            <Button variant="outline" className="min-w-[88px]" onClick={() => { setIsEditOpen(false); resetForm(); }}>Cancel</Button>
+            <Button className="min-w-[130px] bg-[#7f5539] hover:bg-[#7f5539]/90" onClick={handleEdit}>Update Asset</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1171,9 +1180,9 @@ export default function AssetManagementAccountsPage() {
               Are you sure you want to delete asset <strong>{selected?.code}</strong>? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={() => setIsDeleteOpen(false)}>Delete</Button>
+          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)]">
+            <Button variant="outline" className="min-w-[88px]" onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
+            <Button variant="destructive" className="min-w-[88px]" onClick={() => setIsDeleteOpen(false)}>Delete</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1195,9 +1204,9 @@ export default function AssetManagementAccountsPage() {
               <li>Remove department assignment</li>
             </ul>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsInactiveOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleInactive}>Deactivate</Button>
+          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)]">
+            <Button variant="outline" className="min-w-[88px]" onClick={() => setIsInactiveOpen(false)}>Cancel</Button>
+            <Button variant="destructive" className="min-w-[88px]" onClick={handleInactive}>Deactivate</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1255,12 +1264,29 @@ export default function AssetManagementAccountsPage() {
               No detail information available for this asset.
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDetailOpen(false)}>Close</Button>
+          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)]">
+            <Button variant="outline" className="min-w-[88px]" onClick={() => setIsDetailOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      </div>
+
+      {/* Import Result Dialog */}
+      <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+        <DialogContent className="bg-white border border-[rgba(127,85,57,0.2)]">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-medium text-[#1e1e1e]">Import Excel</DialogTitle>
+            <DialogDescription className="text-sm text-[#5d5d5d]">
+              {importResult?.success ? "File parsed successfully." : "Import failed."}
+            </DialogDescription>
+          </DialogHeader>
+          {importResult && (
+            <p className="text-sm text-[#1e1e1e] py-2">{importResult.message}</p>
+          )}
+          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)]">
+            <Button variant="outline" className="min-w-[88px]" onClick={() => { setIsImportOpen(false); setImportResult(null); }}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PermissionGuard>
   );
 }

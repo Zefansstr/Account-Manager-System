@@ -5,6 +5,7 @@ import { Plus, Edit, Trash2, Shield, Eye, Download, Upload, Power, Lock, Filter,
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Pagination } from "@/components/ui/pagination";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -268,6 +269,8 @@ const MENU_CONFIG: Record<string, {
 export default function OperatorRolesPage() {
   const [roles, setRoles] = useState<OperatorRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isPermissionOpen, setIsPermissionOpen] = useState(false);
@@ -380,6 +383,14 @@ export default function OperatorRolesPage() {
       fetchLookups();
     });
   }, []);
+
+  const totalPages = Math.max(1, Math.ceil(roles.length / limit));
+  const paginatedRoles = roles.slice((page - 1) * limit, page * limit);
+
+  const handlePageSizeChange = (newSize: number) => {
+    setLimit(newSize);
+    setPage(1);
+  };
 
   const resetForm = () => {
     setFormData({
@@ -687,135 +698,91 @@ export default function OperatorRolesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64 text-muted-foreground">
-        Loading roles...
+      <div className="flex flex-col w-full bg-[rgba(127,85,57,0.04)] dark:bg-[#101211] border border-[#7F5539]/20 dark:border-[#7F5539]/40 rounded-2xl p-6">
+        <div className="pb-5 border-b border-[#7F5539]/20 dark:border-[#7F5539]/40">
+          <h1 className="text-2xl font-medium text-[#1e1e1e] dark:text-white">Operator Roles</h1>
+          <p className="text-sm text-[rgba(127,85,57,0.62)] dark:text-gray-400 mt-1">Manage role templates with predefined permissions</p>
+        </div>
+        <div className="mt-6 flex items-center justify-center h-64 text-muted-foreground dark:text-gray-400">Loading roles...</div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Operator Roles</h2>
-          <p className="text-sm text-muted-foreground">
-            Manage role templates with predefined permissions
-          </p>
+    <div className="flex flex-col w-full bg-[rgba(127,85,57,0.04)] dark:bg-[#101211] border border-[#7F5539]/20 dark:border-[#7F5539]/40 rounded-2xl p-6">
+      <div className="pb-5 border-b border-[#7F5539]/20 dark:border-[#7F5539]/40 flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-medium text-[#1e1e1e] dark:text-white tracking-tight" style={{ fontFamily: "Inter, sans-serif" }}>Operator Roles</h1>
+            <span className="inline-flex items-center justify-center bg-[#3a2314] dark:bg-[#7f5539] text-white text-xs font-medium rounded min-w-[20px] h-5 px-1.5">{roles.length}</span>
+          </div>
+          <p className="text-sm text-[rgba(127,85,57,0.62)] dark:text-gray-400 mt-1">Manage role templates with predefined permissions</p>
         </div>
-        <Button onClick={() => setIsAddOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Role
-        </Button>
+        <Button onClick={() => setIsAddOpen(true)} className="bg-[#7f5539] hover:bg-[#7f5539]/90 text-white dark:bg-[#7f5539] dark:hover:bg-[#a06540]"><Plus className="mr-2 h-4 w-4" />Add Role</Button>
       </div>
 
-      <div className="rounded-lg border border-border bg-card shadow-lg">
-        <div className="overflow-x-auto">
-          <table className="w-full" style={{ tableLayout: "fixed" }}>
-            <thead>
-              <tr className="border-b border-border bg-secondary/50">
-                <th className="w-[15%] px-4 py-3 text-left text-sm font-semibold text-foreground">Code</th>
-                <th className="w-[20%] px-4 py-3 text-left text-sm font-semibold text-foreground">Role Name</th>
-                <th className="w-[30%] px-4 py-3 text-left text-sm font-semibold text-foreground">Description</th>
-                <th className="w-[10%] px-4 py-3 text-left text-sm font-semibold text-foreground">Users</th>
-                <th className="w-[10%] px-4 py-3 text-left text-sm font-semibold text-foreground">Status</th>
-                <th className="w-[15%] px-4 py-3 text-center text-sm font-semibold text-foreground">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {roles.map((role, index) => (
-                <tr
-                  key={role.id}
-                  className={`border-b border-border transition-colors hover:bg-secondary/30 ${
-                    index % 2 === 0 ? "bg-card" : "bg-secondary/10"
-                  }`}
-                >
-                  <td className="px-4 py-3 text-sm">
-                    <span className="font-medium text-primary">{role.role_code}</span>
-                  </td>
-                  <td className="px-4 py-3 text-sm">
+      <div className="min-h-[280px] max-h-[calc(100vh-320px)] overflow-auto border border-[#7F5539]/20 dark:border-[#7F5539]/40 rounded-lg scrollbar-invisible bg-white dark:bg-[#101211]">
+        <table className="w-full table-fixed border-collapse">
+          <thead className="sticky top-0 z-10 bg-[#f0eae4] dark:bg-[#101211] shadow-[0_1px_0_0_rgba(127,85,57,0.2)] dark:shadow-[0_1px_0_0_rgba(127,85,57,0.4)]">
+            <tr>
+              <th className="w-[15%] px-4 py-3 text-left text-sm font-semibold text-[#1e1e1e] dark:text-white bg-[#f0eae4] dark:bg-[#101211]">Code</th>
+              <th className="w-[20%] px-4 py-3 text-left text-sm font-semibold text-[#1e1e1e] dark:text-white bg-[#f0eae4] dark:bg-[#101211]">Role Name</th>
+              <th className="w-[30%] px-4 py-3 text-left text-sm font-semibold text-[#1e1e1e] dark:text-white bg-[#f0eae4] dark:bg-[#101211]">Description</th>
+              <th className="w-[10%] px-4 py-3 text-left text-sm font-semibold text-[#1e1e1e] dark:text-white bg-[#f0eae4] dark:bg-[#101211]">Users</th>
+              <th className="w-[10%] px-4 py-3 text-left text-sm font-semibold text-[#1e1e1e] dark:text-white bg-[#f0eae4] dark:bg-[#101211]">Status</th>
+              <th className="w-[15%] px-4 py-3 text-center text-sm font-semibold text-[#1e1e1e] dark:text-white bg-[#f0eae4] dark:bg-[#101211]">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white dark:bg-[#101211]">
+            {roles.length === 0 ? (
+              <tr className="bg-white dark:bg-[#101211]"><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground dark:text-gray-400">No roles found</td></tr>
+            ) : (
+              paginatedRoles.map((role) => (
+                <tr key={role.id} className="border-t border-[#7F5539]/15 dark:border-[#7F5539]/30 bg-white dark:bg-[#101211] hover:bg-[#f5f0eb] dark:hover:bg-[#1a1a1a] transition-colors">
+                  <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle"><span className="text-[#7f5539] dark:text-[#a06540] font-medium">{role.role_code}</span></td>
+                  <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle">
                     <div className="flex items-center gap-2">
-                      {role.is_system_role && (
-                        <div title="System Role - Cannot be deleted">
-                          <Lock className="h-3 w-3 text-destructive" />
-                        </div>
-                      )}
-                      <span className="font-medium text-foreground">{role.role_name}</span>
+                      {role.is_system_role && <Lock className="h-3 w-3 text-destructive shrink-0" title="System Role - Cannot be deleted" />}
+                      <span>{role.role_name}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">{role.description}</td>
-                  <td className="px-4 py-3 text-sm">
-                    <Badge variant="secondary" className="bg-primary/20 text-primary">
-                      {role.operator_count || 0}
-                    </Badge>
+                  <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle">{role.description}</td>
+                  <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle"><Badge variant="count">{role.operator_count || 0}</Badge></td>
+                  <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle">
+                    <Badge variant={role.status === "active" ? "success" : "secondary"} className={role.status === "active" ? "bg-emerald-50 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 border-emerald-200" : "bg-secondary text-muted-foreground"}>{role.status}</Badge>
                   </td>
-                  <td className="px-4 py-3 text-sm">
-                    <Badge
-                      variant={role.status === "active" ? "default" : "secondary"}
-                      className={
-                        role.status === "active"
-                          ? "bg-primary/20 text-primary border border-primary"
-                          : "bg-secondary text-muted-foreground"
-                      }
-                    >
-                      {role.status}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3">
+                  <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle">
                     <div className="flex items-center justify-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openModuleSelector(role)}
-                        className="hover:bg-primary/10 hover:text-primary"
-                        title="Manage Permissions"
-                      >
-                        <Shield className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openDataFilterModuleSelector(role)}
-                        className="hover:bg-primary/10 hover:text-primary"
-                        title="Data Filter"
-                      >
-                        <Filter className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openEditDialog(role)}
-                        className="hover:bg-primary/10 hover:text-primary"
-                        disabled={role.is_system_role}
-                        title="Edit Role"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedRole(role);
-                          setIsDeleteOpen(true);
-                        }}
-                        className="hover:bg-destructive/10 hover:text-destructive"
-                        disabled={role.is_system_role || (role.operator_count ? role.operator_count > 0 : false)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => openModuleSelector(role)} className="hover:bg-primary/10 hover:text-primary" title="Manage Permissions"><Shield className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => openDataFilterModuleSelector(role)} className="hover:bg-primary/10 hover:text-primary" title="Data Filter"><Filter className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => openEditDialog(role)} className="hover:bg-primary/10 hover:text-primary" disabled={role.is_system_role} title="Edit Role"><Edit className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => { setSelectedRole(role); setIsDeleteOpen(true); }} className="hover:bg-destructive/10 hover:text-destructive" disabled={role.is_system_role || (role.operator_count ? role.operator_count > 0 : false)}><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-6 pt-4 border-t border-[#7F5539]/20 dark:border-[#7F5539]/40">
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          isLoading={loading}
+          pageSize={limit}
+          onPageSizeChange={handlePageSizeChange}
+          totalRecords={roles.length}
+        />
       </div>
 
       {/* Add Role Dialog */}
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-[500px]">
+        <DialogContent className="bg-white dark:bg-[#101211] border border-[rgba(127,85,57,0.2)] dark:border-[#1f1f1f] sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Add New Role</DialogTitle>
+            <DialogTitle className="text-[#1e1e1e] dark:text-white">Add New Role</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -859,22 +826,18 @@ export default function OperatorRolesPage() {
               </select>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAdd} className="bg-primary hover:bg-primary/90">
-              Add Role
-            </Button>
+          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)]">
+            <Button variant="outline" className="min-w-[88px]" onClick={() => setIsAddOpen(false)}>Cancel</Button>
+            <Button onClick={handleAdd} className="min-w-[100px] bg-[#7f5539] hover:bg-[#7f5539]/90 text-white">Add Role</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Edit Role Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-[500px]">
+        <DialogContent className="bg-white dark:bg-[#101211] border border-[rgba(127,85,57,0.2)] dark:border-[#1f1f1f] sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Edit Role</DialogTitle>
+            <DialogTitle className="text-[#1e1e1e] dark:text-white">Edit Role</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -915,22 +878,18 @@ export default function OperatorRolesPage() {
               </select>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleEdit} className="bg-primary hover:bg-primary/90">
-              Save Changes
-            </Button>
+          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)]">
+            <Button variant="outline" className="min-w-[88px]" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+            <Button onClick={handleEdit} className="min-w-[120px] bg-[#7f5539] hover:bg-[#7f5539]/90 text-white">Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Module Selector Dialog */}
       <Dialog open={isModuleSelectorOpen} onOpenChange={setIsModuleSelectorOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-[500px]">
+        <DialogContent className="bg-white dark:bg-[#101211] border border-[rgba(127,85,57,0.2)] dark:border-[#1f1f1f] sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="text-foreground flex items-center gap-2">
+            <DialogTitle className="text-[#1e1e1e] dark:text-white flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
               Select Module - {selectedRole?.role_name}
             </DialogTitle>
@@ -992,24 +951,22 @@ export default function OperatorRolesPage() {
               </div>
             </button>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsModuleSelectorOpen(false)}>
-              Cancel
-            </Button>
+          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)]">
+            <Button variant="outline" className="min-w-[88px]" onClick={() => setIsModuleSelectorOpen(false)}>Cancel</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Permission Editor Dialog - SAMA SEPERTI DI OPERATORS PAGE */}
+      {/* Permission Editor Dialog */}
       <Dialog open={isPermissionOpen} onOpenChange={(open) => {
         setIsPermissionOpen(open);
         if (!open) {
           setSelectedModule(null);
         }
       }}>
-        <DialogContent className="bg-card border-border sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="bg-white dark:bg-[#101211] border border-[rgba(127,85,57,0.2)] dark:border-[#1f1f1f] sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-foreground flex items-center gap-2">
+            <DialogTitle className="text-[#1e1e1e] dark:text-white flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
               Manage Permissions - {selectedRole?.role_name} ({selectedModule === "account-management" ? "Account Management" : selectedModule === "product-management" ? "Product Management" : selectedModule === "asset-management" ? "Asset Management" : selectedModule === "operator-setting" ? "Operator Setting" : selectedModule})
             </DialogTitle>
@@ -1217,22 +1174,18 @@ export default function OperatorRolesPage() {
               );
             })}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsPermissionOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={savePermissions} className="bg-primary hover:bg-primary/90">
-              Save Permissions
-            </Button>
+          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)]">
+            <Button variant="outline" className="min-w-[88px]" onClick={() => setIsPermissionOpen(false)}>Cancel</Button>
+            <Button onClick={savePermissions} className="min-w-[140px] bg-[#7f5539] hover:bg-[#7f5539]/90 text-white">Save Permissions</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Data Filter Module Selector Dialog */}
       <Dialog open={isDataFilterModuleSelectorOpen} onOpenChange={setIsDataFilterModuleSelectorOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-[500px]">
+        <DialogContent className="bg-white dark:bg-[#101211] border border-[rgba(127,85,57,0.2)] dark:border-[#1f1f1f] sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="text-foreground flex items-center gap-2">
+            <DialogTitle className="text-[#1e1e1e] dark:text-white flex items-center gap-2">
               <Filter className="h-5 w-5 text-primary" />
               Select Module for Data Filter - {selectedRole?.role_name}
             </DialogTitle>
@@ -1280,10 +1233,8 @@ export default function OperatorRolesPage() {
               </div>
             </button>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDataFilterModuleSelectorOpen(false)}>
-              Cancel
-            </Button>
+          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)]">
+            <Button variant="outline" className="min-w-[88px]" onClick={() => setIsDataFilterModuleSelectorOpen(false)}>Cancel</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1295,9 +1246,9 @@ export default function OperatorRolesPage() {
           setSelectedDataFilterModule(null);
         }
       }}>
-        <DialogContent className="bg-card border-border sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="bg-white dark:bg-[#101211] border border-[rgba(127,85,57,0.2)] dark:border-[#1f1f1f] sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-foreground flex items-center gap-2">
+            <DialogTitle className="text-[#1e1e1e] dark:text-white flex items-center gap-2">
               <Filter className="h-5 w-5 text-primary" />
               Data Filter - {selectedRole?.role_name} ({selectedDataFilterModule === "account-management" ? "Account Management" : selectedDataFilterModule === "product-management" ? "Product Management" : selectedDataFilterModule === "asset-management" ? "Asset Management" : selectedDataFilterModule === "operator-setting" ? "Operator Setting" : selectedDataFilterModule})
             </DialogTitle>
@@ -1643,26 +1594,22 @@ export default function OperatorRolesPage() {
               </div>
             )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDataFilterOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={saveDataFilters} className="bg-primary hover:bg-primary/90">
-              Save Data Filters
-            </Button>
+          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)]">
+            <Button variant="outline" className="min-w-[88px]" onClick={() => setIsDataFilterOpen(false)}>Cancel</Button>
+            <Button onClick={saveDataFilters} className="min-w-[140px] bg-[#7f5539] hover:bg-[#7f5539]/90 text-white">Save Data Filters</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-[400px]">
+        <DialogContent className="bg-white dark:bg-[#101211] border border-[rgba(127,85,57,0.2)] dark:border-[#1f1f1f] sm:max-w-[400px]">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Confirm Delete</DialogTitle>
+            <DialogTitle className="text-[#1e1e1e] dark:text-white">Confirm Delete</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p className="text-sm text-muted-foreground">
-              Are you sure you want to delete role <strong className="text-foreground">{selectedRole?.role_name}</strong>? 
+            <p className="text-sm text-muted-foreground dark:text-gray-400">
+              Are you sure you want to delete role <strong className="text-[#1e1e1e] dark:text-white">{selectedRole?.role_name}</strong>? 
               {selectedRole?.is_system_role && (
                 <span className="block mt-2 text-destructive font-semibold">
                   This is a system role and cannot be deleted.
@@ -1675,17 +1622,9 @@ export default function OperatorRolesPage() {
               )}
             </p>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={selectedRole?.is_system_role || (selectedRole?.operator_count ? selectedRole.operator_count > 0 : false)}
-            >
-              Delete
-            </Button>
+          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)]">
+            <Button variant="outline" className="min-w-[88px]" onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
+            <Button variant="destructive" className="min-w-[88px]" onClick={handleDelete} disabled={selectedRole?.is_system_role || (selectedRole?.operator_count ? selectedRole.operator_count > 0 : false)}>Delete</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

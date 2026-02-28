@@ -44,13 +44,13 @@ export function FilterDropdown({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex h-8 items-center justify-between gap-2 pl-4 pr-8 bg-nexgate-brown rounded border-0 cursor-pointer text-white text-[13px] font-medium leading-none whitespace-nowrap w-full min-w-[var(--min-w)] shadow-[0_2px_6px_rgba(127,85,57,0.12)] hover:opacity-95 transition-opacity focus:outline-none focus:ring-2 focus:ring-nexgate-brown/50 focus:ring-offset-2 focus:ring-offset-white"
+        className="flex h-8 items-center justify-between gap-2 pl-4 pr-8 rounded border border-[#7F5539]/30 dark:border-[#7F5539]/50 bg-[#7F5539] dark:bg-[#7F5539] text-white text-[13px] font-medium leading-none whitespace-nowrap w-full min-w-[var(--min-w)] shadow-[0_2px_6px_rgba(127,85,57,0.25)] hover:bg-[#6b4730] dark:hover:bg-[#8f6342] transition-colors focus:outline-none focus:ring-2 focus:ring-[#7F5539]/50 focus:ring-offset-2"
         style={{ ["--min-w" as string]: minWidth }}
       >
-        <span className="truncate text-left">{displayLabel}</span>
+        <span className="truncate text-left text-white">{displayLabel}</span>
         <ChevronDown
           className={cn(
-            "absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 flex-shrink-0 pointer-events-none transition-transform duration-200",
+            "absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 flex-shrink-0 pointer-events-none text-white transition-transform duration-200",
             open && "rotate-180"
           )}
           strokeWidth={2.5}
@@ -58,7 +58,7 @@ export function FilterDropdown({
       </button>
       {open && (
         <div
-          className="absolute top-full left-0 z-50 mt-1.5 min-w-full rounded-md border border-[rgba(127,85,57,0.2)] dark:border-[#1f1f1f] bg-white dark:bg-[#101211] shadow-[0_4px_14px_rgba(127,85,57,0.15)] dark:shadow-xl overflow-hidden"
+          className="absolute top-full left-0 z-50 mt-1.5 min-w-full rounded border border-[#7F5539]/30 dark:border-[#7F5539]/50 bg-white dark:bg-[#101211] shadow-[0_4px_14px_rgba(127,85,57,0.15)] dark:shadow-xl overflow-hidden"
           style={{ minWidth }}
         >
           <div className="max-h-[15rem] overflow-y-auto py-1">

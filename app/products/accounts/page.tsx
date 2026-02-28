@@ -327,9 +327,8 @@ export default function ProductsAccountsPage() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-card shadow-lg">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+      <div className="min-h-[280px] max-h-[calc(100vh-320px)] overflow-auto border border-[#7F5539]/20 dark:border-[#7F5539]/40 rounded-lg scrollbar-invisible bg-white dark:bg-[#101211]">
+        <table className="w-full border-collapse table-fixed">
             <thead>
               <tr className="border-b border-border bg-secondary">
                 <th className="px-4 py-3 text-center text-sm font-semibold text-foreground w-[50px]">
@@ -449,20 +448,18 @@ export default function ProductsAccountsPage() {
               )}
             </tbody>
           </table>
-        </div>
+      </div>
 
-        {/* Pagination */}
-        <div className="border-t border-border p-4">
-          <Pagination
-            currentPage={pagination.page}
-            totalPages={pagination.totalPages}
-            onPageChange={setPage}
-            isLoading={loading}
-            pageSize={limit}
-            onPageSizeChange={() => {}}
-            totalRecords={pagination.total}
-          />
-        </div>
+      <div className="mt-6 pt-4 border-t border-[#7F5539]/20 dark:border-[#7F5539]/40">
+        <Pagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={setPage}
+          isLoading={loading}
+          pageSize={limit}
+          onPageSizeChange={() => {}}
+          totalRecords={pagination.total}
+        />
       </div>
 
       {/* Add Dialog */}

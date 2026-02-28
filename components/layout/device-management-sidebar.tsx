@@ -112,15 +112,15 @@ export function AssetManagementSidebar() {
   const showSettingsMenu = visibleSettingsSubmenus.length > 0;
 
   const navItemClass = "flex items-center gap-3 rounded py-2 px-3 text-sm font-medium transition-colors";
-  const navItemActive = "bg-nexgate-brown text-white";
-  const navItemInactive = "text-nexgate-text dark:text-gray-200 hover:bg-[rgba(127,85,57,0.08)] dark:hover:bg-white/10";
+  const navItemActive = "bg-[#7f5539] text-white";
+  const navItemInactive = "text-[#1e1e1e] dark:text-gray-200 hover:bg-[rgba(127,85,57,0.08)] dark:hover:bg-white/10";
   const submenuItemClass = "flex items-center gap-3 rounded py-2 px-3 text-sm font-medium transition-colors";
   const isSettingsActive = visibleSettingsSubmenus.some(item => pathname === item.href || pathname.startsWith(item.href + "/"));
 
   return (
-    <aside className="sticky top-14 z-40 h-[calc(100vh-3.5rem)] w-[242px] flex-shrink-0 bg-white dark:bg-[#000000] border-r border-[rgba(127,85,57,0.08)] dark:border-[#1f1f1f] overflow-y-auto">
+    <aside className="sticky top-14 z-40 h-[calc(100vh-3.5rem)] w-[242px] flex-shrink-0 bg-white dark:bg-[#000000] overflow-y-auto">
       <nav className="flex h-full flex-col p-4">
-        <p className="text-xs font-medium text-nexgate-textMuted dark:text-gray-400 mb-3 px-1 mt-1">Asset Management</p>
+        <p className="text-xs font-medium text-[rgba(127,85,57,0.62)] dark:text-gray-400 mb-3 px-1 mt-1">Asset Management</p>
         <div className="flex flex-col gap-1">
         {menuItems.map((item) => {
           if (!visibleMenus.includes(item.menuName)) return null;
@@ -163,7 +163,7 @@ export function AssetManagementSidebar() {
                       prefetch={true}
                       className={cn(
                         submenuItemClass,
-                        isActive ? "bg-nexgate-brown/10 text-nexgate-brown dark:bg-nexgate-brown/20 dark:text-nexgate-brownLight" : "text-nexgate-textMuted dark:text-gray-400 hover:bg-[rgba(127,85,57,0.08)] dark:hover:bg-white/10"
+                        isActive ? "bg-[#7f5539]/10 text-[#7f5539] dark:bg-[#7f5539]/20 dark:text-[#a06540]" : "text-gray-600 dark:text-gray-400 hover:bg-[rgba(127,85,57,0.08)] dark:hover:bg-white/10"
                       )}
                     >
                       <Icon className="h-4 w-4 flex-shrink-0" />

@@ -119,11 +119,14 @@ export async function GET(request: NextRequest) {
       query = query.eq("status", filterStatus);
     }
     
-    // Execute query with ordering, pagination, and count
-    const { data, error, count } = await query
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
+    // Fetch applications & lines dari tabel (untuk dropdown filter) — satu request
+    const [accountsResult, applicationsRes, linesRes] = await Promise.all([
+      query.order("created_at", { ascending: false }).range(offset, offset + limit - 1),
+      supabase.from("applications").select("id, app_code, app_name").order("app_name").limit(500),
+      supabase.from("lines").select("id, line_code, line_name").order("line_code").limit(500),
+    ]);
 
+    const { data, error, count } = accountsResult;
     if (error) throw error;
 
     const transformed = data?.map((acc: any) => ({
@@ -142,14 +145,27 @@ export async function GET(request: NextRequest) {
       status: acc.status,
     }));
 
-    return NextResponse.json({ 
+    const applications = (applicationsRes.data || []).map((app: any) => ({
+      id: app.id,
+      code: app.app_code,
+      name: app.app_name,
+    }));
+    const lines = (linesRes.data || []).map((line: any) => ({
+      id: line.id,
+      code: line.line_code,
+      name: line.line_name,
+    }));
+
+    return NextResponse.json({
       data: transformed,
       pagination: {
         page,
         limit,
         total: count || 0,
         totalPages: Math.ceil((count || 0) / limit),
-      }
+      },
+      applications,
+      lines,
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
