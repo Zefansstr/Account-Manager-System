@@ -202,10 +202,6 @@ export function Sidebar() {
   // Only show Operators menu when in Operator Setting pages
   const shouldShowOnlyOperators = isOperatorSetting;
   
-  // Hide Operators menu when in Account Management (dashboard/accounts)
-  const isAccountManagement = pathname === "/dashboard" || pathname === "/accounts" || pathname.startsWith("/accounts/") || pathname.startsWith("/dashboard/");
-  const shouldHideOperatorsMenu = isAccountManagement;
-
   // Settings area: /settings, /applications, /lines, /departments, /roles — pakai tema coklat sama seperti account management
   const isSettingsArea =
     pathname === "/settings" ||
@@ -213,6 +209,10 @@ export function Sidebar() {
     pathname?.startsWith("/lines") ||
     pathname?.startsWith("/departments") ||
     pathname?.startsWith("/roles");
+
+  // Hide Operators menu when in Account Management (dashboard/accounts) or Settings area
+  const isAccountManagement = pathname === "/dashboard" || pathname === "/accounts" || pathname.startsWith("/accounts/") || pathname.startsWith("/dashboard/");
+  const shouldHideOperatorsMenu = isAccountManagement || isSettingsArea;
   // Show Operators menu if in Operator Setting pages OR if has permission and not in Account Management
   const showOperatorsMenu = isOperatorSetting || (visibleOperatorSubmenus.length > 0 && !shouldHideOperatorsMenu);
   const showSettingsMenu = visibleSettingsSubmenus.length > 0;

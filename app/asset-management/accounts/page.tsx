@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
-import { Plus, Edit, Trash2, Power, CheckSquare, Square, Search, Upload, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Edit, Trash2, Power, CheckSquare, Square, Search, Upload, ChevronDown, ChevronUp, Download } from "lucide-react";
 import { FilterDropdown } from "@/components/ui/filter-dropdown";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,9 +42,11 @@ export default function AssetManagementAccountsPage() {
   const [brandList, setBrandList] = useState<LookupData>([]);
   const [brandFilterList, setBrandFilterList] = useState<string[]>([]);
   const [locationList, setLocationList] = useState<string[]>([]);
+  const [types, setTypes] = useState<LookupData>([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
   const [isInactiveOpen, setIsInactiveOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selected, setSelected] = useState<Device | null>(null);
@@ -88,6 +90,18 @@ export default function AssetManagementAccountsPage() {
   });
 
   const menuName = "Accounts";
+
+  // Helper function to check if item requires full detail form (Laptop, All In One, Computer)
+  const requiresFullDetail = (item: string): boolean => {
+    if (!item) return false;
+    const itemLower = item.toLowerCase();
+    return (
+      itemLower.includes("laptop") ||
+      itemLower.includes("all in one") ||
+      itemLower.includes("all-in-one") ||
+      itemLower.includes("computer")
+    );
+  };
 
   // Get status badge color
   const getStatusBadge = (status: string | undefined) => {
@@ -158,6 +172,12 @@ export default function AssetManagementAccountsPage() {
       const deptJson = await deptRes.json();
       if (deptRes.ok) {
         setDepartments(deptJson.data || []);
+      }
+      // Fetch types for import mapping
+      const typesRes = await fetch("/api/asset-management/applications");
+      const typesJson = await typesRes.json();
+      if (typesRes.ok) {
+        setTypes(typesJson.data || []);
       }
     } catch (error) {
       console.error("Error fetching lookups:", error);
@@ -263,29 +283,171 @@ export default function AssetManagementAccountsPage() {
   const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     setIsImporting(true);
     setImportResult(null);
+
     try {
       const data = await file.arrayBuffer();
-      const wb = XLSX.read(data, { type: "array" });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws);
-      const total = rows.length;
-      setImportResult({
-        success: true,
-        message: total > 0 ? `Parsed ${total} row(s) from Excel. Import to database is not yet configured for assets.` : "No data rows found in the file.",
-        total,
-        imported: 0,
+      const workbook = XLSX.read(data);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      // Map Excel columns to database fields
+      const assetsToImport = jsonData.map((row: any) => {
+        // Find type ID by code/name
+        const type = types.find((t: { id: string; code: string; name: string }) => 
+          t.code === row.Type || t.name === row.Type
+        );
+
+        const item = row.Item || row.Device || null;
+        const needsFullDetail = requiresFullDetail(item || "");
+
+        return {
+          code: row.Code || row["Asset ID"],
+          typeId: type?.id || null,
+          brand: row.Brand || null,
+          item: item,
+          userUse: row["User Use"] || row.User || null,
+          note: row.Note || row.Remarks || null,
+          departmentTeam: row["Department Team"] || row.Department || null,
+          storageLocation: row["Storage Location"] || row.Location || null,
+          purchaseAmount: row["Purchase Amount"] || row.Purchase || null,
+          currency: row.Currency || null,
+          status: row.Status || "not_used",
+          // Asset Details (optional, but required for Laptop/All In One/Computer)
+          details: needsFullDetail ? {
+            condition: row.Condition || null,
+            yearOfPurchase: row["Year of Purchase"] || row["Year Of Purchase"] || null,
+            yearOfProduction: row["Year of Production"] || row["Year Of Production"] || null,
+            cpu: row.CPU || null,
+            gpu: row.GPU || null,
+            ram: row.RAM || null,
+            memory: row.Memory || null,
+            item: row["Detail Item"] || row["Detail Item Name"] || null,
+          } : {
+            condition: row.Condition || null,
+            yearOfPurchase: row["Year of Purchase"] || row["Year Of Purchase"] || null,
+            yearOfProduction: null,
+            cpu: null,
+            gpu: null,
+            ram: null,
+            memory: null,
+            item: null,
+          },
+        };
+      }).filter((asset: any) => asset.code && asset.item); // Filter out invalid rows
+
+      if (assetsToImport.length === 0) {
+        setImportResult({
+          success: false,
+          message: "No valid assets found. Please ensure Code and Item columns are filled.",
+          total: jsonData.length,
+          imported: 0,
+        });
+        setIsImportOpen(true);
+        return;
+      }
+
+      // Get user ID
+      const operatorStr = localStorage.getItem("operator");
+      const userId = operatorStr ? JSON.parse(operatorStr).id : null;
+
+      // Send to API
+      const res = await fetch("/api/asset-management/accounts/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assets: assetsToImport, userId }),
       });
-      setIsImportOpen(true);
-    } catch (err) {
-      console.error(err);
-      setImportResult({ success: false, message: "Failed to read Excel file." });
-      setIsImportOpen(true);
+
+      const result = await res.json();
+
+      if (res.ok) {
+        setImportResult({
+          success: true,
+          message: result.message,
+          imported: result.imported,
+          total: result.total,
+        });
+        fetchDevices(); // Refresh table
+      } else {
+        setImportResult({
+          success: false,
+          message: result.error || "Import failed",
+          total: assetsToImport.length,
+          imported: 0,
+        });
+      }
+    } catch (error: any) {
+      console.error("Import error:", error);
+      setImportResult({
+        success: false,
+        message: error.message || "Failed to parse Excel file",
+      });
     } finally {
       setIsImporting(false);
-      e.target.value = "";
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
+  };
+
+  // Download Excel template
+  const downloadTemplate = () => {
+    const template = [
+      {
+        "Asset ID": "ASSET001",
+        "Type": "Laptop",
+        "Brand": "Dell",
+        "Item": "Laptop Dell XPS 15",
+        "User Use": "John Doe",
+        "Department Team": "IT Department",
+        "Storage Location": "Warehouse A",
+        "Purchase Amount": "15000000",
+        "Currency": "IDR",
+        "Note": "Example asset",
+        "Status": "not_used",
+        // Asset Details (optional, required for Laptop/All In One/Computer)
+        "Condition": "New",
+        "Year of Purchase": "2024",
+        "Year of Production": "2024",
+        "CPU": "Intel Core i7-12700H",
+        "GPU": "NVIDIA RTX 3060",
+        "RAM": "16GB DDR4",
+        "Memory": "512GB SSD",
+        "Detail Item": "Dell XPS 15 9520",
+      },
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(template);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Assets Template");
+
+    // Set column widths
+    worksheet["!cols"] = [
+      { wch: 15 }, // Asset ID
+      { wch: 15 }, // Type
+      { wch: 15 }, // Brand
+      { wch: 30 }, // Item
+      { wch: 20 }, // User Use
+      { wch: 20 }, // Department Team
+      { wch: 20 }, // Storage Location
+      { wch: 18 }, // Purchase Amount
+      { wch: 12 }, // Currency
+      { wch: 30 }, // Note
+      { wch: 12 }, // Status
+      { wch: 12 }, // Condition
+      { wch: 18 }, // Year of Purchase
+      { wch: 18 }, // Year of Production
+      { wch: 25 }, // CPU
+      { wch: 25 }, // GPU
+      { wch: 15 }, // RAM
+      { wch: 15 }, // Memory
+      { wch: 30 }, // Detail Item
+    ];
+
+    XLSX.writeFile(workbook, "Assets_Master_Import_Template.xlsx");
   };
 
   // Fetch asset detail
@@ -347,12 +509,12 @@ export default function AssetManagementAccountsPage() {
     }
 
     // Validate detail form based on device type
-    const isLaptopOrComputer = formData.item.toLowerCase().includes("laptop") || formData.item.toLowerCase().includes("computer");
+    const needsFullDetail = requiresFullDetail(formData.item);
     
-    if (isLaptopOrComputer) {
-      // For Laptop/Computer: Condition, Year of Production, CPU, GPU, RAM, Memory are required
+    if (needsFullDetail) {
+      // For Laptop/All In One/Computer: Condition, Year of Production, CPU, GPU, RAM, Memory are required
       if (!detailData.condition || !detailData.yearOfProduction || !detailData.cpu || !detailData.gpu || !detailData.ram || !detailData.memory) {
-        toast.error("For Laptop/Computer, Condition, Year of Production, CPU, GPU, RAM, and Memory are required in Asset Detail");
+        toast.error("For Laptop/All In One/Computer, Condition, Year of Production, CPU, GPU, RAM, and Memory are required in Asset Detail");
         return;
       }
     } else {
@@ -468,6 +630,70 @@ export default function AssetManagementAccountsPage() {
     }
   };
 
+  // Handle delete device
+  const handleDelete = async () => {
+    if (!selected) {
+      toast.error("No asset selected");
+      return;
+    }
+
+    try {
+      const operatorStr = localStorage.getItem("operator");
+      const userId = operatorStr ? JSON.parse(operatorStr).id : null;
+
+      const res = await fetch(`/api/asset-management/accounts/${selected.id}?userId=${userId}`, {
+        method: "DELETE",
+      });
+
+      const json = await res.json();
+
+      if (res.ok) {
+        toast.success(`Asset "${selected.code}" deleted successfully!`);
+        setIsDeleteOpen(false);
+        setSelected(null);
+        fetchDevices();
+      } else {
+        toast.error(json.error || "Failed to delete asset");
+      }
+    } catch (error: any) {
+      console.error("Error deleting asset:", error);
+      toast.error(error.message || "Failed to delete asset. Please try again.");
+    }
+  };
+
+  // Handle bulk delete
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) {
+      toast.error("No assets selected");
+      return;
+    }
+
+    try {
+      const operatorStr = localStorage.getItem("operator");
+      const userId = operatorStr ? JSON.parse(operatorStr).id : null;
+
+      const res = await fetch("/api/asset-management/accounts/bulk-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assetIds: selectedIds, userId }),
+      });
+
+      const json = await res.json();
+
+      if (res.ok) {
+        toast.success(`Successfully deleted ${selectedIds.length} asset(s)!`);
+        setSelectedIds([]);
+        setIsBulkDeleteOpen(false);
+        fetchDevices();
+      } else {
+        toast.error(json.error || "Failed to delete assets. Please try again.");
+      }
+    } catch (error: any) {
+      console.error("Error bulk deleting:", error);
+      toast.error(error.message || "An error occurred while deleting assets. Please try again.");
+    }
+  };
+
   // Handle edit device
   const handleEdit = async () => {
     if (!selected) {
@@ -573,14 +799,36 @@ export default function AssetManagementAccountsPage() {
             </div>
             <div className="h-8 w-px flex-shrink-0 bg-[rgba(127,85,57,0.2)]" aria-hidden />
             <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleImportExcel} className="hidden" />
-            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isImporting} className="flex items-center gap-2 h-8 px-4 bg-[#a06540] rounded border-0 cursor-pointer text-white text-sm font-medium whitespace-nowrap hover:opacity-90 transition-opacity shadow-[0_2px_6px_rgba(127,85,57,0.12)] disabled:opacity-60">
-              <Upload className="h-4 w-4" /> Import Excel
+            <button
+              type="button"
+              onClick={() => setIsImportOpen(true)}
+              className="flex items-center gap-2 h-8 px-4 bg-[#a06540] rounded border-0 cursor-pointer text-white text-sm font-medium whitespace-nowrap hover:opacity-90 transition-opacity shadow-[0_2px_6px_rgba(127,85,57,0.12)]"
+            >
+              <Upload className="h-4 w-4" />
+              Import Excel
             </button>
             <button type="button" onClick={() => setIsAddOpen(true)} className="h-8 px-4 bg-[#3a2314] dark:bg-transparent dark:border dark:border-[#2a2a2a] dark:text-white rounded border-0 cursor-pointer text-white text-sm font-medium whitespace-nowrap hover:opacity-90 dark:hover:bg-white/10 transition-colors shadow-[0_2px_6px_rgba(127,85,57,0.12)]">
               <span className="dark:text-[#a06540]">+</span> Add Asset
             </button>
           </div>
         </div>
+
+        {selectedIds.length > 0 && (
+          <div className="flex items-center gap-4 py-3 px-4 rounded bg-[#7f5539]/5 dark:bg-[#7f5539]/15 border border-[#7f5539]/20 dark:border-[#7f5539]/30 mb-4">
+            <span className="text-sm font-medium bg-[#7f5539]/10 dark:bg-[#7f5539]/20 text-[#7f5539] dark:text-[#a06540] px-3 py-1.5 rounded">
+              {selectedIds.length} selected
+            </span>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setIsBulkDeleteOpen(true)}
+              className="border-2 border-red-600 bg-red-600 hover:bg-red-700 text-white shadow-[0_2px_6px_rgba(0,0,0,0.08)]"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete Selected
+            </Button>
+          </div>
+        )}
 
         <div className="min-h-[280px] max-h-[calc(100vh-320px)] overflow-auto border border-[#7F5539]/20 dark:border-[#7F5539]/40 rounded-lg scrollbar-invisible bg-white dark:bg-[#101211]">
           <table className="w-full border-collapse table-fixed">
@@ -827,15 +1075,15 @@ export default function AssetManagementAccountsPage() {
                       )}
                     </button>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {formData.item.toLowerCase().includes("laptop") || formData.item.toLowerCase().includes("computer")
-                        ? "Add detailed specifications (for Laptop/Computer)"
+                      {requiresFullDetail(formData.item)
+                        ? "Add detailed specifications (for Laptop/All In One/Computer)"
                         : "Add basic details (Condition & Year of Purchase)"}
                     </p>
                   </CardHeader>
                   {showDetailForm && (
                     <CardContent className="pt-0">
-                      {formData.item.toLowerCase().includes("laptop") || formData.item.toLowerCase().includes("computer") ? (
-                        // Full detail form for Laptop/Computer
+                      {requiresFullDetail(formData.item) ? (
+                        // Full detail form for Laptop/All In One/Computer
                         <div className="grid grid-cols-2 gap-4">
                           <div className="grid gap-2">
                             <Label className="text-sm font-medium">Condition *</Label>
@@ -969,7 +1217,7 @@ export default function AssetManagementAccountsPage() {
                 !formData.item || 
                 !formData.purchaseAmount || 
                 !formData.currency ||
-                (formData.item.toLowerCase().includes("laptop") || formData.item.toLowerCase().includes("computer")
+                (requiresFullDetail(formData.item)
                   ? (!detailData.condition || !detailData.yearOfProduction || !detailData.cpu || !detailData.gpu || !detailData.ram || !detailData.memory)
                   : !detailData.condition)
               }
@@ -1033,15 +1281,15 @@ export default function AssetManagementAccountsPage() {
                       )}
                     </button>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {formData.item.toLowerCase().includes("laptop") || formData.item.toLowerCase().includes("computer")
-                        ? "Edit detailed specifications (for Laptop/Computer)"
+                      {requiresFullDetail(formData.item)
+                        ? "Edit detailed specifications (for Laptop/All In One/Computer)"
                         : "Edit basic details (Condition & Year of Purchase)"}
                     </p>
                   </CardHeader>
                   {showDetailForm && (
                     <CardContent className="pt-0">
-                      {formData.item.toLowerCase().includes("laptop") || formData.item.toLowerCase().includes("computer") ? (
-                        // Full detail form for Laptop/Computer
+                      {requiresFullDetail(formData.item) ? (
+                        // Full detail form for Laptop/All In One/Computer
                         <div className="grid grid-cols-2 gap-4">
                           <div className="grid gap-2">
                             <Label className="text-sm font-medium">Condition</Label>
@@ -1171,18 +1419,70 @@ export default function AssetManagementAccountsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Dialog */}
-      <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Asset</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete asset <strong>{selected?.code}</strong>? This action cannot be undone.
+      {/* Bulk Delete Dialog */}
+      <Dialog open={isBulkDeleteOpen} onOpenChange={setIsBulkDeleteOpen}>
+        <DialogContent className="bg-white dark:bg-[#101211] border border-[rgba(127,85,57,0.2)] dark:border-[#1f1f1f]">
+          <DialogHeader className="text-left">
+            <DialogTitle className="text-lg font-medium text-[#1e1e1e] dark:text-white" style={{ fontFamily: 'Inter, sans-serif' }}>Delete Multiple Assets</DialogTitle>
+            <DialogDescription className="text-sm text-[#5d5d5d] dark:text-gray-400">
+              Are you sure you want to delete <strong className="text-[#1e1e1e] dark:text-white">{selectedIds.length} asset(s)</strong>? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)]">
-            <Button variant="outline" className="min-w-[88px]" onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
-            <Button variant="destructive" className="min-w-[88px]" onClick={() => setIsDeleteOpen(false)}>Delete</Button>
+          <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4">
+            <p className="text-sm font-medium text-red-700 dark:text-red-400">⚠️ Warning</p>
+            <p className="text-sm text-[#5d5d5d] dark:text-gray-400 mt-1">
+              You are about to permanently delete {selectedIds.length} asset(s). This will remove all asset data and cannot be recovered.
+            </p>
+          </div>
+          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)] dark:border-[#1f1f1f]">
+            <Button 
+              variant="outline" 
+              className="min-w-[88px] border-[rgba(127,85,57,0.2)] dark:border-[#2a2a2a] text-[#1e1e1e] dark:text-white hover:bg-[#7f5539]/10 dark:hover:bg-white/10" 
+              onClick={() => setIsBulkDeleteOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              className="min-w-[140px] bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700" 
+              onClick={handleBulkDelete}
+            >
+              Delete {selectedIds.length} Asset(s)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <DialogContent className="bg-white dark:bg-[#101211] border border-[rgba(127,85,57,0.2)] dark:border-[#1f1f1f]">
+          <DialogHeader className="text-left">
+            <DialogTitle className="text-lg font-medium text-[#1e1e1e] dark:text-white" style={{ fontFamily: 'Inter, sans-serif' }}>Delete Asset</DialogTitle>
+            <DialogDescription className="text-sm text-[#5d5d5d] dark:text-gray-400">
+              Are you sure you want to delete asset <strong className="text-[#1e1e1e] dark:text-white">{selected?.code}</strong>? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4">
+            <p className="text-sm font-medium text-red-700 dark:text-red-400">⚠️ Warning</p>
+            <p className="text-sm text-[#5d5d5d] dark:text-gray-400 mt-1">
+              You are about to permanently delete this asset. This will remove all asset data and cannot be recovered.
+            </p>
+          </div>
+          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)] dark:border-[#1f1f1f]">
+            <Button 
+              variant="outline" 
+              className="min-w-[88px] border-[rgba(127,85,57,0.2)] dark:border-[#2a2a2a] text-[#1e1e1e] dark:text-white hover:bg-[#7f5539]/10 dark:hover:bg-white/10" 
+              onClick={() => setIsDeleteOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              className="min-w-[88px] bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700" 
+              onClick={handleDelete}
+            >
+              Delete
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1213,77 +1513,272 @@ export default function AssetManagementAccountsPage() {
 
       {/* Detail Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Asset Detail - {selected?.code}</DialogTitle>
-            <DialogDescription>Detailed specifications for this asset</DialogDescription>
+        <DialogContent className="max-w-3xl bg-white dark:bg-[#101211] border border-[rgba(127,85,57,0.2)] dark:border-[#1f1f1f]">
+          <DialogHeader className="text-left">
+            <DialogTitle className="text-lg font-medium text-[#1e1e1e] dark:text-white" style={{ fontFamily: 'Inter, sans-serif' }}>
+              Asset Detail - {selected?.code}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-[#5d5d5d] dark:text-gray-400">
+              {selected?.item && requiresFullDetail(selected.item)
+                ? "Detailed specifications for this asset"
+                : "Basic information for this asset"}
+            </DialogDescription>
           </DialogHeader>
           {assetDetail ? (
             <div className="py-4">
-              <div className="rounded-lg border border-border">
+              <div className="rounded-lg border border-[rgba(127,85,57,0.12)] dark:border-[#1f1f1f] bg-[#faf8f6] dark:bg-[#1a1a1a]">
                 <table className="w-full">
                   <tbody>
-                    <tr className="border-b border-border">
-                      <td className="px-4 py-3 font-semibold bg-secondary/50 w-1/3">Condition</td>
-                      <td className="px-4 py-3">{assetDetail.condition || "-"}</td>
+                    <tr className="border-b border-[rgba(127,85,57,0.08)] dark:border-[#1f1f1f]">
+                      <td className="px-4 py-3 font-semibold bg-[#e8e0d5]/50 dark:bg-[#2a2a2a] w-1/3 text-[#1e1e1e] dark:text-white">Condition</td>
+                      <td className="px-4 py-3 text-[#1e1e1e] dark:text-white">{assetDetail.condition || "-"}</td>
                     </tr>
-                    <tr className="border-b border-border">
-                      <td className="px-4 py-3 font-semibold bg-secondary/50">Year of Purchase</td>
-                      <td className="px-4 py-3">{assetDetail.year_of_purchase || "-"}</td>
+                    <tr className="border-b border-[rgba(127,85,57,0.08)] dark:border-[#1f1f1f]">
+                      <td className="px-4 py-3 font-semibold bg-[#e8e0d5]/50 dark:bg-[#2a2a2a] text-[#1e1e1e] dark:text-white">Year of Purchase</td>
+                      <td className="px-4 py-3 text-[#1e1e1e] dark:text-white">{assetDetail.year_of_purchase || "-"}</td>
                     </tr>
-                    <tr className="border-b border-border">
-                      <td className="px-4 py-3 font-semibold bg-secondary/50">Year of Production</td>
-                      <td className="px-4 py-3">{assetDetail.year_of_production || "-"}</td>
-                    </tr>
-                    <tr className="border-b border-border">
-                      <td className="px-4 py-3 font-semibold bg-secondary/50">CPU</td>
-                      <td className="px-4 py-3">{assetDetail.cpu || "-"}</td>
-                    </tr>
-                    <tr className="border-b border-border">
-                      <td className="px-4 py-3 font-semibold bg-secondary/50">GPU</td>
-                      <td className="px-4 py-3">{assetDetail.gpu || "-"}</td>
-                    </tr>
-                    <tr className="border-b border-border">
-                      <td className="px-4 py-3 font-semibold bg-secondary/50">RAM</td>
-                      <td className="px-4 py-3">{assetDetail.ram || "-"}</td>
-                    </tr>
-                    <tr className="border-b border-border">
-                      <td className="px-4 py-3 font-semibold bg-secondary/50">Memory</td>
-                      <td className="px-4 py-3">{assetDetail.memory || "-"}</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 font-semibold bg-secondary/50">Item</td>
-                      <td className="px-4 py-3">{assetDetail.item || "-"}</td>
-                    </tr>
+                    {selected?.item && requiresFullDetail(selected.item) && (
+                      <>
+                        <tr className="border-b border-[rgba(127,85,57,0.08)] dark:border-[#1f1f1f]">
+                          <td className="px-4 py-3 font-semibold bg-[#e8e0d5]/50 dark:bg-[#2a2a2a] text-[#1e1e1e] dark:text-white">Year of Production</td>
+                          <td className="px-4 py-3 text-[#1e1e1e] dark:text-white">{assetDetail.year_of_production || "-"}</td>
+                        </tr>
+                        <tr className="border-b border-[rgba(127,85,57,0.08)] dark:border-[#1f1f1f]">
+                          <td className="px-4 py-3 font-semibold bg-[#e8e0d5]/50 dark:bg-[#2a2a2a] text-[#1e1e1e] dark:text-white">CPU</td>
+                          <td className="px-4 py-3 text-[#1e1e1e] dark:text-white">{assetDetail.cpu || "-"}</td>
+                        </tr>
+                        <tr className="border-b border-[rgba(127,85,57,0.08)] dark:border-[#1f1f1f]">
+                          <td className="px-4 py-3 font-semibold bg-[#e8e0d5]/50 dark:bg-[#2a2a2a] text-[#1e1e1e] dark:text-white">GPU</td>
+                          <td className="px-4 py-3 text-[#1e1e1e] dark:text-white">{assetDetail.gpu || "-"}</td>
+                        </tr>
+                        <tr className="border-b border-[rgba(127,85,57,0.08)] dark:border-[#1f1f1f]">
+                          <td className="px-4 py-3 font-semibold bg-[#e8e0d5]/50 dark:bg-[#2a2a2a] text-[#1e1e1e] dark:text-white">RAM</td>
+                          <td className="px-4 py-3 text-[#1e1e1e] dark:text-white">{assetDetail.ram || "-"}</td>
+                        </tr>
+                        <tr className="border-b border-[rgba(127,85,57,0.08)] dark:border-[#1f1f1f]">
+                          <td className="px-4 py-3 font-semibold bg-[#e8e0d5]/50 dark:bg-[#2a2a2a] text-[#1e1e1e] dark:text-white">Memory</td>
+                          <td className="px-4 py-3 text-[#1e1e1e] dark:text-white">{assetDetail.memory || "-"}</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 font-semibold bg-[#e8e0d5]/50 dark:bg-[#2a2a2a] text-[#1e1e1e] dark:text-white">Item</td>
+                          <td className="px-4 py-3 text-[#1e1e1e] dark:text-white">{assetDetail.item || "-"}</td>
+                        </tr>
+                      </>
+                    )}
                   </tbody>
                 </table>
               </div>
             </div>
           ) : (
-            <div className="py-8 text-center text-muted-foreground">
+            <div className="py-8 text-center text-[#5d5d5d] dark:text-gray-400">
               No detail information available for this asset.
             </div>
           )}
-          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)]">
-            <Button variant="outline" className="min-w-[88px]" onClick={() => setIsDetailOpen(false)}>Close</Button>
+          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)] dark:border-[#1f1f1f]">
+            <Button 
+              variant="outline" 
+              className="min-w-[88px] border-[rgba(127,85,57,0.2)] dark:border-[#2a2a2a] text-[#1e1e1e] dark:text-white hover:bg-[#7f5539]/10 dark:hover:bg-white/10" 
+              onClick={() => setIsDetailOpen(false)}
+            >
+              Close
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Import Result Dialog */}
+      {/* Import Excel Dialog */}
       <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
-        <DialogContent className="bg-white border border-[rgba(127,85,57,0.2)]">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-medium text-[#1e1e1e]">Import Excel</DialogTitle>
-            <DialogDescription className="text-sm text-[#5d5d5d]">
-              {importResult?.success ? "File parsed successfully." : "Import failed."}
-            </DialogDescription>
-          </DialogHeader>
-          {importResult && (
-            <p className="text-sm text-[#1e1e1e] py-2">{importResult.message}</p>
-          )}
-          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)]">
-            <Button variant="outline" className="min-w-[88px]" onClick={() => { setIsImportOpen(false); setImportResult(null); }}>Close</Button>
+        <DialogContent className="max-w-xl overflow-hidden rounded-xl border border-[rgba(127,85,57,0.18)] dark:border-[#1f1f1f] bg-white dark:bg-[#101211] p-0 shadow-xl">
+          {/* Header strip */}
+          <div className="border-b border-[rgba(127,85,57,0.1)] dark:border-[#1f1f1f] bg-gradient-to-b from-[#7f5539]/8 to-transparent dark:from-[#7f5539]/15 px-6 py-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#7f5539]/15 dark:bg-[#7f5539]/25">
+                <Upload className="h-5 w-5 text-[#7f5539] dark:text-[#a06540]" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-medium text-[#1e1e1e] dark:text-white" style={{ fontFamily: 'Inter, sans-serif' }}>Import from Excel</DialogTitle>
+                <DialogDescription className="mt-0.5 text-sm text-[#5d5d5d] dark:text-gray-400">
+                  Bulk add assets using .xlsx or .xls
+                </DialogDescription>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-5 px-6 py-5">
+            {/* Step 1: Template */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 rounded-lg border border-[#e8e0d5]/80 dark:border-[#1f1f1f] bg-[#faf8f6] dark:bg-[#1a1a1a] p-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#7f5539] dark:bg-[#a06540] text-xs font-semibold text-white">1</span>
+                <div>
+                  <p className="text-sm font-medium text-[#1e1e1e] dark:text-white">Get the template</p>
+                  <p className="text-xs text-[#5d5d5d] dark:text-gray-400 mt-0.5">Example rows and correct columns</p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="shrink-0 border-[#7f5539]/35 dark:border-[#7f5539]/50 bg-white dark:bg-[#101211] px-4 text-[#7f5539] dark:text-[#a06540] hover:bg-[#7f5539]/10 dark:hover:bg-[#7f5539]/20"
+                onClick={downloadTemplate}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Download Template
+              </Button>
+            </div>
+
+            {/* Step 2: Upload */}
+            <div className="rounded-lg border border-[#e8e0d5]/80 dark:border-[#1f1f1f] bg-[#faf8f6] dark:bg-[#1a1a1a] p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#7f5539] dark:bg-[#a06540] text-xs font-semibold text-white">2</span>
+                <p className="text-sm font-medium text-[#1e1e1e] dark:text-white">Upload your file</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isImporting}
+                className="flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[rgba(127,85,57,0.25)] dark:border-[#2a2a2a] bg-white dark:bg-[#101211] py-8 transition-colors hover:border-[#7f5539]/50 dark:hover:border-[#7f5539]/50 hover:bg-[#7f5539]/5 dark:hover:bg-[#7f5539]/10 disabled:opacity-60 disabled:pointer-events-none"
+              >
+                <Upload className="h-8 w-8 text-[#7f5539]/70 dark:text-[#a06540]/70" />
+                <span className="text-sm font-medium text-[#1e1e1e] dark:text-white">
+                  {isImporting ? "Importing…" : "Click to choose file"}
+                </span>
+                <span className="text-xs text-[#5d5d5d] dark:text-gray-400">.xlsx or .xls</span>
+              </button>
+            </div>
+
+            {/* Import Result */}
+            {importResult && (
+              <div className={`rounded-lg border p-4 ${
+                importResult.success
+                  ? "border-[#7f5539]/30 dark:border-[#7f5539]/50 bg-[#7f5539]/5 dark:bg-[#7f5539]/10"
+                  : "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20"
+              }`}>
+                <div className="flex items-center gap-3">
+                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
+                    importResult.success 
+                      ? "bg-[#7f5539]/20 dark:bg-[#7f5539]/30 text-[#7f5539] dark:text-[#a06540]" 
+                      : "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400"
+                  }`}>
+                    {importResult.success ? "✓" : "✗"}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className={`text-sm font-medium ${
+                      importResult.success 
+                        ? "text-[#7f5539] dark:text-[#a06540]" 
+                        : "text-red-700 dark:text-red-400"
+                    }`}>
+                      {importResult.success ? "Import complete" : "Import failed"}
+                    </p>
+                    <p className="text-sm text-[#1e1e1e] dark:text-white mt-0.5">{importResult.message}</p>
+                    {importResult.imported !== undefined && (
+                      <p className="text-xs text-[#5d5d5d] dark:text-gray-400 mt-1">
+                        {importResult.imported} of {importResult.total} asset(s)
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Format reference */}
+            <details className="group rounded-lg border border-[rgba(127,85,57,0.12)] dark:border-[#1f1f1f] bg-white dark:bg-[#101211]">
+              <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-medium text-[#1e1e1e] dark:text-white [&::-webkit-details-marker]:hidden">
+                <span className="text-[#5d5d5d] dark:text-gray-400">📋</span>
+                Column format reference
+              </summary>
+              <div className="border-t border-[rgba(127,85,57,0.08)] dark:border-[#1f1f1f] px-4 py-3">
+                <dl className="space-y-2.5 text-sm">
+                  <div className="flex gap-3 sm:gap-4">
+                    <dt className="w-32 shrink-0 font-medium text-[#1e1e1e] dark:text-white">Asset ID</dt>
+                    <dd className="text-[#5d5d5d] dark:text-gray-400">Required: Unique asset code</dd>
+                  </div>
+                  <div className="flex gap-3 sm:gap-4">
+                    <dt className="w-32 shrink-0 font-medium text-[#1e1e1e] dark:text-white">Type</dt>
+                    <dd className="text-[#5d5d5d] dark:text-gray-400">Optional: Asset type code or name</dd>
+                  </div>
+                  <div className="flex gap-3 sm:gap-4">
+                    <dt className="w-32 shrink-0 font-medium text-[#1e1e1e] dark:text-white">Brand</dt>
+                    <dd className="text-[#5d5d5d] dark:text-gray-400">Optional: Brand name</dd>
+                  </div>
+                  <div className="flex gap-3 sm:gap-4">
+                    <dt className="w-32 shrink-0 font-medium text-[#1e1e1e] dark:text-white">Item</dt>
+                    <dd className="text-[#5d5d5d] dark:text-gray-400">Required: Device/item name</dd>
+                  </div>
+                  <div className="flex gap-3 sm:gap-4">
+                    <dt className="w-32 shrink-0 font-medium text-[#1e1e1e] dark:text-white">User Use</dt>
+                    <dd className="text-[#5d5d5d] dark:text-gray-400">Optional: Current user</dd>
+                  </div>
+                  <div className="flex gap-3 sm:gap-4">
+                    <dt className="w-32 shrink-0 font-medium text-[#1e1e1e] dark:text-white">Department Team</dt>
+                    <dd className="text-[#5d5d5d] dark:text-gray-400">Optional: Department name</dd>
+                  </div>
+                  <div className="flex gap-3 sm:gap-4">
+                    <dt className="w-32 shrink-0 font-medium text-[#1e1e1e] dark:text-white">Storage Location</dt>
+                    <dd className="text-[#5d5d5d] dark:text-gray-400">Optional: Storage location</dd>
+                  </div>
+                  <div className="flex gap-3 sm:gap-4">
+                    <dt className="w-32 shrink-0 font-medium text-[#1e1e1e] dark:text-white">Purchase Amount</dt>
+                    <dd className="text-[#5d5d5d] dark:text-gray-400">Optional: Purchase price</dd>
+                  </div>
+                  <div className="flex gap-3 sm:gap-4">
+                    <dt className="w-32 shrink-0 font-medium text-[#1e1e1e] dark:text-white">Currency</dt>
+                    <dd className="text-[#5d5d5d] dark:text-gray-400">Optional: IDR, USD, SGD, MYR, EUR</dd>
+                  </div>
+                  <div className="flex gap-3 sm:gap-4">
+                    <dt className="w-32 shrink-0 font-medium text-[#1e1e1e] dark:text-white">Note</dt>
+                    <dd className="text-[#5d5d5d] dark:text-gray-400">Optional: Remarks</dd>
+                  </div>
+                  <div className="flex gap-3 sm:gap-4">
+                    <dt className="w-32 shrink-0 font-medium text-[#1e1e1e] dark:text-white">Status</dt>
+                    <dd className="text-[#5d5d5d] dark:text-gray-400">Optional: active, inactive, not_used (default: not_used)</dd>
+                  </div>
+                  <div className="flex gap-3 sm:gap-4 pt-2 border-t border-[rgba(127,85,57,0.08)] dark:border-[#1f1f1f]">
+                    <dt className="w-32 shrink-0 font-medium text-[#1e1e1e] dark:text-white">Condition</dt>
+                    <dd className="text-[#5d5d5d] dark:text-gray-400">Optional: New, Good, Fair, Poor (required for Laptop/All In One/Computer)</dd>
+                  </div>
+                  <div className="flex gap-3 sm:gap-4">
+                    <dt className="w-32 shrink-0 font-medium text-[#1e1e1e] dark:text-white">Year of Purchase</dt>
+                    <dd className="text-[#5d5d5d] dark:text-gray-400">Optional: Purchase year (e.g. 2024)</dd>
+                  </div>
+                  <div className="flex gap-3 sm:gap-4">
+                    <dt className="w-32 shrink-0 font-medium text-[#1e1e1e] dark:text-white">Year of Production</dt>
+                    <dd className="text-[#5d5d5d] dark:text-gray-400">Optional: Production year (required for Laptop/All In One/Computer)</dd>
+                  </div>
+                  <div className="flex gap-3 sm:gap-4">
+                    <dt className="w-32 shrink-0 font-medium text-[#1e1e1e] dark:text-white">CPU</dt>
+                    <dd className="text-[#5d5d5d] dark:text-gray-400">Optional: CPU specification (required for Laptop/All In One/Computer)</dd>
+                  </div>
+                  <div className="flex gap-3 sm:gap-4">
+                    <dt className="w-32 shrink-0 font-medium text-[#1e1e1e] dark:text-white">GPU</dt>
+                    <dd className="text-[#5d5d5d] dark:text-gray-400">Optional: GPU specification (required for Laptop/All In One/Computer)</dd>
+                  </div>
+                  <div className="flex gap-3 sm:gap-4">
+                    <dt className="w-32 shrink-0 font-medium text-[#1e1e1e] dark:text-white">RAM</dt>
+                    <dd className="text-[#5d5d5d] dark:text-gray-400">Optional: RAM specification (required for Laptop/All In One/Computer)</dd>
+                  </div>
+                  <div className="flex gap-3 sm:gap-4">
+                    <dt className="w-32 shrink-0 font-medium text-[#1e1e1e] dark:text-white">Memory</dt>
+                    <dd className="text-[#5d5d5d] dark:text-gray-400">Optional: Storage specification (required for Laptop/All In One/Computer)</dd>
+                  </div>
+                  <div className="flex gap-3 sm:gap-4">
+                    <dt className="w-32 shrink-0 font-medium text-[#1e1e1e] dark:text-white">Detail Item</dt>
+                    <dd className="text-[#5d5d5d] dark:text-gray-400">Optional: Detailed item name/model</dd>
+                  </div>
+                </dl>
+              </div>
+            </details>
+          </div>
+
+          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 pb-6 px-6 border-t border-[rgba(127,85,57,0.12)] dark:border-[#1f1f1f]">
+            <Button 
+              variant="outline" 
+              className="min-w-[88px] border-[rgba(127,85,57,0.2)] dark:border-[#2a2a2a] text-[#1e1e1e] dark:text-white hover:bg-[#7f5539]/10 dark:hover:bg-white/10" 
+              onClick={() => {
+                setIsImportOpen(false);
+                setImportResult(null);
+              }}
+            >
+              Close
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
