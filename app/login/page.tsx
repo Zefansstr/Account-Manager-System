@@ -98,7 +98,7 @@ export default function LoginPage() {
             <p className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#7f5539]/10 dark:bg-[#7f5539]/20 text-[#7f5539] dark:text-[#a06540] text-sm font-medium mb-6">
               <Zap className="h-4 w-4" /> Account & access management
             </p>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#1e1e1e] dark:text-white leading-[1.1] mb-6">
+            <h1 className="font-manrope text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#1e1e1e] dark:text-white leading-[1.1] mb-6">
               Manage teams,{" "}
               <span className="text-[#7f5539] dark:text-[#a06540]">one place.</span>
             </h1>
@@ -167,7 +167,7 @@ export default function LoginPage() {
       <section id="features" className="py-20 px-6 lg:px-12 bg-white/50 dark:bg-white/5 border-y border-[#7F5539]/10 dark:border-white/5">
         <div className="max-w-6xl mx-auto">
           <p className="text-center text-sm font-medium text-[#7f5539] dark:text-[#a06540] mb-2">Why choose us</p>
-          <h2 className="text-3xl sm:text-4xl font-bold text-center text-[#1e1e1e] dark:text-white mb-16">
+          <h2 className="font-manrope text-3xl sm:text-4xl font-extrabold text-center text-[#1e1e1e] dark:text-white mb-16">
             Everything you need to stay in control
           </h2>
           <div className="grid sm:grid-cols-3 gap-8">
@@ -183,7 +183,7 @@ export default function LoginPage() {
                 <div className="w-12 h-12 rounded-xl bg-[#7f5539]/10 dark:bg-[#7f5539]/20 flex items-center justify-center mb-6 group-hover:bg-[#7f5539]/20 dark:group-hover:bg-[#7f5539]/30 transition-colors">
                   <Icon className="h-6 w-6 text-[#7f5539] dark:text-[#a06540]" />
                 </div>
-                <h3 className="text-xl font-semibold text-[#1e1e1e] dark:text-white mb-3">{title}</h3>
+                <h3 className="font-manrope text-xl font-extrabold text-[#1e1e1e] dark:text-white mb-3">{title}</h3>
                 <p className="text-[#5d5d5d] dark:text-gray-400">{desc}</p>
               </div>
             ))}

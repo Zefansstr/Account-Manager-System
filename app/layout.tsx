@@ -9,11 +9,11 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: {
-    default: "Account Management System",
-    template: "%s | Account Management System",
+    default: "Nexgate - Account Management System",
+    template: "%s | Nexgate",
   },
   description: "Full-stack Account Management System with RBAC, Data Filtering, and Audit Logs",
-  keywords: ["account management", "RBAC", "supabase", "next.js", "audit logs"],
+  keywords: ["account management", "RBAC", "supabase", "next.js", "audit logs", "Nexgate"],
   authors: [{ name: "Zefan" }],
   creator: "Zefan",
   publisher: "Zefan",
@@ -21,13 +21,13 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "https://github.com/Zefansstr/Account-Manager-System",
-    siteName: "Account Management System",
-    title: "Account Management System",
+    siteName: "Nexgate - Account Management System",
+    title: "Nexgate - Account Management System",
     description: "Full-stack Account Management System with RBAC, Data Filtering, and Audit Logs",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Account Management System",
+    title: "Nexgate - Account Management System",
     description: "Full-stack Account Management System with RBAC, Data Filtering, and Audit Logs",
   },
   robots: {
