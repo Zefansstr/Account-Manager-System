@@ -106,6 +106,7 @@ export default function AuditLogsPage() {
       LOGOUT: "bg-yellow-500/20 text-yellow-500 border-yellow-500",
       ENABLE: "bg-green-500/20 text-green-500 border-green-500",
       DISABLE: "bg-gray-500/20 text-gray-400 border-gray-500",
+      IMPORT: "bg-violet-500/20 text-violet-500 border-violet-500",
     };
     return colors[action] || "bg-secondary text-muted-foreground";
   };
@@ -198,6 +199,7 @@ export default function AuditLogsPage() {
               { value: "DELETE", label: "Delete" },
               { value: "LOGIN", label: "Login" },
               { value: "LOGOUT", label: "Logout" },
+              { value: "IMPORT", label: "Import" },
             ]}
             placeholder="All Actions"
             minWidth="140px"
