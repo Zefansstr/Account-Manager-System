@@ -80,10 +80,11 @@ export function Pagination({
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
               disabled={isLoading}
-              className="rounded-md border border-border bg-background px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="rounded-md border border-[#7F5539]/30 dark:border-[#7F5539]/50 bg-white dark:bg-[#101211] px-2 py-1 text-sm text-[#1e1e1e] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7f5539]/50 focus:border-[#7f5539]"
+              style={{ color: pageSize ? '#1e1e1e' : 'rgba(127, 85, 57, 0.4)' }}
             >
               {pageSizeOptions.map((size) => (
-                <option key={size} value={size}>
+                <option key={size} value={size} style={{ color: '#1e1e1e', backgroundColor: '#ffffff' }}>
                   {size}
                 </option>
               ))}

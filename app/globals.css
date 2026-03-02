@@ -127,6 +127,18 @@ select option:hover {
   color: #FFFFFF;
 }
 
+/* Pagination dropdown - highlight selected with brown */
+select:focus {
+  border-color: #7F5539;
+  outline: none;
+}
+
+select option:checked,
+select option[selected] {
+  background-color: #7F5539 !important;
+  color: #FFFFFF !important;
+}
+
 select:focus option:checked {
   background: linear-gradient(#7F5539, #7F5539);
 }
@@ -149,6 +161,17 @@ select:focus option:checked {
 .dark select option:hover {
   background-color: #8f6342;
   color: #FFFFFF;
+}
+
+.dark select:focus {
+  border-color: #8f6342;
+  outline: none;
+}
+
+.dark select option:checked,
+.dark select option[selected] {
+  background-color: #8f6342 !important;
+  color: #FFFFFF !important;
 }
 
 /* Custom animations */
