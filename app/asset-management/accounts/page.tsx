@@ -55,8 +55,9 @@ export default function AssetManagementAccountsPage() {
   const [filterDevice, setFilterDevice] = useState("");
   const [filterBrand, setFilterBrand] = useState("");
   const [filterLocation, setFilterLocation] = useState("");
+  const [filterDepartment, setFilterDepartment] = useState("");
   const [page, setPage] = useState(1);
-  const [limit] = useState(20);
+  const [limit, setLimit] = useState(20);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
   const [showDetailForm, setShowDetailForm] = useState(false);
   const [assetDetail, setAssetDetail] = useState<any>(null);
@@ -197,6 +198,7 @@ export default function AssetManagementAccountsPage() {
       if (filterDevice) params.append("deviceId", filterDevice);
       if (filterBrand) params.append("brand", filterBrand);
       if (filterLocation) params.append("storageLocation", filterLocation);
+      if (filterDepartment) params.append("departmentTeam", filterDepartment);
 
       const res = await fetch(`/api/asset-management/accounts?${params}`);
       const json = await res.json();
@@ -245,7 +247,10 @@ export default function AssetManagementAccountsPage() {
       const res = await fetch("/api/asset-management/devices");
       const json = await res.json();
       if (res.ok) {
-        setDeviceList(json.data || []);
+        const data = json.data || [];
+        // Sort devices by name alphabetically
+        const sorted = [...data].sort((a, b) => a.name.localeCompare(b.name));
+        setDeviceList(sorted);
       }
     } catch (error) {
       console.error("Error fetching device list:", error);
@@ -258,7 +263,10 @@ export default function AssetManagementAccountsPage() {
       const res = await fetch("/api/asset-management/brands");
       const json = await res.json();
       if (res.ok) {
-        setBrandList(json.data || []);
+        const data = json.data || [];
+        // Sort brands by name alphabetically
+        const sorted = [...data].sort((a, b) => a.name.localeCompare(b.name));
+        setBrandList(sorted);
       }
     } catch (error) {
       console.error("Error fetching brand list:", error);
@@ -278,7 +286,12 @@ export default function AssetManagementAccountsPage() {
     }, 300); // Debounce search
 
     return () => clearTimeout(timeoutId);
-  }, [page, searchQuery, filterDevice, filterBrand, filterLocation]);
+  }, [page, limit, searchQuery, filterDevice, filterBrand, filterLocation, filterDepartment]);
+
+  const handlePageSizeChange = (newSize: number) => {
+    setLimit(newSize);
+    setPage(1); // Reset to first page when changing page size
+  };
 
   const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -340,13 +353,13 @@ export default function AssetManagementAccountsPage() {
       }).filter((asset: any) => asset.code && asset.item); // Filter out invalid rows
 
       if (assetsToImport.length === 0) {
-        setImportResult({
+      setImportResult({
           success: false,
           message: "No valid assets found. Please ensure Code and Item columns are filled.",
           total: jsonData.length,
-          imported: 0,
-        });
-        setIsImportOpen(true);
+        imported: 0,
+      });
+      setIsImportOpen(true);
         return;
       }
 
@@ -641,11 +654,18 @@ export default function AssetManagementAccountsPage() {
       const operatorStr = localStorage.getItem("operator");
       const userId = operatorStr ? JSON.parse(operatorStr).id : null;
 
-      const res = await fetch(`/api/asset-management/accounts/${selected.id}?userId=${userId}`, {
+      const res = await fetch(`/api/asset-management/accounts/${selected.id}?userId=${userId || ""}`, {
         method: "DELETE",
       });
 
-      const json = await res.json();
+      let json;
+      try {
+        const text = await res.text();
+        json = text ? JSON.parse(text) : {};
+      } catch (parseError) {
+        console.error("Error parsing response:", parseError);
+        json = { error: "Invalid response from server" };
+      }
 
       if (res.ok) {
         toast.success(`Asset "${selected.code}" deleted successfully!`);
@@ -653,7 +673,8 @@ export default function AssetManagementAccountsPage() {
         setSelected(null);
         fetchDevices();
       } else {
-        toast.error(json.error || "Failed to delete asset");
+        console.error("Delete error response:", res.status, json);
+        toast.error(json.error || `Failed to delete asset. Status: ${res.status}`);
       }
     } catch (error: any) {
       console.error("Error deleting asset:", error);
@@ -672,21 +693,32 @@ export default function AssetManagementAccountsPage() {
       const operatorStr = localStorage.getItem("operator");
       const userId = operatorStr ? JSON.parse(operatorStr).id : null;
 
+      console.log("Bulk delete request:", { selectedIdsCount: selectedIds.length, userId });
+
       const res = await fetch("/api/asset-management/accounts/bulk-delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ assetIds: selectedIds, userId }),
       });
 
-      const json = await res.json();
+      let json;
+      try {
+        const text = await res.text();
+        json = text ? JSON.parse(text) : {};
+      } catch (parseError) {
+        console.error("Error parsing response:", parseError);
+        json = { error: "Invalid response from server" };
+      }
 
       if (res.ok) {
-        toast.success(`Successfully deleted ${selectedIds.length} asset(s)!`);
+        const deletedCount = json.deleted || selectedIds.length;
+        toast.success(`Successfully deleted ${deletedCount} asset(s)!`);
         setSelectedIds([]);
         setIsBulkDeleteOpen(false);
         fetchDevices();
       } else {
-        toast.error(json.error || "Failed to delete assets. Please try again.");
+        console.error("Bulk delete error response:", res.status, json);
+        toast.error(json.error || `Failed to delete assets. Status: ${res.status}`);
       }
     } catch (error: any) {
       console.error("Error bulk deleting:", error);
@@ -768,6 +800,7 @@ export default function AssetManagementAccountsPage() {
   const deviceOptions = deviceList.map((d) => ({ value: d.name, label: d.name }));
   const brandOptions = brandFilterList.map((b) => ({ value: b, label: b }));
   const locationOptions = locationList.map((l) => ({ value: l, label: l }));
+  const departmentOptions = departments.map((d) => ({ value: d.name, label: d.name }));
 
   return (
     <PermissionGuard menuName={menuName}>
@@ -790,6 +823,7 @@ export default function AssetManagementAccountsPage() {
           <div className="flex items-center gap-3 flex-wrap">
             <FilterDropdown value={filterDevice} onChange={(v) => { setFilterDevice(v); setPage(1); }} options={deviceOptions} placeholder="All Devices" minWidth="140px" />
             <FilterDropdown value={filterBrand} onChange={(v) => { setFilterBrand(v); setPage(1); }} options={brandOptions} placeholder="All Brands" minWidth="120px" />
+            <FilterDropdown value={filterDepartment} onChange={(v) => { setFilterDepartment(v); setPage(1); }} options={departmentOptions} placeholder="All Departments" minWidth="140px" />
             <FilterDropdown value={filterLocation} onChange={(v) => { setFilterLocation(v); setPage(1); }} options={locationOptions} placeholder="All Locations" minWidth="120px" />
           </div>
           <div className="flex items-center gap-3 flex-wrap">
@@ -979,7 +1013,7 @@ export default function AssetManagementAccountsPage() {
             onPageChange={setPage}
             isLoading={loading}
             pageSize={limit}
-            onPageSizeChange={() => {}}
+            onPageSizeChange={handlePageSizeChange}
             totalRecords={pagination.total}
           />
         </div>
@@ -1002,11 +1036,12 @@ export default function AssetManagementAccountsPage() {
               <select
                 value={formData.brand}
                 onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-10 w-full rounded-md border border-input bg-white dark:bg-[#101211] px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-[#1e1e1e] dark:text-gray-200"
+                style={{ color: formData.brand ? '#1e1e1e' : 'rgba(127, 85, 57, 0.4)' }}
               >
-                <option value="">Select Brand</option>
+                <option value="" style={{ color: 'rgba(127, 85, 57, 0.4)' }}>Select Brand</option>
                 {brandList.map((brand) => (
-                  <option key={brand.id} value={brand.name}>
+                  <option key={brand.id} value={brand.name} style={{ color: '#1e1e1e', backgroundColor: '#ffffff' }}>
                     {brand.name}
                   </option>
                 ))}
@@ -1025,11 +1060,12 @@ export default function AssetManagementAccountsPage() {
                     setShowDetailForm(false);
                   }
                 }}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-10 w-full rounded-md border border-input bg-white dark:bg-[#101211] px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-[#1e1e1e] dark:text-gray-200"
+                style={{ color: formData.item ? '#1e1e1e' : 'rgba(127, 85, 57, 0.4)' }}
               >
-                <option value="">Select Device</option>
+                <option value="" style={{ color: 'rgba(127, 85, 57, 0.4)' }}>Select Device</option>
                 {deviceList.map((device) => (
-                  <option key={device.id} value={device.name}>
+                  <option key={device.id} value={device.name} style={{ color: '#1e1e1e', backgroundColor: '#ffffff' }}>
                     {device.name}
                   </option>
                 ))}
@@ -1045,13 +1081,18 @@ export default function AssetManagementAccountsPage() {
             </div>
             <div className="grid gap-2">
               <Label>Currency *</Label>
-              <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={formData.currency} onChange={(e) => setFormData({ ...formData, currency: e.target.value })}>
-                <option value="">Select Currency</option>
-                <option value="IDR">IDR</option>
-                <option value="USD">USD</option>
-                <option value="SGD">SGD</option>
-                <option value="MYR">MYR</option>
-                <option value="EUR">EUR</option>
+              <select 
+                className="rounded-md border border-input bg-white dark:bg-[#101211] px-3 py-2 text-sm text-[#1e1e1e] dark:text-gray-200 h-10" 
+                value={formData.currency} 
+                onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                style={{ color: formData.currency ? '#1e1e1e' : 'rgba(127, 85, 57, 0.4)' }}
+              >
+                <option value="" style={{ color: 'rgba(127, 85, 57, 0.4)' }}>Select Currency</option>
+                <option value="IDR" style={{ color: '#1e1e1e', backgroundColor: '#ffffff' }}>IDR</option>
+                <option value="USD" style={{ color: '#1e1e1e', backgroundColor: '#ffffff' }}>USD</option>
+                <option value="SGD" style={{ color: '#1e1e1e', backgroundColor: '#ffffff' }}>SGD</option>
+                <option value="MYR" style={{ color: '#1e1e1e', backgroundColor: '#ffffff' }}>MYR</option>
+                <option value="EUR" style={{ color: '#1e1e1e', backgroundColor: '#ffffff' }}>EUR</option>
               </select>
             </div>
             <div className="col-span-2 grid gap-2">
@@ -1542,27 +1583,27 @@ export default function AssetManagementAccountsPage() {
                         <tr className="border-b border-[rgba(127,85,57,0.08)] dark:border-[#1f1f1f]">
                           <td className="px-4 py-3 font-semibold bg-[#e8e0d5]/50 dark:bg-[#2a2a2a] text-[#1e1e1e] dark:text-white">Year of Production</td>
                           <td className="px-4 py-3 text-[#1e1e1e] dark:text-white">{assetDetail.year_of_production || "-"}</td>
-                        </tr>
+                    </tr>
                         <tr className="border-b border-[rgba(127,85,57,0.08)] dark:border-[#1f1f1f]">
                           <td className="px-4 py-3 font-semibold bg-[#e8e0d5]/50 dark:bg-[#2a2a2a] text-[#1e1e1e] dark:text-white">CPU</td>
                           <td className="px-4 py-3 text-[#1e1e1e] dark:text-white">{assetDetail.cpu || "-"}</td>
-                        </tr>
+                    </tr>
                         <tr className="border-b border-[rgba(127,85,57,0.08)] dark:border-[#1f1f1f]">
                           <td className="px-4 py-3 font-semibold bg-[#e8e0d5]/50 dark:bg-[#2a2a2a] text-[#1e1e1e] dark:text-white">GPU</td>
                           <td className="px-4 py-3 text-[#1e1e1e] dark:text-white">{assetDetail.gpu || "-"}</td>
-                        </tr>
+                    </tr>
                         <tr className="border-b border-[rgba(127,85,57,0.08)] dark:border-[#1f1f1f]">
                           <td className="px-4 py-3 font-semibold bg-[#e8e0d5]/50 dark:bg-[#2a2a2a] text-[#1e1e1e] dark:text-white">RAM</td>
                           <td className="px-4 py-3 text-[#1e1e1e] dark:text-white">{assetDetail.ram || "-"}</td>
-                        </tr>
+                    </tr>
                         <tr className="border-b border-[rgba(127,85,57,0.08)] dark:border-[#1f1f1f]">
                           <td className="px-4 py-3 font-semibold bg-[#e8e0d5]/50 dark:bg-[#2a2a2a] text-[#1e1e1e] dark:text-white">Memory</td>
                           <td className="px-4 py-3 text-[#1e1e1e] dark:text-white">{assetDetail.memory || "-"}</td>
-                        </tr>
-                        <tr>
+                    </tr>
+                    <tr>
                           <td className="px-4 py-3 font-semibold bg-[#e8e0d5]/50 dark:bg-[#2a2a2a] text-[#1e1e1e] dark:text-white">Item</td>
                           <td className="px-4 py-3 text-[#1e1e1e] dark:text-white">{assetDetail.item || "-"}</td>
-                        </tr>
+                    </tr>
                       </>
                     )}
                   </tbody>
@@ -1599,7 +1640,7 @@ export default function AssetManagementAccountsPage() {
                 <DialogTitle className="text-lg font-medium text-[#1e1e1e] dark:text-white" style={{ fontFamily: 'Inter, sans-serif' }}>Import from Excel</DialogTitle>
                 <DialogDescription className="mt-0.5 text-sm text-[#5d5d5d] dark:text-gray-400">
                   Bulk add assets using .xlsx or .xls
-                </DialogDescription>
+            </DialogDescription>
               </div>
             </div>
           </div>
@@ -1646,7 +1687,7 @@ export default function AssetManagementAccountsPage() {
             </div>
 
             {/* Import Result */}
-            {importResult && (
+          {importResult && (
               <div className={`rounded-lg border p-4 ${
                 importResult.success
                   ? "border-[#7f5539]/30 dark:border-[#7f5539]/50 bg-[#7f5539]/5 dark:bg-[#7f5539]/10"

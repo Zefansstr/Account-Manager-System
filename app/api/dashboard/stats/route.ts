@@ -133,44 +133,64 @@ export async function GET(request: NextRequest) {
       accountsByRoleQuery,
     ]);
 
+    // Check for errors in critical queries
+    if (accountsRes.error) {
+      console.error("Error fetching accounts:", accountsRes.error);
+    }
+    if (accountsByDeptRes.error) {
+      console.error("Error fetching accounts by department:", accountsByDeptRes.error);
+    }
+    if (accountsByAppRes.error) {
+      console.error("Error fetching accounts by application:", accountsByAppRes.error);
+    }
+    if (accountsByRoleRes.error) {
+      console.error("Error fetching accounts by role:", accountsByRoleRes.error);
+    }
+
     // Calculate inactive accounts
     const inactiveAccounts = (accountsRes.count || 0) - (activeAccountsRes.count || 0);
 
     // Process accounts by department
     const deptGroups: any = {};
-    accountsByDeptRes.data?.forEach((acc: any) => {
-      if (acc.departments) {
-        const key = acc.departments.department_code;
-        deptGroups[key] = {
-          name: acc.departments.department_name,
-          count: (deptGroups[key]?.count || 0) + 1,
-        };
-      }
-    });
+    if (accountsByDeptRes.data && !accountsByDeptRes.error) {
+      accountsByDeptRes.data.forEach((acc: any) => {
+        if (acc.departments) {
+          const key = acc.departments.department_code;
+          deptGroups[key] = {
+            name: acc.departments.department_name,
+            count: (deptGroups[key]?.count || 0) + 1,
+          };
+        }
+      });
+    }
 
     // Process accounts by application
     const appGroups: any = {};
-    accountsByAppRes.data?.forEach((acc: any) => {
-      if (acc.applications) {
-        const key = acc.applications.app_code;
-        appGroups[key] = {
-          name: acc.applications.app_name,
-          count: (appGroups[key]?.count || 0) + 1,
-        };
-      }
-    });
+    if (accountsByAppRes.data && !accountsByAppRes.error) {
+      accountsByAppRes.data.forEach((acc: any) => {
+        if (acc.applications) {
+          const key = acc.applications.app_code;
+          appGroups[key] = {
+            name: acc.applications.app_name,
+            count: (appGroups[key]?.count || 0) + 1,
+          };
+        }
+      });
+    }
 
     // Process accounts by role
     const roleGroups: any = {};
-    accountsByRoleRes.data?.forEach((acc: any) => {
-      if (acc.roles) {
-        const key = acc.roles.role_code;
-        roleGroups[key] = {
-          name: acc.roles.role_name,
-          count: (roleGroups[key]?.count || 0) + 1,
-        };
-      }
-    });
+    if (accountsByRoleRes.data && !accountsByRoleRes.error) {
+      accountsByRoleRes.data.forEach((acc: any) => {
+        if (acc.roles) {
+          const key = acc.roles.role_code;
+          roleGroups[key] = {
+            name: acc.roles.role_name,
+            count: (roleGroups[key]?.count || 0) + 1,
+          };
+        }
+      });
+    }
 
     return NextResponse.json({
       kpis: {
@@ -201,7 +221,28 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Dashboard stats error:", error);
+    // Return default structure even on error to prevent UI crashes
+    return NextResponse.json({
+      kpis: {
+        totalAccounts: 0,
+        activeAccounts: 0,
+        totalApplications: 0,
+        totalLines: 0,
+        totalDepartments: 0,
+        totalRoles: 0,
+      },
+      charts: {
+        accountsStatus: [
+          { name: "Active", count: 0 },
+          { name: "Inactive", count: 0 },
+        ],
+        accountsByDepartment: [],
+        accountsByApplication: [],
+        accountsByRole: [],
+      },
+      error: error.message || "Unknown error",
+    }, { status: 500 });
   }
 }
 

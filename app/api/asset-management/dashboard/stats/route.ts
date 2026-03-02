@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 
 export async function GET(request: NextRequest) {
   try {
-    // Get all assets with necessary fields for charts
+    // Get all assets with necessary fields for charts (include all assets, not just those with brand)
     const assetsQuery = supabase
       .from("asset_accounts")
       .select(`
@@ -14,28 +14,37 @@ export async function GET(request: NextRequest) {
         department_team,
         storage_location,
         user_use
-      `)
-      .not("brand", "is", null);
+      `);
 
     // Get all counts in parallel - optimized queries
     const [
       assetsRes,
-      activeAssetsRes,
       brandsDistinctRes,
       departmentsDistinctRes,
       assetsDataRes,
     ] = await Promise.all([
       // Total devices (count only)
       supabase.from("asset_accounts").select("id", { count: "exact", head: true }),
-      // Active assets (count only)
-      supabase.from("asset_accounts").select("id", { count: "exact", head: true }).eq("status", "active"),
       // Total brands (distinct count from brand column)
       supabase.from("asset_accounts").select("brand").not("brand", "is", null),
       // Total departments (distinct count from department_team column)
       supabase.from("asset_accounts").select("department_team").not("department_team", "is", null),
-      // All assets data for charts
+      // All assets data for charts (we'll calculate active count from this)
       assetsQuery,
     ]);
+
+    // Check for errors in queries
+    if (assetsRes.error) {
+      console.error("Error fetching total assets:", assetsRes.error);
+    }
+    if (assetsDataRes.error) {
+      console.error("Error fetching assets data:", assetsDataRes.error);
+    }
+
+    // Calculate active count from full data (case-insensitive)
+    const activeCount = assetsDataRes.data?.filter((asset: any) => 
+      asset.status?.toLowerCase() === "active"
+    ).length || 0;
 
     // Calculate total brands (distinct)
     const brandsSet = new Set<string>();
@@ -63,7 +72,8 @@ export async function GET(request: NextRequest) {
     
     assetsDataRes.data?.forEach((asset: any) => {
       const deviceName = asset.item || "Unknown";
-      const isActive = asset.status === "active";
+      // Case-insensitive status comparison
+      const isActive = asset.status?.toLowerCase() === "active";
       const isUsed = !!asset.user_use;
       const department = asset.department_team || "Unknown";
       const brand = asset.brand || "Unknown";
@@ -131,7 +141,7 @@ export async function GET(request: NextRequest) {
       kpis: {
         totalDevices: assetsRes.count || 0,
         totalBrands: totalBrands,
-        totalActiveStatus: activeAssetsRes.count || 0,
+        totalActiveStatus: activeCount,
         totalDepartments: totalDepartments,
       },
       charts: {

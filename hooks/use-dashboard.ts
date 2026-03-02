@@ -41,8 +41,12 @@ async function fetchDashboardStats(operatorId?: string): Promise<DashboardData> 
   }
 
   const res = await fetch('/api/dashboard/stats', { headers });
-  if (!res.ok) throw new Error('Failed to fetch dashboard stats');
-  return res.json();
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(errorData.error || `Failed to fetch dashboard stats: ${res.status}`);
+  }
+  const data = await res.json();
+  return data;
 }
 
 // Hook: Get dashboard stats with caching

@@ -11,9 +11,9 @@ import { cn } from "@/lib/utils";
 
 const MODULES = [
   { title: "Account Management", href: "/accounts" },
+  { title: "Asset Management", href: "/asset-management" },
   { title: "Product Management", href: "/products" },
   { title: "Operator Setting", href: "/operators" },
-  { title: "Asset Management", href: "/asset-management" },
 ] as const;
 
 function NexgateLogo({ className }: { className?: string }) {

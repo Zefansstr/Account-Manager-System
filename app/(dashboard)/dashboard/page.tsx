@@ -145,11 +145,23 @@ export default function DashboardPage() {
     );
   }
 
+  if (error) {
+    return (
+      <PermissionGuard menuName="Dashboard">
+        <div className="flex items-center justify-center h-96">
+          <div className="text-destructive">Failed to load dashboard data: {error.message}</div>
+        </div>
+      </PermissionGuard>
+    );
+  }
+
   if (!data) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-destructive">Failed to load dashboard data</div>
-      </div>
+      <PermissionGuard menuName="Dashboard">
+        <div className="flex items-center justify-center h-96">
+          <div className="text-destructive">No data available</div>
+        </div>
+      </PermissionGuard>
     );
   }
 

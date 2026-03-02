@@ -103,12 +103,20 @@
 }
 
 /* Select dropdown styling - Light Theme */
-select option {
-  background-color: #FFFFFF;
-  color: #333333;
+select {
+  color: #1e1e1e !important;
 }
 
-select option:checked,
+select option {
+  background-color: #FFFFFF;
+  color: #1e1e1e;
+}
+
+select option:checked {
+  background-color: #7F5539;
+  color: #FFFFFF;
+}
+
 select option:hover {
   background-color: #7F5539;
   color: #FFFFFF;
@@ -119,12 +127,20 @@ select:focus option:checked {
 }
 
 /* Select dropdown styling - Dark Theme */
+.dark select {
+  color: #e5e5e5 !important;
+}
+
 .dark select option {
   background-color: #2D333B;
+  color: #e5e5e5;
+}
+
+.dark select option:checked {
+  background-color: #8f6342;
   color: #FFFFFF;
 }
 
-.dark select option:checked,
 .dark select option:hover {
   background-color: #8f6342;
   color: #FFFFFF;

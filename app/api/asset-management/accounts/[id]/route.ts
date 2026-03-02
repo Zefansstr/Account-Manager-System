@@ -94,26 +94,61 @@ export async function DELETE(
       .eq("id", id)
       .single();
 
+    if (!oldData) {
+      return NextResponse.json({ error: "Asset not found" }, { status: 404 });
+    }
+
+    // Delete asset_details first (if exists) to avoid foreign key constraint
+    const { error: detailsError } = await supabase
+      .from("asset_details")
+      .delete()
+      .eq("asset_id", id);
+
+    if (detailsError) {
+      console.error("Error deleting asset_details:", detailsError);
+      // Continue with asset_accounts delete even if details delete fails
+    }
+
+    // Delete asset account
     const { error } = await supabase
       .from("asset_accounts")
       .delete()
       .eq("id", id);
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error deleting asset_accounts:", error);
+      // Check for foreign key constraint error
+      if (error.code === "23503" || error.message?.includes("foreign key")) {
+        return NextResponse.json(
+          { error: "Cannot delete asset: It is referenced by other records. Please remove all references first." },
+          { status: 400 }
+        );
+      }
+      throw error;
+    }
 
     // Log activity
-    await logActivity({
-      userId,
-      action: "DELETE",
-      tableName: "asset_accounts",
-      recordId: id,
-      oldValue: { code: oldData?.code, item: oldData?.item },
-      ipAddress: getIpAddress(request),
-      userAgent: getUserAgent(request),
-    });
+    try {
+      await logActivity({
+        userId,
+        action: "DELETE",
+        tableName: "asset_accounts",
+        recordId: id,
+        oldValue: { code: oldData?.code, item: oldData?.item },
+        ipAddress: getIpAddress(request),
+        userAgent: getUserAgent(request),
+      });
+    } catch (logError) {
+      console.error("Error logging activity:", logError);
+      // Don't fail the delete if logging fails
+    }
 
     return NextResponse.json({ message: "Asset deleted successfully" });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Delete error:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to delete asset. Please try again." },
+      { status: 500 }
+    );
   }
 }

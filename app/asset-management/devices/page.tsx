@@ -6,7 +6,7 @@ import { Badge, CODE_BADGE_VARIANTS } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PermissionGuard } from "@/components/auth/permission-guard";
 import toast from "react-hot-toast";
@@ -15,7 +15,9 @@ type Device = { id: string; code: string; name: string; description?: string; ac
 
 export default function AssetManagementDevicesPage() {
   const [devices, setDevices] = useState<Device[]>([]);
+  const [filteredDevices, setFilteredDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -39,7 +41,9 @@ export default function AssetManagementDevicesPage() {
       }
       
       if (res.ok) {
-        setDevices(json.data || []);
+        const data = json.data || [];
+        setDevices(data);
+        setFilteredDevices(data);
       } else {
         console.error("Error response status:", res.status);
         console.error("Error response:", json);
@@ -62,6 +66,22 @@ export default function AssetManagementDevicesPage() {
       fetchDevices();
     });
   }, []);
+
+  // Filter devices based on search query
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredDevices(devices);
+    } else {
+      const query = searchQuery.toLowerCase();
+      const filtered = devices.filter(
+        (device) =>
+          device.code.toLowerCase().includes(query) ||
+          device.name.toLowerCase().includes(query) ||
+          (device.description && device.description.toLowerCase().includes(query))
+      );
+      setFilteredDevices(filtered);
+    }
+  }, [searchQuery, devices]);
 
   const resetForm = () => {
     setFormData({ code: "", name: "", description: "" });
@@ -219,7 +239,21 @@ export default function AssetManagementDevicesPage() {
           <Button onClick={() => setIsAddOpen(true)} className="bg-[#7f5539] hover:bg-[#7f5539]/90 text-white dark:bg-[#7f5539] dark:hover:bg-[#a06540]"><Plus className="mr-2 h-4 w-4" />Add Device</Button>
         </div>
 
-        <div className="mt-6 overflow-auto max-h-[calc(100vh-320px)] rounded-lg border border-[#7F5539]/20 dark:border-[#7F5539]/40 bg-white dark:bg-[#101211] scrollbar-invisible">
+        {/* Search Box */}
+        <div className="mt-6 flex items-center gap-3">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[rgba(127,85,57,0.4)] dark:text-gray-500" />
+            <Input
+              type="text"
+              placeholder="Search code, device name, description..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-10 bg-white dark:bg-[#101211] border-[#7F5539]/20 dark:border-[#7F5539]/40 text-[#1e1e1e] dark:text-gray-200 placeholder:text-[rgba(127,85,57,0.4)] dark:placeholder:text-gray-500 focus-visible:ring-[#7f5539]"
+            />
+          </div>
+        </div>
+
+        <div className="mt-6 overflow-auto max-h-[calc(100vh-380px)] rounded-lg border border-[#7F5539]/20 dark:border-[#7F5539]/40 bg-white dark:bg-[#101211] scrollbar-invisible">
           <table className="w-full table-fixed border-collapse">
             <thead className="sticky top-0 z-10 bg-[#f0eae4] dark:bg-[#101211] shadow-[0_1px_0_0_rgba(127,85,57,0.2)] dark:shadow-[0_1px_0_0_rgba(127,85,57,0.4)]">
               <tr>
@@ -232,10 +266,10 @@ export default function AssetManagementDevicesPage() {
             <tbody className="bg-white dark:bg-[#101211]">
               {loading ? (
                 <tr className="bg-white dark:bg-[#101211]"><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground dark:text-gray-400">Loading...</td></tr>
-              ) : devices.length === 0 ? (
-                <tr className="bg-white dark:bg-[#101211]"><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground dark:text-gray-400">No devices found</td></tr>
+              ) : filteredDevices.length === 0 ? (
+                <tr className="bg-white dark:bg-[#101211]"><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground dark:text-gray-400">{searchQuery ? "No devices found matching your search" : "No devices found"}</td></tr>
               ) : (
-                devices.map((device, index) => (
+                filteredDevices.map((device, index) => (
                   <tr key={device.id} className="border-t border-[#7F5539]/15 dark:border-[#7F5539]/30 bg-white dark:bg-[#101211] hover:bg-[#f5f0eb] dark:hover:bg-[#1a1a1a] transition-colors">
                     <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle"><Badge variant={CODE_BADGE_VARIANTS[index % 4]}>{device.code}</Badge></td>
                     <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle">{device.name}</td>

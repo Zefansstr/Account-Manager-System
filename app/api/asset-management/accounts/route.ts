@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     const deviceId = searchParams.get("deviceId") || "";
     const brand = searchParams.get("brand") || "";
     const storageLocation = searchParams.get("storageLocation") || "";
+    const departmentTeam = searchParams.get("departmentTeam") || "";
 
     const offset = (page - 1) * limit;
 
@@ -59,6 +60,9 @@ export async function GET(request: NextRequest) {
     }
     if (storageLocation) {
       query = query.eq("storage_location", storageLocation);
+    }
+    if (departmentTeam) {
+      query = query.eq("department_team", departmentTeam);
     }
 
     // Apply pagination
