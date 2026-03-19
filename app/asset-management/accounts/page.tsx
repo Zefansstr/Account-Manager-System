@@ -72,6 +72,7 @@ export default function AssetManagementAccountsPage() {
     brand: "",
     item: "",
     userUse: "",
+    status: "inactive",
     note: "",
     departmentTeam: "",
     storageLocation: "",
@@ -132,6 +133,7 @@ export default function AssetManagementAccountsPage() {
       brand: "",
       item: "",
       userUse: "",
+      status: "inactive",
       note: "",
       departmentTeam: "",
       storageLocation: "",
@@ -515,9 +517,9 @@ export default function AssetManagementAccountsPage() {
 
   // Handle add device
   const handleAdd = async () => {
-    // Validate required fields: Code, Brand, Device, Storage Location, User, Condition
-    if (!formData.code || !formData.brand || !formData.item || !formData.storageLocation || !formData.userUse) {
-      toast.error("Code, Brand, Device, Storage Location, and User are required");
+    // Validate required fields: Code, Brand, Device, Storage Location, Condition
+    if (!formData.code || !formData.brand || !formData.item || !formData.storageLocation) {
+      toast.error("Code, Brand, Device, and Storage Location are required");
       return;
     }
 
@@ -556,7 +558,7 @@ export default function AssetManagementAccountsPage() {
           storageLocation: formData.storageLocation || null,
           purchaseAmount: formData.purchaseAmount ? parseFloat(formData.purchaseAmount) : null,
           currency: formData.currency || null,
-          status: "active",
+          status: "inactive",
           userId,
         }),
       });
@@ -980,6 +982,7 @@ export default function AssetManagementAccountsPage() {
                             brand: device.brand || "",
                             item: device.item || "",
                             userUse: device.userUse || "",
+                            status: device.status || "inactive",
                             note: device.note || "",
                             departmentTeam: device.departmentTeam || "",
                             storageLocation: device.storageLocation || "",
@@ -1027,14 +1030,6 @@ export default function AssetManagementAccountsPage() {
             <DialogDescription>Create a new asset entry</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
-            <div className="col-span-2 grid gap-2">
-              <Label>User <span className="text-red-500">*</span></Label>
-              <Input
-                value={formData.userUse}
-                onChange={(e) => setFormData({ ...formData, userUse: e.target.value })}
-                placeholder="Nama pengguna aset (utama) — contoh: John Doe"
-              />
-            </div>
             <div className="grid gap-2">
               <Label>Code <span className="text-red-500">*</span></Label>
               <Input value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} placeholder="e.g. DEV001" />
@@ -1265,7 +1260,6 @@ export default function AssetManagementAccountsPage() {
                 !formData.brand || 
                 !formData.item || 
                 !formData.storageLocation ||
-                !formData.userUse ||
                 !detailData.condition
               }
             >
@@ -1280,17 +1274,9 @@ export default function AssetManagementAccountsPage() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Asset</DialogTitle>
-            <DialogDescription>Update User, Storage Location, Remarks, and Asset Detail where applicable</DialogDescription>
+            <DialogDescription>Update Storage Location, Remarks, and Asset Detail where applicable</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
-            <div className="col-span-2 grid gap-2">
-              <Label>User <span className="text-red-500">*</span></Label>
-              <Input
-                value={formData.userUse}
-                onChange={(e) => setFormData({ ...formData, userUse: e.target.value })}
-                placeholder="Nama pengguna aset (utama) — contoh: John Doe"
-              />
-            </div>
             <div className="grid gap-2">
               <Label>Code</Label>
               <Input value={formData.code} disabled className="bg-muted cursor-not-allowed" />

@@ -132,7 +132,7 @@ export async function POST(request: Request) {
           storage_location: storageLocation || null,
           purchase_amount: purchaseAmount || null,
           currency: currency || null,
-          status: status || "active", // Default status for new assets is "active"
+          status: status || "inactive", // Default status for new assets is "inactive"
           created_by: userId || null,
         },
       ])
