@@ -515,9 +515,9 @@ export default function AssetManagementAccountsPage() {
 
   // Handle add device
   const handleAdd = async () => {
-    // Validate required fields
-    if (!formData.code || !formData.brand || !formData.item || !formData.purchaseAmount || !formData.currency) {
-      toast.error("Code, Brand, Device, Purchase Amount, and Currency are required");
+    // Validate required fields: Code, Brand, Device, Storage Location, User, Condition
+    if (!formData.code || !formData.brand || !formData.item || !formData.storageLocation || !formData.userUse) {
+      toast.error("Code, Brand, Device, Storage Location, and User are required");
       return;
     }
 
@@ -525,9 +525,9 @@ export default function AssetManagementAccountsPage() {
     const needsFullDetail = requiresFullDetail(formData.item);
     
     if (needsFullDetail) {
-      // For Laptop/All In One/Computer: Condition, Year of Production, CPU, GPU, RAM, Memory are required
-      if (!detailData.condition || !detailData.yearOfProduction || !detailData.cpu || !detailData.gpu || !detailData.ram || !detailData.memory) {
-        toast.error("For Laptop/All In One/Computer, Condition, Year of Production, CPU, GPU, RAM, and Memory are required in Asset Detail");
+      // For Laptop/All In One/Computer: Condition is required
+      if (!detailData.condition) {
+        toast.error("Condition is required in Asset Detail");
         return;
       }
     } else {
@@ -1027,7 +1027,7 @@ export default function AssetManagementAccountsPage() {
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
             <div className="col-span-2 grid gap-2">
-              <Label className="text-base font-semibold text-[#7f5539] dark:text-[#a06540]">User</Label>
+              <Label className="text-base font-semibold text-[#7f5539] dark:text-[#a06540]">User <span className="text-red-500">*</span></Label>
               <Input
                 value={formData.userUse}
                 onChange={(e) => setFormData({ ...formData, userUse: e.target.value })}
@@ -1036,11 +1036,11 @@ export default function AssetManagementAccountsPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label>Code *</Label>
+              <Label>Code <span className="text-red-500">*</span></Label>
               <Input value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} placeholder="e.g. DEV001" />
             </div>
             <div className="grid gap-2">
-              <Label>Brand *</Label>
+              <Label>Brand <span className="text-red-500">*</span></Label>
               <select
                 value={formData.brand}
                 onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
@@ -1056,7 +1056,7 @@ export default function AssetManagementAccountsPage() {
               </select>
             </div>
             <div className="grid gap-2">
-              <Label>Device *</Label>
+              <Label>Device <span className="text-red-500">*</span></Label>
               <select
                 value={formData.item}
                 onChange={(e) => {
@@ -1080,15 +1080,15 @@ export default function AssetManagementAccountsPage() {
               </select>
             </div>
             <div className="grid gap-2">
-              <Label>Storage Location</Label>
+              <Label>Storage Location <span className="text-red-500">*</span></Label>
               <Input value={formData.storageLocation} onChange={(e) => setFormData({ ...formData, storageLocation: e.target.value })} placeholder="e.g. Warehouse A, Room 101" />
             </div>
             <div className="grid gap-2">
-              <Label>Purchase Amount *</Label>
+              <Label>Purchase Amount</Label>
               <Input type="number" step="0.01" value={formData.purchaseAmount} onChange={(e) => setFormData({ ...formData, purchaseAmount: e.target.value })} placeholder="e.g. 5000000" />
             </div>
             <div className="grid gap-2">
-              <Label>Currency *</Label>
+              <Label>Currency</Label>
               <select 
                 className="rounded-md border border-input bg-white dark:bg-[#101211] px-3 py-2 text-sm text-[#1e1e1e] dark:text-gray-200 h-10" 
                 value={formData.currency} 
@@ -1135,222 +1135,7 @@ export default function AssetManagementAccountsPage() {
                         // Full detail form for Laptop/All In One/Computer
                         <div className="grid grid-cols-2 gap-4">
                           <div className="grid gap-2">
-                            <Label className="text-sm font-medium">Condition *</Label>
-                            <select
-                              value={detailData.condition}
-                              onChange={(e) => setDetailData({ ...detailData, condition: e.target.value })}
-                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                            >
-                              <option value="">Select Condition</option>
-                              <option value="New">New</option>
-                              <option value="Good">Good</option>
-                              <option value="Fair">Fair</option>
-                              <option value="Poor">Poor</option>
-                            </select>
-                          </div>
-                          <div className="grid gap-2">
-                            <Label className="text-sm font-medium">Year of Purchase</Label>
-                            <Input
-                              type="number"
-                              value={detailData.yearOfPurchase}
-                              onChange={(e) => setDetailData({ ...detailData, yearOfPurchase: e.target.value })}
-                              placeholder="e.g. 2024"
-                              min="1900"
-                              max={new Date().getFullYear()}
-                              className="h-10"
-                            />
-                          </div>
-                          <div className="grid gap-2">
-                            <Label className="text-sm font-medium">Year of Production *</Label>
-                            <Input
-                              type="number"
-                              value={detailData.yearOfProduction}
-                              onChange={(e) => setDetailData({ ...detailData, yearOfProduction: e.target.value })}
-                              placeholder="e.g. 2024"
-                              min="1900"
-                              max={new Date().getFullYear()}
-                              className="h-10"
-                            />
-                          </div>
-                          <div className="grid gap-2">
-                            <Label className="text-sm font-medium">CPU *</Label>
-                            <Input
-                              value={detailData.cpu}
-                              onChange={(e) => setDetailData({ ...detailData, cpu: e.target.value })}
-                              placeholder="e.g. Intel Core i7-12700H"
-                              className="h-10"
-                            />
-                          </div>
-                          <div className="grid gap-2">
-                            <Label className="text-sm font-medium">GPU *</Label>
-                            <Input
-                              value={detailData.gpu}
-                              onChange={(e) => setDetailData({ ...detailData, gpu: e.target.value })}
-                              placeholder="e.g. NVIDIA RTX 3060"
-                              className="h-10"
-                            />
-                          </div>
-                          <div className="grid gap-2">
-                            <Label className="text-sm font-medium">RAM *</Label>
-                            <Input
-                              value={detailData.ram}
-                              onChange={(e) => setDetailData({ ...detailData, ram: e.target.value })}
-                              placeholder="e.g. 16GB DDR4"
-                              className="h-10"
-                            />
-                          </div>
-                          <div className="grid gap-2">
-                            <Label className="text-sm font-medium">Memory *</Label>
-                            <Input
-                              value={detailData.memory}
-                              onChange={(e) => setDetailData({ ...detailData, memory: e.target.value })}
-                              placeholder="e.g. 512GB SSD"
-                              className="h-10"
-                            />
-                          </div>
-                          <div className="grid gap-2">
-                            <Label className="text-sm font-medium">Item</Label>
-                            <Input
-                              value={detailData.item}
-                              onChange={(e) => setDetailData({ ...detailData, item: e.target.value })}
-                              placeholder="e.g. Laptop Model XYZ"
-                              className="h-10"
-                            />
-                          </div>
-                        </div>
-                      ) : (
-                        // Limited detail form for other devices (only Condition & Year of Purchase)
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="grid gap-2">
-                            <Label className="text-sm font-medium">Condition *</Label>
-                            <select
-                              value={detailData.condition}
-                              onChange={(e) => setDetailData({ ...detailData, condition: e.target.value })}
-                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                            >
-                              <option value="">Select Condition</option>
-                              <option value="New">New</option>
-                              <option value="Good">Good</option>
-                              <option value="Fair">Fair</option>
-                              <option value="Poor">Poor</option>
-                            </select>
-                          </div>
-                          <div className="grid gap-2">
-                            <Label className="text-sm font-medium">Year of Purchase</Label>
-                            <Input
-                              type="number"
-                              value={detailData.yearOfPurchase}
-                              onChange={(e) => setDetailData({ ...detailData, yearOfPurchase: e.target.value })}
-                              placeholder="e.g. 2024"
-                              min="1900"
-                              max={new Date().getFullYear()}
-                              className="h-10"
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  )}
-                </Card>
-              </div>
-            )}
-          </div>
-          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)]">
-            <Button variant="outline" className="min-w-[88px]" onClick={() => { setIsAddOpen(false); resetForm(); }}>Cancel</Button>
-            <Button 
-              className="min-w-[120px] bg-[#7f5539] hover:bg-[#7f5539]/90"
-              onClick={handleAdd} 
-              disabled={
-                !formData.code || 
-                !formData.brand || 
-                !formData.item || 
-                !formData.purchaseAmount || 
-                !formData.currency ||
-                (requiresFullDetail(formData.item)
-                  ? (!detailData.condition || !detailData.yearOfProduction || !detailData.cpu || !detailData.gpu || !detailData.ram || !detailData.memory)
-                  : !detailData.condition)
-              }
-            >
-              Add Asset
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Dialog */}
-      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Asset</DialogTitle>
-            <DialogDescription>Update User, Storage Location, Remarks, and Asset Detail where applicable</DialogDescription>
-          </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-4">
-            <div className="col-span-2 grid gap-2">
-              <Label className="text-base font-semibold text-[#7f5539] dark:text-[#a06540]">User</Label>
-              <Input
-                value={formData.userUse}
-                onChange={(e) => setFormData({ ...formData, userUse: e.target.value })}
-                placeholder="Nama pengguna aset (utama) — contoh: John Doe"
-                className="h-11 border-[#7F5539]/25 dark:border-[#7F5539]/40 focus-visible:ring-[#7f5539]/40"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label>Code</Label>
-              <Input value={formData.code} disabled className="bg-muted cursor-not-allowed" />
-            </div>
-            <div className="grid gap-2">
-              <Label>Brand</Label>
-              <Input value={formData.brand || "-"} disabled className="bg-muted cursor-not-allowed" />
-            </div>
-            <div className="grid gap-2">
-              <Label>Device</Label>
-              <Input value={formData.item || "-"} disabled className="bg-muted cursor-not-allowed" />
-            </div>
-            <div className="grid gap-2">
-              <Label>Purchase Amount</Label>
-              <Input value={formData.purchaseAmount ? new Intl.NumberFormat('id-ID').format(parseFloat(formData.purchaseAmount)) : "-"} disabled className="bg-muted cursor-not-allowed" />
-            </div>
-            <div className="grid gap-2">
-              <Label>Currency</Label>
-              <Input value={formData.currency || "-"} disabled className="bg-muted cursor-not-allowed" />
-            </div>
-            <div className="grid gap-2">
-              <Label>Storage Location</Label>
-              <Input value={formData.storageLocation} onChange={(e) => setFormData({ ...formData, storageLocation: e.target.value })} placeholder="e.g. Warehouse A, Room 101" />
-            </div>
-            <div className="col-span-2 grid gap-2">
-              <Label>Remarks</Label>
-              <Textarea value={formData.note} onChange={(e) => setFormData({ ...formData, note: e.target.value })} placeholder="Optional remarks" />
-            </div>
-            {selected && (
-              <div className="col-span-2 mt-2">
-                <Card className="border-border bg-card shadow-sm">
-                  <CardHeader className="pb-3">
-                    <button
-                      type="button"
-                      onClick={() => setShowDetailForm(!showDetailForm)}
-                      className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity"
-                    >
-                      <CardTitle className="text-base font-semibold text-[#7f5539] dark:text-[#a06540]">Asset Detail</CardTitle>
-                      {showDetailForm ? (
-                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </button>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {requiresFullDetail(formData.item)
-                        ? "Edit detailed specifications (for Laptop/All In One/Computer)"
-                        : "Edit basic details (Condition & Year of Purchase)"}
-                    </p>
-                  </CardHeader>
-                  {showDetailForm && (
-                    <CardContent className="pt-0">
-                      {requiresFullDetail(formData.item) ? (
-                        // Full detail form for Laptop/All In One/Computer
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="grid gap-2">
-                            <Label className="text-sm font-medium">Condition</Label>
+                            <Label className="text-sm font-medium">Condition <span className="text-red-500">*</span></Label>
                             <select
                               value={detailData.condition}
                               onChange={(e) => setDetailData({ ...detailData, condition: e.target.value })}
@@ -1437,7 +1222,220 @@ export default function AssetManagementAccountsPage() {
                         // Limited detail form for other devices (only Condition & Year of Purchase)
                         <div className="grid grid-cols-2 gap-4">
                           <div className="grid gap-2">
-                            <Label className="text-sm font-medium">Condition</Label>
+                            <Label className="text-sm font-medium">Condition <span className="text-red-500">*</span></Label>
+                            <select
+                              value={detailData.condition}
+                              onChange={(e) => setDetailData({ ...detailData, condition: e.target.value })}
+                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            >
+                              <option value="">Select Condition</option>
+                              <option value="New">New</option>
+                              <option value="Good">Good</option>
+                              <option value="Fair">Fair</option>
+                              <option value="Poor">Poor</option>
+                            </select>
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">Year of Purchase</Label>
+                            <Input
+                              type="number"
+                              value={detailData.yearOfPurchase}
+                              onChange={(e) => setDetailData({ ...detailData, yearOfPurchase: e.target.value })}
+                              placeholder="e.g. 2024"
+                              min="1900"
+                              max={new Date().getFullYear()}
+                              className="h-10"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  )}
+                </Card>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="flex flex-row justify-end gap-3 pt-4 mt-1 border-t border-[rgba(127,85,57,0.12)]">
+            <Button variant="outline" className="min-w-[88px]" onClick={() => { setIsAddOpen(false); resetForm(); }}>Cancel</Button>
+            <Button 
+              className="min-w-[120px] bg-[#7f5539] hover:bg-[#7f5539]/90"
+              onClick={handleAdd} 
+              disabled={
+                !formData.code || 
+                !formData.brand || 
+                !formData.item || 
+                !formData.storageLocation ||
+                !formData.userUse ||
+                !detailData.condition
+              }
+            >
+              Add Asset
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Asset</DialogTitle>
+            <DialogDescription>Update User, Storage Location, Remarks, and Asset Detail where applicable</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-4">
+            <div className="col-span-2 grid gap-2">
+              <Label className="text-base font-semibold text-[#7f5539] dark:text-[#a06540]">User <span className="text-red-500">*</span></Label>
+              <Input
+                value={formData.userUse}
+                onChange={(e) => setFormData({ ...formData, userUse: e.target.value })}
+                placeholder="Nama pengguna aset (utama) — contoh: John Doe"
+                className="h-11 border-[#7F5539]/25 dark:border-[#7F5539]/40 focus-visible:ring-[#7f5539]/40"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Code</Label>
+              <Input value={formData.code} disabled className="bg-muted cursor-not-allowed" />
+            </div>
+            <div className="grid gap-2">
+              <Label>Brand</Label>
+              <Input value={formData.brand || "-"} disabled className="bg-muted cursor-not-allowed" />
+            </div>
+            <div className="grid gap-2">
+              <Label>Device</Label>
+              <Input value={formData.item || "-"} disabled className="bg-muted cursor-not-allowed" />
+            </div>
+            <div className="grid gap-2">
+              <Label>Purchase Amount</Label>
+              <Input value={formData.purchaseAmount ? new Intl.NumberFormat('id-ID').format(parseFloat(formData.purchaseAmount)) : "-"} disabled className="bg-muted cursor-not-allowed" />
+            </div>
+            <div className="grid gap-2">
+              <Label>Currency</Label>
+              <Input value={formData.currency || "-"} disabled className="bg-muted cursor-not-allowed" />
+            </div>
+            <div className="grid gap-2">
+              <Label>Storage Location <span className="text-red-500">*</span></Label>
+              <Input value={formData.storageLocation} onChange={(e) => setFormData({ ...formData, storageLocation: e.target.value })} placeholder="e.g. Warehouse A, Room 101" />
+            </div>
+            <div className="col-span-2 grid gap-2">
+              <Label>Remarks</Label>
+              <Textarea value={formData.note} onChange={(e) => setFormData({ ...formData, note: e.target.value })} placeholder="Optional remarks" />
+            </div>
+            {selected && (
+              <div className="col-span-2 mt-2">
+                <Card className="border-border bg-card shadow-sm">
+                  <CardHeader className="pb-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowDetailForm(!showDetailForm)}
+                      className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity"
+                    >
+                      <CardTitle className="text-base font-semibold text-[#7f5539] dark:text-[#a06540]">Asset Detail</CardTitle>
+                      {showDetailForm ? (
+                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </button>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {requiresFullDetail(formData.item)
+                        ? "Edit detailed specifications (for Laptop/All In One/Computer)"
+                        : "Edit basic details (Condition & Year of Purchase)"}
+                    </p>
+                  </CardHeader>
+                  {showDetailForm && (
+                    <CardContent className="pt-0">
+                      {requiresFullDetail(formData.item) ? (
+                        // Full detail form for Laptop/All In One/Computer
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">Condition <span className="text-red-500">*</span></Label>
+                            <select
+                              value={detailData.condition}
+                              onChange={(e) => setDetailData({ ...detailData, condition: e.target.value })}
+                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            >
+                              <option value="">Select Condition</option>
+                              <option value="New">New</option>
+                              <option value="Good">Good</option>
+                              <option value="Fair">Fair</option>
+                              <option value="Poor">Poor</option>
+                            </select>
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">Year of Purchase</Label>
+                            <Input
+                              type="number"
+                              value={detailData.yearOfPurchase}
+                              onChange={(e) => setDetailData({ ...detailData, yearOfPurchase: e.target.value })}
+                              placeholder="e.g. 2024"
+                              min="1900"
+                              max={new Date().getFullYear()}
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">Year of Production</Label>
+                            <Input
+                              type="number"
+                              value={detailData.yearOfProduction}
+                              onChange={(e) => setDetailData({ ...detailData, yearOfProduction: e.target.value })}
+                              placeholder="e.g. 2024"
+                              min="1900"
+                              max={new Date().getFullYear()}
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">CPU</Label>
+                            <Input
+                              value={detailData.cpu}
+                              onChange={(e) => setDetailData({ ...detailData, cpu: e.target.value })}
+                              placeholder="e.g. Intel Core i7-12700H"
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">GPU</Label>
+                            <Input
+                              value={detailData.gpu}
+                              onChange={(e) => setDetailData({ ...detailData, gpu: e.target.value })}
+                              placeholder="e.g. NVIDIA RTX 3060"
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">RAM</Label>
+                            <Input
+                              value={detailData.ram}
+                              onChange={(e) => setDetailData({ ...detailData, ram: e.target.value })}
+                              placeholder="e.g. 16GB DDR4"
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">Memory</Label>
+                            <Input
+                              value={detailData.memory}
+                              onChange={(e) => setDetailData({ ...detailData, memory: e.target.value })}
+                              placeholder="e.g. 512GB SSD"
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">Item</Label>
+                            <Input
+                              value={detailData.item}
+                              onChange={(e) => setDetailData({ ...detailData, item: e.target.value })}
+                              placeholder="e.g. Laptop Model XYZ"
+                              className="h-10"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        // Limited detail form for other devices (only Condition & Year of Purchase)
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="grid gap-2">
+                            <Label className="text-sm font-medium">Condition <span className="text-red-500">*</span></Label>
                             <select
                               value={detailData.condition}
                               onChange={(e) => setDetailData({ ...detailData, condition: e.target.value })}
