@@ -737,7 +737,6 @@ export default function AssetManagementAccountsPage() {
       const operatorStr = localStorage.getItem("operator");
       const userId = operatorStr ? JSON.parse(operatorStr).id : null;
 
-      // Only update Storage Location and Remarks
       const res = await fetch(`/api/asset-management/accounts/${selected.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -746,10 +745,10 @@ export default function AssetManagementAccountsPage() {
           typeId: selected.typeId || null,
           brand: selected.brand || null,
           item: selected.item, // Keep original item
-          userUse: selected.userUse || null,
-          note: formData.note || null, // Only update note
+          userUse: formData.userUse?.trim() ? formData.userUse.trim() : null,
+          note: formData.note || null,
           departmentTeam: selected.departmentTeam || null,
-          storageLocation: formData.storageLocation || null, // Only update storageLocation
+          storageLocation: formData.storageLocation || null,
           purchaseAmount: selected.purchaseAmount || null,
           currency: selected.currency || null,
           userId,
@@ -1027,6 +1026,15 @@ export default function AssetManagementAccountsPage() {
             <DialogDescription>Create a new asset entry</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
+            <div className="col-span-2 grid gap-2">
+              <Label className="text-base font-semibold text-[#7f5539] dark:text-[#a06540]">User</Label>
+              <Input
+                value={formData.userUse}
+                onChange={(e) => setFormData({ ...formData, userUse: e.target.value })}
+                placeholder="Nama pengguna aset (utama) — contoh: John Doe"
+                className="h-11 border-[#7F5539]/25 dark:border-[#7F5539]/40 focus-visible:ring-[#7f5539]/40"
+              />
+            </div>
             <div className="grid gap-2">
               <Label>Code *</Label>
               <Input value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} placeholder="e.g. DEV001" />
@@ -1274,9 +1282,18 @@ export default function AssetManagementAccountsPage() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Asset</DialogTitle>
-            <DialogDescription>Update asset information (only Storage Location and Remarks can be edited)</DialogDescription>
+            <DialogDescription>Update User, Storage Location, Remarks, and Asset Detail where applicable</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
+            <div className="col-span-2 grid gap-2">
+              <Label className="text-base font-semibold text-[#7f5539] dark:text-[#a06540]">User</Label>
+              <Input
+                value={formData.userUse}
+                onChange={(e) => setFormData({ ...formData, userUse: e.target.value })}
+                placeholder="Nama pengguna aset (utama) — contoh: John Doe"
+                className="h-11 border-[#7F5539]/25 dark:border-[#7F5539]/40 focus-visible:ring-[#7f5539]/40"
+              />
+            </div>
             <div className="grid gap-2">
               <Label>Code</Label>
               <Input value={formData.code} disabled className="bg-muted cursor-not-allowed" />

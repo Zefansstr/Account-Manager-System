@@ -392,7 +392,16 @@ export default function MaintenanceLogPage() {
                   <td colSpan={11} className="p-4 bg-white dark:bg-[#101211] text-center text-muted-foreground dark:text-gray-400">Loading...</td>
                 </tr>
               ) : logs.length === 0 ? (
-                <tr className="bg-white dark:bg-[#101211]"><td colSpan={11} className="px-4 py-8 text-center text-muted-foreground dark:text-gray-400 bg-white dark:bg-[#101211]">No maintenance logs found</td></tr>
+                <tr className="bg-white dark:bg-[#101211]">
+                  <td colSpan={11} className="p-0 align-middle bg-white dark:bg-[#101211]">
+                    <div className="flex min-h-[220px] flex-col items-center justify-center px-4 py-12 text-center sm:min-h-[260px]">
+                      <p className="text-sm font-medium text-muted-foreground dark:text-gray-400">No maintenance logs found</p>
+                      <p className="mt-1 max-w-sm text-xs text-[rgba(127,85,57,0.55)] dark:text-gray-500">
+                        Add a log or adjust your search to see records here.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
               ) : (
                 logs.map((log) => (
                   <tr key={log.id} className="border-t border-[#7F5539]/15 dark:border-[#7F5539]/30 bg-white dark:bg-[#101211] hover:bg-[#f5f0eb] dark:hover:bg-[#1a1a1a] transition-colors">
