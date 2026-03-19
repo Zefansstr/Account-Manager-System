@@ -1027,12 +1027,11 @@ export default function AssetManagementAccountsPage() {
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
             <div className="col-span-2 grid gap-2">
-              <Label className="text-base font-semibold text-[#7f5539] dark:text-[#a06540]">User <span className="text-red-500">*</span></Label>
+              <Label>User <span className="text-red-500">*</span></Label>
               <Input
                 value={formData.userUse}
                 onChange={(e) => setFormData({ ...formData, userUse: e.target.value })}
                 placeholder="Nama pengguna aset (utama) — contoh: John Doe"
-                className="h-11 border-[#7F5539]/25 dark:border-[#7F5539]/40 focus-visible:ring-[#7f5539]/40"
               />
             </div>
             <div className="grid gap-2">
@@ -1284,12 +1283,11 @@ export default function AssetManagementAccountsPage() {
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
             <div className="col-span-2 grid gap-2">
-              <Label className="text-base font-semibold text-[#7f5539] dark:text-[#a06540]">User <span className="text-red-500">*</span></Label>
+              <Label>User <span className="text-red-500">*</span></Label>
               <Input
                 value={formData.userUse}
                 onChange={(e) => setFormData({ ...formData, userUse: e.target.value })}
                 placeholder="Nama pengguna aset (utama) — contoh: John Doe"
-                className="h-11 border-[#7F5539]/25 dark:border-[#7F5539]/40 focus-visible:ring-[#7f5539]/40"
               />
             </div>
             <div className="grid gap-2">
