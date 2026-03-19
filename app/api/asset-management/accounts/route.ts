@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { code, typeId, brand, item, userUse, note, departmentTeam, storageLocation, purchaseAmount, currency, userId } = body;
+    const { code, typeId, brand, item, userUse, note, departmentTeam, storageLocation, purchaseAmount, currency, status, userId } = body;
 
     if (!code || !item) {
       return NextResponse.json(
@@ -132,7 +132,7 @@ export async function POST(request: Request) {
           storage_location: storageLocation || null,
           purchase_amount: purchaseAmount || null,
           currency: currency || null,
-          status: "not_used", // Default status for new assets
+          status: status || "active", // Default status for new assets is "active"
           created_by: userId || null,
         },
       ])

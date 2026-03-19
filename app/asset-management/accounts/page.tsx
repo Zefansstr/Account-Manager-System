@@ -556,6 +556,7 @@ export default function AssetManagementAccountsPage() {
           storageLocation: formData.storageLocation || null,
           purchaseAmount: formData.purchaseAmount ? parseFloat(formData.purchaseAmount) : null,
           currency: formData.currency || null,
+          status: "active",
           userId,
         }),
       });
