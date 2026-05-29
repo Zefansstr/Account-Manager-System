@@ -142,6 +142,7 @@ export async function GET(request: NextRequest) {
       role: acc.roles?.role_name || "-",
       roleId: acc.role_id,
       remark: acc.remark,
+      accessUrl: acc.access_url || null,
       status: acc.status,
     }));
 
@@ -175,7 +176,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { applicationId, lineId, username, password, departmentId, roleId, remark, userId } = body;
+    const { applicationId, lineId, username, password, departmentId, roleId, remark, accessUrl, userId } = body;
 
     const { data, error } = await supabase
       .from("accounts")
@@ -187,6 +188,7 @@ export async function POST(request: Request) {
         department_id: departmentId || null,
         role_id: roleId || null,
         remark: remark || null,
+        access_url: accessUrl?.trim() || null,
       }])
       .select()
       .single();

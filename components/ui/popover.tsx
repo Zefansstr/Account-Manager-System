@@ -118,7 +118,10 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
         if (!contentRef.current || !triggerRef.current) return;
         
         // Check if click is inside the popover content
-        if (contentRef.current.contains(target)) {
+        if (
+          contentRef.current.contains(target) ||
+          target.closest("[data-popover-content]")
+        ) {
           return; // Don't close if clicking inside popover
         }
         

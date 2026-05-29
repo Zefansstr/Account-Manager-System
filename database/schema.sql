@@ -98,6 +98,7 @@ CREATE TABLE accounts (
   department_id UUID REFERENCES departments(id) ON DELETE SET NULL,
   role_id UUID REFERENCES roles(id) ON DELETE SET NULL,
   remark TEXT,
+  access_url TEXT,
   status VARCHAR(20) DEFAULT 'active',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

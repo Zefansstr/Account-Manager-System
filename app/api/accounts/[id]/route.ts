@@ -6,7 +6,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params;
     const body = await request.json();
-    const { applicationId, lineId, username, password, departmentId, roleId, remark, userId } = body;
+    const { applicationId, lineId, username, password, departmentId, roleId, remark, accessUrl, userId } = body;
 
     // Get old value before update
     const { data: oldData } = await supabase
@@ -25,6 +25,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         department_id: departmentId || null,
         role_id: roleId || null,
         remark: remark || null,
+        access_url: accessUrl?.trim() || null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)

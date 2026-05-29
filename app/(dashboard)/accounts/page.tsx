@@ -10,8 +10,9 @@ import { Pagination } from "@/components/ui/pagination";
 import { TableSkeleton } from "@/components/ui/skeleton";
 import { Toast } from "@/components/ui/toast";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Eye, EyeOff, Upload, Download, Power, CheckSquare, Square, Search, UserCog } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, EyeOff, Upload, Download, Power, CheckSquare, Square, Search, UserCog, ExternalLink, Copy } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { FilterDropdown } from "@/components/ui/filter-dropdown";
 import * as XLSX from "xlsx";
 import { PermissionGuard } from "@/components/auth/permission-guard";
@@ -20,6 +21,7 @@ import { useAccounts, useCreateAccount, useUpdateAccount, useDeleteAccount, acco
 import { useLookups } from "@/hooks/use-lookups";
 import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+import { copyToClipboard } from "@/lib/utils";
 
 type Account = {
   id: string;
@@ -34,8 +36,101 @@ type Account = {
   role: string;
   roleId?: string;
   remark?: string;
+  accessUrl?: string | null;
   status?: string;
 };
+
+function normalizeAccessUrl(url: string | null | undefined): string | null {
+  const trimmed = url?.trim();
+  if (!trimmed) return null;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
+function AccessLinkMenu({ url }: { url?: string | null }) {
+  const [open, setOpen] = useState(false);
+  const hasUrl = !!url?.trim();
+  const normalized = normalizeAccessUrl(url);
+
+  const handleOpenLink = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!normalized) return;
+    window.open(normalized, "_blank", "noopener,noreferrer");
+    setOpen(false);
+  };
+
+  const handleCopyLink = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const toCopy = normalized || url?.trim();
+    if (!toCopy) return;
+
+    void copyToClipboard(toCopy).then((ok) => {
+      if (ok) {
+        toast.success("Link copied to clipboard");
+        setOpen(false);
+      } else {
+        toast.error("Failed to copy link. Please copy manually from Edit.");
+      }
+    });
+  };
+
+  if (!hasUrl) {
+    return (
+      <Button
+        variant="ghost"
+        size="sm"
+        disabled
+        className="h-8 px-2 gap-1 disabled:opacity-40"
+        title="No access link set"
+      >
+        <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+        <span className="text-xs font-medium">Link</span>
+      </Button>
+    );
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 px-2 gap-1 hover:bg-sky-500/10 hover:text-sky-700"
+          title="Access link options"
+        >
+          <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+          <span className="text-xs font-medium">Link</span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        className="w-44 p-1 border-[#7F5539]/20 bg-white shadow-lg"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={handleOpenLink}
+          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-[#1e1e1e] hover:bg-[#7f5539]/10 transition-colors"
+        >
+          <ExternalLink className="h-4 w-4 text-[#7f5539]" />
+          Open Link
+        </button>
+        <button
+          type="button"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={handleCopyLink}
+          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-[#1e1e1e] hover:bg-[#7f5539]/10 transition-colors"
+        >
+          <Copy className="h-4 w-4 text-[#7f5539]" />
+          Copy Link
+        </button>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 type LookupData = { id: string; code: string; name: string }[];
 
@@ -149,6 +244,7 @@ export default function AccountsPage() {
     departmentId: "",
     roleId: "",
     remark: "",
+    accessUrl: "",
   });
 
   // Debounce search input
@@ -277,6 +373,7 @@ export default function AccountsPage() {
       departmentId: "",
       roleId: "",
       remark: "",
+      accessUrl: "",
     });
   };
 
@@ -399,6 +496,13 @@ export default function AccountsPage() {
           department_id: dept?.id || null,
           role_id: role?.id || null,
           remark: row.Remark || null,
+          access_url: (
+            row["Access URL"] ||
+            row["Access Link"] ||
+            row.Link ||
+            row["Login URL"] ||
+            ""
+          ).toString().trim() || null,
         };
       });
 
@@ -450,6 +554,7 @@ export default function AccountsPage() {
         Department: "CRM_HOD",
         Role: "HOD_M1",
         Remark: "Example account",
+        "Access URL": "https://example.com/login",
       },
     ];
 
@@ -466,6 +571,7 @@ export default function AccountsPage() {
       { wch: 20 }, // Department
       { wch: 15 }, // Role
       { wch: 30 }, // Remark
+      { wch: 40 }, // Access URL
     ];
 
     XLSX.writeFile(workbook, "Accounts_Import_Template.xlsx");
@@ -684,7 +790,8 @@ export default function AccountsPage() {
                     {showRoleColumn && <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle">{acc.role}</td>}
                     {showRemarkColumn && <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle">{acc.remark || "-"}</td>}
                     <td className="py-3 px-4 text-sm font-medium text-[#1e1e1e] dark:text-gray-200 align-middle">
-                      <div className="flex items-center justify-center gap-2">
+                      <div className="flex items-center justify-center gap-1 flex-wrap">
+                        <AccessLinkMenu url={acc.accessUrl} />
                         {hasEnableDisablePermission && (
                           <Button
                             variant="ghost"
@@ -708,6 +815,7 @@ export default function AccountsPage() {
                                 departmentId: acc.departmentId || "",
                                 roleId: acc.roleId || "",
                                 remark: acc.remark || "",
+                                accessUrl: acc.accessUrl || "",
                               });
                               setIsEditOpen(true);
                             }}>
@@ -788,6 +896,17 @@ export default function AccountsPage() {
               </select>
             </div>
             <div className="col-span-2 grid gap-1.5">
+              <Label className="text-sm font-medium text-[#1e1e1e]">Access URL</Label>
+              <Input
+                type="url"
+                className="h-9 text-sm text-[#1e1e1e]"
+                value={formData.accessUrl}
+                onChange={(e) => setFormData({ ...formData, accessUrl: e.target.value })}
+                placeholder="https://portal.example.com/login"
+              />
+              <p className="text-xs text-[#5d5d5d]">Login page URL for the Link button in the table (Open / Copy)</p>
+            </div>
+            <div className="col-span-2 grid gap-1.5">
               <Label className="text-sm font-medium text-[#1e1e1e]">Remark</Label>
               <Textarea className="min-h-[80px] text-sm text-[#1e1e1e] resize-none" value={formData.remark} onChange={(e) => setFormData({ ...formData, remark: e.target.value })} placeholder="Optional remark" />
             </div>
@@ -842,6 +961,17 @@ export default function AccountsPage() {
                 <option value="">Select Role</option>
                 {roles.map((role: { id: string; code: string; name: string }) => (<option key={role.id} value={role.id}>{role.name}</option>))}
               </select>
+            </div>
+            <div className="col-span-2 grid gap-1.5">
+              <Label className="text-sm font-medium text-[#1e1e1e]">Access URL</Label>
+              <Input
+                type="url"
+                className="h-9 text-sm text-[#1e1e1e]"
+                value={formData.accessUrl}
+                onChange={(e) => setFormData({ ...formData, accessUrl: e.target.value })}
+                placeholder="https://portal.example.com/login"
+              />
+              <p className="text-xs text-[#5d5d5d]">Login page URL for the Link button in the table (Open / Copy)</p>
             </div>
             <div className="col-span-2 grid gap-1.5">
               <Label className="text-sm font-medium text-[#1e1e1e]">Remark</Label>
@@ -1015,6 +1145,10 @@ export default function AccountsPage() {
                   <div className="flex gap-3 sm:gap-4">
                     <dt className="w-24 shrink-0 font-medium text-[#1e1e1e]">Remark</dt>
                     <dd className="text-[#5d5d5d]">Optional</dd>
+                  </div>
+                  <div className="flex gap-3 sm:gap-4">
+                    <dt className="w-24 shrink-0 font-medium text-[#1e1e1e]">Access URL</dt>
+                    <dd className="text-[#5d5d5d]">Optional — full URL (https://...)</dd>
                   </div>
                 </dl>
               </div>
